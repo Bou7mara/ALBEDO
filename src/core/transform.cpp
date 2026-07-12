@@ -67,6 +67,8 @@ Transform Transform::RotateZ(float thetaDeg) {
 }
 
 Transform Transform::LookAt(const Point3f& eye, const Point3f& look, const Vector3f& up) {
+    // Precondition: 'up' vector must not be parallel to the viewing direction 'look - eye'
+    // (otherwise Cross(up, dir) yields a zero vector, causing NaNs during normalization).
     Vector3f dir = Normalize(look - eye);
     Vector3f right = Normalize(Cross(Normalize(up), dir));
     Vector3f newUp = Cross(dir, right);
