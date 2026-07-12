@@ -1,44 +1,26 @@
-cmake_minimum_required(VERSION 3.15)
-project(ALBEDO LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.20)
+project(raytracer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler-specific warning flags and treat warnings as errors
+# Header-only core, exposed as an interface library so both the main
+# executable and the test suite can link against it uniformly.
+add_library(rt_core INTERFACE)
+target_include_directories(rt_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(rt_core INTERFACE cxx_std_23)
+
+# Apply warnings-as-errors strictly to our own targets (propagated via rt_core INTERFACE)
+# without enforcing it on external dependencies fetched by CMake.
 if(MSVC)
-    add_compile_options(/W4 /WX)
+    target_compile_options(rt_core INTERFACE /W4 /WX)
 else()
-    add_compile_options(-Wall -Wextra -Werror -Wpedantic)
+    target_compile_options(rt_core INTERFACE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
-# Include directory for the public headers
-set(RT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(raytracer src/main.cpp)
+target_link_libraries(raytracer PRIVATE rt_core)
 
-# Executable target
-add_executable(albedo src/main.cpp)
-target_include_directories(albedo PRIVATE ${RT_INCLUDE_DIR})
-
-# Unit testing setup
-option(BUILD_TESTING "Build tests" ON)
-if(BUILD_TESTING)
-    include(FetchContent)
-    FetchContent_Declare(
-        doctest
-        GIT_REPOSITORY https://github.com/doctest/doctest.git
-        GIT_TAG        v2.4.11
-    )
-    FetchContent_MakeAvailable(doctest)
-
-    # test_main.cpp contains DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN to speed up builds
-    add_executable(tests
-        tests/test_main.cpp
-        tests/test_tuple3.cpp
-        tests/test_geometry.cpp
-    )
-    target_include_directories(tests PRIVATE ${RT_INCLUDE_DIR})
-    target_link_libraries(tests PRIVATE doctest::doctest)
-
-    enable_testing()
-    add_test(NAME CoreTests COMMAND tests)
-endif()
+enable_testing()
+add_subdirectory(tests)
