@@ -28,9 +28,10 @@ int main() {
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f));
 
-    std::ofstream out("image.ppm");
+    std::string outputPath = NextImagePath();
+    std::ofstream out(outputPath);
     if (!out) {
-        std::cerr << "Failed to open image.ppm for writing!" << std::endl;
+        std::cerr << "Failed to open " << outputPath << " for writing!" << std::endl;
         return 1;
     }
 
@@ -60,6 +61,6 @@ int main() {
         }
     }
 
-    std::cout << "Rendering completed. Output written to image.ppm" << std::endl;
+    std::cout << "Rendering completed. Output written to " << outputPath << std::endl;
     return 0;
 }

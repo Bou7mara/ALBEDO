@@ -4,6 +4,8 @@
 #include <ostream>
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <string>
 
 namespace rt {
 
@@ -22,6 +24,23 @@ inline void WritePixel(std::ostream& os, float r, float g, float b) {
         return static_cast<int>(255.999f * c);
     };
     os << toByte(r) << ' ' << toByte(g) << ' ' << toByte(b) << '\n';
+}
+
+// Returns the path for the next numbered image (images/image1.ppm,
+// images/image2.ppm, ...), creating the images/ directory if it
+// doesn't exist yet. Numbering is derived by checking what already
+// exists on disk -- no separate counter file or state to keep in sync.
+inline std::string NextImagePath(const std::string& directory = "images") {
+    std::filesystem::create_directories(directory);
+
+    int n = 1;
+    std::string path;
+    do {
+        path = directory + "/image" + std::to_string(n) + ".ppm";
+        ++n;
+    } while (std::filesystem::exists(path));
+
+    return path;
 }
 
 } // namespace rt

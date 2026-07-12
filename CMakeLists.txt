@@ -17,9 +17,9 @@ target_compile_features(rt_core PUBLIC cxx_std_23)
 # Apply warnings-as-errors strictly to our own targets (propagated via rt_core PUBLIC)
 # without enforcing it on external dependencies fetched by CMake.
 if(MSVC)
-    target_compile_options(rt_core PUBLIC /W4 /WX)
+    target_compile_options(rt_core PRIVATE /W4 /WX)
 else()
-    target_compile_options(rt_core PUBLIC -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(rt_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 add_executable(raytracer src/main.cpp)
