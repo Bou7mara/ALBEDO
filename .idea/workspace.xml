@@ -4,6 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
   </component>
   <component name="CMakePresetLoader"><![CDATA[{
@@ -15,6 +16,42 @@
   <component name="CMakeReloadState">
     <option name="reloaded" value="true" />
   </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="raytracer" targetName="ExperimentalCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousBuild" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlySubmit" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyTest" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="raytracer" />
+      <config projectName="raytracer" targetName="ExperimentalBuild" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyBuild" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ExperimentalStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Catch2WithMain" />
+      <config projectName="raytracer" targetName="ContinuousSubmit" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyMemoryCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ExperimentalConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ExperimentalMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousTest" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ExperimentalTest" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Catch2" />
+      <config projectName="raytracer" targetName="ExperimentalUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Experimental" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="rt_tests" />
+      <config projectName="raytracer" targetName="ExperimentalSubmit" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Continuous" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Nightly" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyUpdate" folderName="CTestDashboardTargets" />
+    </generated>
+  </component>
   <component name="CMakeSettings">
     <configurations>
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
@@ -22,12 +59,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_geometry.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_geometry.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_tuple3.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_tuple3.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,6 +69,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -60,9 +93,11 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Catch.rt_tests.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
@@ -70,7 +105,13 @@
     "RunOnceActivity.west.config.association.type.startup.service": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
+    "ctest.advertisement.all.test.configuration.is.created": "true",
     "git-widget-placeholder": "main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
     "org.rust.first.attach.projects": "true",
     "vue.rearranger.settings.migration": "true"
   }
@@ -291,11 +332,16 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783863011977</updated>
-      <workItem from="1783863014206" duration="170000" />
+      <workItem from="1783863014206" duration="681000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
   </component>
 </project>

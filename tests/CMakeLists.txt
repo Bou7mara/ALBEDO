@@ -14,6 +14,7 @@ add_executable(rt_tests
     test_vector3.cpp
     test_point3.cpp
     test_normal3.cpp
+    test_ray.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)
