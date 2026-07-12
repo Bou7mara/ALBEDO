@@ -1,6 +1,8 @@
 #include "rt/core/point2.h"
+#include "rt/core/rng.h"
 #include "rt/cameras/perspective_camera.h"
 #include "rt/shapes/sphere.h"
+#include "rt/materials/lambertian.h"
 #include "rt/scene/scene.h"
 #include "rt/io/ppm_writer.h"
 
@@ -10,57 +12,95 @@
 
 using namespace rt;
 
+Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
+    if (depth <= 0) return Vector3f(0.0f, 0.0f, 0.0f);
+
+    SurfaceInteraction isect;
+    if (scene.Intersect(r, &isect)) {
+        const BSDF* bsdf = isect.shape->GetBSDF();
+        if (bsdf) {
+            Vector3f wi;
+            float pdf;
+            Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n),
+                                         rng.Uniform2D(), &wi, &pdf);
+            if (pdf <= 0.0f) return Vector3f(0.0f, 0.0f, 0.0f);
+
+            float cosTheta = AbsDot(wi, isect.n);
+
+            // Offset the next ray's origin along the normal -- floating
+            // point error in isect.p means a ray from the exact hit
+            // point can re-intersect the same surface it just left
+            // ("shadow acne"). Flagged as a real concern back when Ray
+            // was designed (TOC 3.1.1); this is where it first actually
+            // bites.
+            constexpr float kEpsilon = 1e-4f;
+            Point3f offsetOrigin = isect.p + kEpsilon * Vector3f(isect.n);
+            Ray scattered(offsetOrigin, wi);
+
+            Vector3f Li = RayColor(scattered, scene, rng, depth - 1);
+            return f * cosTheta * Li / pdf;
+        }
+        // No BSDF attached: fall back to normal-visualization debug
+        // shading, so any future un-textured shape stays diagnosable
+        // rather than silently rendering black.
+        Vector3f n = Vector3f(isect.n);
+        return Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f),
+                         0.5f * (n.z + 1.0f));
+    }
+
+    Vector3f unitDir = Normalize(r.d);
+    float t = 0.5f * (unitDir.y + 1.0f);
+    return (1.0f - t) * Vector3f(1.0f, 1.0f, 1.0f)
+         + t * Vector3f(0.5f, 0.7f, 1.0f);
+}
+
 int main() {
     const int imageWidth = 400;
     const int imageHeight = 200;
+    const int samplesPerPixel = 100;
+    const int maxDepth = 50;
 
-    std::cout << "Rendering a " << imageWidth << "x" << imageHeight << " image..." << std::endl;
+    std::cout << "Rendering a " << imageWidth << "x" << imageHeight
+              << " image at " << samplesPerPixel << " spp...\n";
 
     PerspectiveCamera camera(
-        Point3f(0.0f, 0.0f, 0.0f),   // eye
-        Point3f(0.0f, 0.0f, -1.0f),  // lookAt: looking down -world-Z
-        Vector3f(0.0f, 1.0f, 0.0f),  // up
-        90.0f,                        // vertical FOV
+        Point3f(0.0f, 0.0f, 0.0f),
+        Point3f(0.0f, 0.0f, -1.0f),
+        Vector3f(0.0f, 1.0f, 0.0f),
+        90.0f,
         imageWidth, imageHeight
     );
 
+    auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.5f, 0.5f, 0.5f));
+
     Scene scene;
     scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f));
+        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, groundMaterial));
 
     std::string outputPath = NextImagePath();
     std::ofstream out(outputPath);
     if (!out) {
-        std::cerr << "Failed to open " << outputPath << " for writing!" << std::endl;
+        std::cerr << "Failed to open " << outputPath << " for writing!\n";
         return 1;
     }
 
     WritePPMHeader(out, imageWidth, imageHeight);
+    RNG rng;   // single-threaded for now -- see rng.h note on per-thread RNGs
 
     for (int y = 0; y < imageHeight; ++y) {
         for (int x = 0; x < imageWidth; ++x) {
-            CameraSample sample{Point2f(x + 0.5f, y + 0.5f)};
-            Ray ray = camera.GenerateRay(sample);
-
-            SurfaceInteraction isect;
-            if (scene.Intersect(ray, &isect)) {
-                // Normal-visualization shading: map [-1,1] per component to [0,1] for display.
-                // Cast to Vector3f first so component-wise operations are defined.
-                Vector3f n = Vector3f(isect.n);
-                WritePixel(out, 0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f),
-                           0.5f * (n.z + 1.0f));
-            } else {
-                // Background sky vertical gradient (interpolate by ray direction Y)
-                Vector3f unitDir = Normalize(ray.d);
-                float t = 0.5f * (unitDir.y + 1.0f);
-                Vector3f white(1.0f, 1.0f, 1.0f);
-                Vector3f skyBlue(0.5f, 0.7f, 1.0f);
-                Vector3f color = (1.0f - t) * white + t * skyBlue;
-                WritePixel(out, color.x, color.y, color.z);
+            Vector3f colorSum(0.0f, 0.0f, 0.0f);
+            for (int s = 0; s < samplesPerPixel; ++s) {
+                Point2f jitter = rng.Uniform2D();
+                CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
+                Ray ray = camera.GenerateRay(sample);
+                colorSum += RayColor(ray, scene, rng, maxDepth);
             }
+            Vector3f avgColor = colorSum / static_cast<float>(samplesPerPixel);
+            WritePixel(out, avgColor.x, avgColor.y, avgColor.z);
         }
     }
 
-    std::cout << "Rendering completed. Output written to " << outputPath << std::endl;
+    std::cout << "Rendering completed. Output written to " << outputPath << "\n";
     return 0;
 }

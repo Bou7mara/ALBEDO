@@ -5,6 +5,8 @@
 #include "rt/core/vector3.h"
 #include "rt/core/normal3.h"
 #include "rt/core/ray.h"
+#include "rt/materials/bsdf.h"
+#include <memory>
 
 namespace rt {
 
@@ -20,6 +22,8 @@ struct SurfaceInteraction {
 
 class Shape {
 public:
+    explicit Shape(std::shared_ptr<BSDF> bsdf = nullptr)
+        : bsdf_(std::move(bsdf)) {}
     virtual ~Shape() = default;
 
     // Returns true if ray hits this shape within (0, ray.tMax).
@@ -32,6 +36,11 @@ public:
         Ray r = ray;   // local copy so tMax mutation doesn't leak to caller
         return Intersect(r, &isect);
     }
+
+    const BSDF* GetBSDF() const { return bsdf_.get(); }
+
+protected:
+    std::shared_ptr<BSDF> bsdf_;
 };
 
 } // namespace rt

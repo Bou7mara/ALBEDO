@@ -54,3 +54,12 @@ TEST_CASE("Permute reorders components", "[vector3]") {
     Vector3f p = Permute(v, 2, 0, 1);
     REQUIRE(p == Vector3f(30.0f, 10.0f, 20.0f));
 }
+
+TEST_CASE("Componentwise Vector3 multiplication", "[vector3]") {
+    Vector3f a(2.0f, 3.0f, 4.0f);
+    Vector3f b(0.5f, 2.0f, 0.25f);
+    Vector3f c = a * b;
+    REQUIRE(c.x == Catch::Approx(1.0f));
+    REQUIRE(c.y == Catch::Approx(6.0f));
+    REQUIRE(c.z == Catch::Approx(1.0f));
+}

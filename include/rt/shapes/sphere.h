@@ -8,8 +8,10 @@ namespace rt {
 
 class Sphere : public Shape {
 public:
-    Sphere(const Transform& objectToWorld, float radius)
-        : objectToWorld_(objectToWorld),
+    Sphere(const Transform& objectToWorld, float radius,
+           std::shared_ptr<BSDF> bsdf = nullptr)
+        : Shape(std::move(bsdf)),
+          objectToWorld_(objectToWorld),
           worldToObject_(objectToWorld.Inverse()),
           radius_(radius) {}
 
