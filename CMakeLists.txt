@@ -34,6 +34,7 @@ if(BUILD_TESTING)
     add_executable(tests
         tests/test_main.cpp
         tests/test_tuple3.cpp
+        tests/test_geometry.cpp
     )
     target_include_directories(tests PRIVATE ${RT_INCLUDE_DIR})
     target_link_libraries(tests PRIVATE doctest::doctest)

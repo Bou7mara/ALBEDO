@@ -88,9 +88,13 @@ TEST_CASE("Tuple3 compound assignments and comparison") {
 }
 
 TEST_CASE("Tuple3 NaN check") {
-    TestTuple<float> t1(1.0f, NAN, 3.0f);
-    CHECK(t1.has_nan() == true);
+    // We cannot construct directly with NaN because of the assert in the constructor.
+    // However, we can construct and then assign, or write to it directly if we disable asserts,
+    // or test the HasNaN method using default constructed + manual member assignment.
+    TestTuple<float> t1;
+    t1.y = NAN;
+    CHECK(t1.HasNaN() == true);
 
     TestTuple<float> t2(1.0f, 2.0f, 3.0f);
-    CHECK(t2.has_nan() == false);
+    CHECK(t2.HasNaN() == false);
 }

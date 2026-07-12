@@ -13,7 +13,9 @@ public:
     T x, y, z;
 
     constexpr Tuple3() : x(0), y(0), z(0) {}
-    constexpr Tuple3(T x, T y, T z) : x(x), y(y), z(z) {}
+    constexpr Tuple3(T x, T y, T z) : x(x), y(y), z(z) {
+        assert(!HasNaN());
+    }
 
     // Element access
     constexpr T operator[](int i) const {
@@ -91,7 +93,7 @@ public:
     }
 
     // Checks for NaNs
-    bool has_nan() const {
+    constexpr bool HasNaN() const {
         return std::isnan(x) || std::isnan(y) || std::isnan(z);
     }
 };
