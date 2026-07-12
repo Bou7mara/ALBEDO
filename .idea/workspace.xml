@@ -61,9 +61,6 @@
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/shapes/sphere.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/sphere.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shapes/sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/sphere.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -356,7 +353,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783863011977</updated>
-      <workItem from="1783863014206" duration="13333000" />
+      <workItem from="1783863014206" duration="15188000" />
     </task>
     <servers />
   </component>

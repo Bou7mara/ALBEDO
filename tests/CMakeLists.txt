@@ -25,6 +25,7 @@ add_executable(rt_tests
     test_sampling.cpp
     test_lambertian.cpp
     test_shape.cpp
+    test_rng.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

@@ -17,6 +17,8 @@ bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     if (!Quadratic(a, b, c, &t0, &t1)) return false;
 
     // Find the smallest root within range (0, objectRay.tMax]
+    // NOTE: This relies on callers offsetting ray origins away from the surface to prevent
+    // self-intersection (shadow acne); see TOC 3.1.1 for the general fix.
     if (t0 > objectRay.tMax || t1 <= 0.0f) return false;
     float tHit = t0;
     if (tHit <= 0.0f) {

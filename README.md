@@ -6,17 +6,17 @@ of it.
 
 ## Status
 
-🚧 Early development — math core complete, geometry and rendering pipeline in progress.
+🚧 Early development — math core, shapes, camera, scene, and Lambertian materials complete.
 
 | Component            | Status       |
 |-----------------------|--------------|
-| Math core (Tuple/Vector/Point/Normal) | ✅ Complete, tested |
+| Math core (Tuple/Vector/Point/Normal/Point2/Vector2) | ✅ Complete, tested |
 | Ray                    | ✅ Complete, tested |
 | Transform              | ✅ Complete, tested |
-| Shape / Sphere         | 🔧 In progress |
-| Camera                 | ⬜ Not started |
-| Scene / Renderer       | ⬜ Not started |
-| Materials / BSDFs      | ⬜ Not started |
+| Shape / Sphere         | ✅ Complete, tested |
+| Camera                 | ✅ Complete, tested |
+| Scene / Renderer       | ✅ Complete, tested |
+| Materials / BSDFs      | ✅ Complete, tested (`Lambertian`) |
 | Acceleration (BVH)     | ⬜ Not started |
 
 ## Why a new repository
