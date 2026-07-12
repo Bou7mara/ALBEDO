@@ -3,7 +3,7 @@
 
 using namespace rt;
 
-TEST_CASE("RNG outputs are within bounds [0, 1)", "[rng]") {
+TEST_CASE("RNG outputs lie in the half-open range zero to one", "[rng]") {
     RNG rng;
     for (int i = 0; i < 1000; ++i) {
         float val1d = rng.Uniform1D();
