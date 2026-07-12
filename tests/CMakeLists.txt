@@ -20,6 +20,7 @@ add_executable(rt_tests
     test_vector2.cpp
     test_point2.cpp
     test_camera.cpp
+    test_scene.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)
