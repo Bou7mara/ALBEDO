@@ -71,11 +71,17 @@ int main() {
         imageWidth, imageHeight
     );
 
-    auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.5f, 0.5f, 0.5f));
+    auto sphereMaterial = std::make_shared<Lambertian>(Vector3f(0.7f, 0.7f, 0.7f));
+    auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
 
     Scene scene;
+    // Bumpy middle sphere (bottom edge sits at y = -0.5)
     scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, groundMaterial));
+        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial, /*isBumpy=*/true));
+
+    // Huge ground sphere (top edge sits at y = -0.5, touching the middle sphere tangentially)
+    scene.Add(std::make_shared<Sphere>(
+        Transform::Translate(Vector3f(0.0f, -100.5f, -1.0f)), 100.0f, groundMaterial));
 
     std::string outputPath = NextImagePath();
     std::ofstream out(outputPath);

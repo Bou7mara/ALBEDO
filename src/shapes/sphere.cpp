@@ -27,6 +27,18 @@ bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     Point3f pObject = objectRay(tHit);
     Normal3f nObject(pObject.x / radius_, pObject.y / radius_, pObject.z / radius_);
 
+    if (isBumpy_) {
+        float frequency = 30.0f;
+        float amplitude = 0.2f;
+        Vector3f perturbation(
+            std::sin(frequency * pObject.x) * amplitude,
+            std::sin(frequency * pObject.y) * amplitude,
+            std::sin(frequency * pObject.z) * amplitude
+        );
+        Vector3f perturbedN = Normalize(Vector3f(nObject) + perturbation);
+        nObject = Normal3f(perturbedN.x, perturbedN.y, perturbedN.z);
+    }
+
     // Mutate world-space ray tMax to tHit
     ray.tMax = tHit;
 
