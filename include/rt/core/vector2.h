@@ -1,109 +1,17 @@
 #ifndef RT_CORE_VECTOR2_H
 #define RT_CORE_VECTOR2_H
 
-#include <iostream>
+#include "rt/core/tuple2.h"
 #include <cmath>
-#include <cassert>
 #include <algorithm>
+#include <type_traits>
 
 namespace rt {
 
 template <typename T>
-class Vector2 {
+class Vector2 : public Tuple2<Vector2<T>, T> {
 public:
-    T x, y;
-
-    constexpr Vector2() : x(0), y(0) {}
-    constexpr Vector2(T x, T y) : x(x), y(y) {
-        assert(!HasNaN());
-    }
-
-    constexpr bool HasNaN() const {
-        return std::isnan(x) || std::isnan(y);
-    }
-
-    // Element access
-    constexpr T operator[](int i) const {
-        assert(i >= 0 && i < 2);
-        return (i == 0) ? x : y;
-    }
-
-    constexpr T& operator[](int i) {
-        assert(i >= 0 && i < 2);
-        return (i == 0) ? x : y;
-    }
-
-    // Unary operators
-    constexpr Vector2 operator-() const {
-        return Vector2(-x, -y);
-    }
-
-    // Binary arithmetic operators
-    constexpr Vector2 operator+(const Vector2& other) const {
-        return Vector2(x + other.x, y + other.y);
-    }
-
-    constexpr Vector2 operator-(const Vector2& other) const {
-        return Vector2(x - other.x, y - other.y);
-    }
-
-    constexpr Vector2 operator*(T scalar) const {
-        return Vector2(x * scalar, y * scalar);
-    }
-
-    constexpr Vector2 operator/(T scalar) const {
-        assert(scalar != 0);
-        T inv = static_cast<T>(1) / scalar;
-        return Vector2(x * inv, y * inv);
-    }
-
-    // Compound assignment
-    constexpr Vector2& operator+=(const Vector2& other) {
-        x += other.x;
-        y += other.y;
-        return *this;
-    }
-
-    constexpr Vector2& operator-=(const Vector2& other) {
-        x -= other.x;
-        y -= other.y;
-        return *this;
-    }
-
-    constexpr Vector2& operator*=(T scalar) {
-        x *= scalar;
-        y *= scalar;
-        return *this;
-    }
-
-    constexpr Vector2& operator/=(T scalar) {
-        assert(scalar != 0);
-        T inv = static_cast<T>(1) / scalar;
-        x *= inv;
-        y *= inv;
-        return *this;
-    }
-
-    // Equality
-    constexpr bool operator==(const Vector2& other) const {
-        return x == other.x && y == other.y;
-    }
-
-    constexpr bool operator!=(const Vector2& other) const {
-        return !(*this == other);
-    }
-
-    constexpr T LengthSquared() const {
-        return x * x + y * y;
-    }
-
-    T Length() const {
-        return std::sqrt(LengthSquared());
-    }
-
-    Vector2 Normalize() const {
-        return *this / Length();
-    }
+    using Tuple2<Vector2<T>, T>::Tuple2;
 };
 
 // Typedefs for convenience
@@ -112,30 +20,37 @@ using Vector2d = Vector2<double>;
 using Vector2i = Vector2<int>;
 
 // Free Functions
+
 template <typename T>
-constexpr Vector2<T> operator*(T scalar, const Vector2<T>& v) {
-    return v * scalar;
+constexpr T LengthSquared(const Vector2<T>& v) {
+    return v.x * v.x + v.y * v.y;
 }
 
 template <typename T>
-constexpr T dot(const Vector2<T>& v1, const Vector2<T>& v2) {
+T Length(const Vector2<T>& v) {
+    static_assert(std::is_floating_point_v<T>, "Length() requires a floating-point type");
+    return std::sqrt(LengthSquared(v));
+}
+
+template <typename T>
+Vector2<T> Normalize(const Vector2<T>& v) {
+    static_assert(std::is_floating_point_v<T>, "Normalize() requires a floating-point type");
+    return v / Length(v);
+}
+
+template <typename T>
+constexpr T Dot(const Vector2<T>& v1, const Vector2<T>& v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
 template <typename T>
-constexpr T absDot(const Vector2<T>& v1, const Vector2<T>& v2) {
-    return std::abs(dot(v1, v2));
+constexpr T AbsDot(const Vector2<T>& v1, const Vector2<T>& v2) {
+    return std::abs(Dot(v1, v2));
 }
 
 template <typename T>
-constexpr Vector2<T> abs(const Vector2<T>& v) {
+constexpr Vector2<T> Abs(const Vector2<T>& v) {
     return Vector2<T>(std::abs(v.x), std::abs(v.y));
-}
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const Vector2<T>& v) {
-    os << "[" << v.x << ", " << v.y << "]";
-    return os;
 }
 
 } // namespace rt

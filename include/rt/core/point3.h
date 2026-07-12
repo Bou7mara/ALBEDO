@@ -5,6 +5,7 @@
 #include "rt/core/vector3.h"
 #include <algorithm>
 #include <cmath>
+#include <type_traits>
 
 namespace rt {
 
@@ -16,9 +17,12 @@ public:
     // Explicitly construct from Vector3
     explicit constexpr Point3(const Vector3<T>& v) : Tuple3<Point3<T>, T>(v.x, v.y, v.z) {}
 
-    // Disable adding two points
+    // Disable adding two points (non-affine operation)
     Point3 operator+(const Point3& other) const = delete;
     Point3& operator+=(const Point3& other) = delete;
+
+    // NOTE: Unary operator- is intentionally hidden by these member operator- overloads.
+    // Negating a Point3 is mathematically non-affine, so name hiding is treated as a feature here.
 
     // Point + Vector -> Point
     constexpr Point3<T> operator+(const Vector3<T>& v) const {
@@ -64,42 +68,44 @@ constexpr Point3<T> operator+(const Vector3<T>& v, const Point3<T>& p) {
 // Free Functions
 
 template <typename T>
-constexpr T distanceSquared(const Point3<T>& p1, const Point3<T>& p2) {
-    return (p1 - p2).LengthSquared();
+constexpr T DistanceSquared(const Point3<T>& p1, const Point3<T>& p2) {
+    return LengthSquared(p1 - p2);
 }
 
 template <typename T>
-T distance(const Point3<T>& p1, const Point3<T>& p2) {
-    return (p1 - p2).Length();
+T Distance(const Point3<T>& p1, const Point3<T>& p2) {
+    static_assert(std::is_floating_point_v<T>, "Distance() requires a floating-point type");
+    return Length(p1 - p2);
 }
 
 template <typename T>
-constexpr Point3<T> lerp(T t, const Point3<T>& p0, const Point3<T>& p1) {
-    return (1 - t) * p0 + t * p1;
+constexpr Point3<T> Lerp(T t, const Point3<T>& p0, const Point3<T>& p1) {
+    static_assert(std::is_floating_point_v<T>, "Lerp() requires a floating-point type");
+    return p0 + t * (p1 - p0);
 }
 
 template <typename T>
-constexpr Point3<T> floor(const Point3<T>& p) {
+constexpr Point3<T> Floor(const Point3<T>& p) {
     return Point3<T>(std::floor(p.x), std::floor(p.y), std::floor(p.z));
 }
 
 template <typename T>
-constexpr Point3<T> ceil(const Point3<T>& p) {
+constexpr Point3<T> Ceil(const Point3<T>& p) {
     return Point3<T>(std::ceil(p.x), std::ceil(p.y), std::ceil(p.z));
 }
 
 template <typename T>
-constexpr Point3<T> min(const Point3<T>& p1, const Point3<T>& p2) {
+constexpr Point3<T> Min(const Point3<T>& p1, const Point3<T>& p2) {
     return Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
 }
 
 template <typename T>
-constexpr Point3<T> max(const Point3<T>& p1, const Point3<T>& p2) {
+constexpr Point3<T> Max(const Point3<T>& p1, const Point3<T>& p2) {
     return Point3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
 }
 
 template <typename T>
-constexpr Point3<T> permute(const Point3<T>& p, int ix, int iy, int iz) {
+constexpr Point3<T> Permute(const Point3<T>& p, int ix, int iy, int iz) {
     return Point3<T>(p[ix], p[iy], p[iz]);
 }
 
