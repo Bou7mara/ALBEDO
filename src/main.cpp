@@ -75,9 +75,9 @@ int main() {
     auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
 
     Scene scene;
-    // Bumpy middle sphere (bottom edge sits at y = -0.5)
+    // Middle sphere (bottom edge sits at y = -0.5)
     scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial, /*isBumpy=*/true));
+        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial));
 
     // Huge ground sphere (top edge sits at y = -0.5, touching the middle sphere tangentially)
     scene.Add(std::make_shared<Sphere>(

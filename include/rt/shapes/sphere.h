@@ -9,12 +9,11 @@ namespace rt {
 class Sphere : public Shape {
 public:
     Sphere(const Transform& objectToWorld, float radius,
-           std::shared_ptr<BSDF> bsdf = nullptr, bool isBumpy = false)
+           std::shared_ptr<BSDF> bsdf = nullptr)
         : Shape(std::move(bsdf)),
           objectToWorld_(objectToWorld),
           worldToObject_(objectToWorld.Inverse()),
-          radius_(radius),
-          isBumpy_(isBumpy) {}
+          radius_(radius) {}
 
     bool Intersect(const Ray& ray, SurfaceInteraction* isect) const override;
 
@@ -22,7 +21,6 @@ private:
     Transform objectToWorld_;
     Transform worldToObject_;
     float radius_;
-    bool isBumpy_;
 };
 
 } // namespace rt
