@@ -16,6 +16,7 @@ add_executable(rt_tests
     test_normal3.cpp
     test_ray.cpp
     test_transform.cpp
+    test_sphere.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)
