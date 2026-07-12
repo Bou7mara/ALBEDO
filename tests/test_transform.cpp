@@ -1,0 +1,85 @@
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
+#include "rt/core/transform.h"
+
+using namespace rt;
+using Catch::Approx;
+
+TEST_CASE("Identity transform leaves points and vectors unchanged", "[transform]") {
+    Transform t = Transform::Identity();
+    Point3f p(1.0f, 2.0f, 3.0f);
+    Vector3f v(4.0f, 5.0f, 6.0f);
+
+    REQUIRE(t(p) == p);
+    REQUIRE(t(v) == v);
+}
+
+TEST_CASE("Translate affects points but not vectors", "[transform]") {
+    Transform t = Transform::Translate(Vector3f(10.0f, 0.0f, 0.0f));
+    Point3f p(1.0f, 1.0f, 1.0f);
+    Vector3f v(1.0f, 1.0f, 1.0f);
+
+    REQUIRE(t(p) == Point3f(11.0f, 1.0f, 1.0f));
+    REQUIRE(t(v) == v);   // vectors are translation-invariant
+}
+
+TEST_CASE("Scale affects points and vectors identically", "[transform]") {
+    Transform t = Transform::Scale(2.0f, 3.0f, 4.0f);
+    Point3f p(1.0f, 1.0f, 1.0f);
+    Vector3f v(1.0f, 1.0f, 1.0f);
+
+    REQUIRE(t(p) == Point3f(2.0f, 3.0f, 4.0f));
+    REQUIRE(t(v) == Vector3f(2.0f, 3.0f, 4.0f));
+}
+
+TEST_CASE("Non-uniform scale transforms normals differently than vectors", "[transform][regression]") {
+    // A normal perpendicular to a surface must remain perpendicular after a non-uniform scale,
+    // which requires the inverse-transpose rule.
+    Transform t = Transform::Scale(1.0f, 1.0f, 2.0f);   // stretch along Z
+
+    // A normal pointing along +Z on a surface, transformed under a Z-stretch,
+    // should shrink (inverse-transpose), not grow like a vector would.
+    Normal3f n(0.0f, 0.0f, 1.0f);
+    Normal3f transformed = t(n);
+
+    REQUIRE(transformed.z == Approx(0.5f));   // 1/scale, not scale
+}
+
+TEST_CASE("Inverse transform undoes the original", "[transform]") {
+    Transform t = Transform::Translate(Vector3f(5.0f, -3.0f, 2.0f));
+    Transform tInv = t.Inverse();
+    Point3f p(1.0f, 1.0f, 1.0f);
+
+    Point3f roundTrip = tInv(t(p));
+    REQUIRE(roundTrip.x == Approx(p.x).margin(1e-5));
+    REQUIRE(roundTrip.y == Approx(p.y).margin(1e-5));
+    REQUIRE(roundTrip.z == Approx(p.z).margin(1e-5));
+}
+
+TEST_CASE("Composition applies right-to-left, matching function composition", "[transform]") {
+    Transform translate = Transform::Translate(Vector3f(1.0f, 0.0f, 0.0f));
+    Transform scale = Transform::Scale(2.0f, 2.0f, 2.0f);
+    Transform composed = translate * scale;   // should scale first, then translate
+
+    Point3f p(1.0f, 1.0f, 1.0f);
+    Point3f expected = translate(scale(p));
+
+    REQUIRE(composed(p) == expected);
+}
+
+TEST_CASE("SwapsHandedness detects negative-determinant transforms", "[transform]") {
+    Transform normalScale = Transform::Scale(1.0f, 1.0f, 1.0f);
+    Transform mirrorX = Transform::Scale(-1.0f, 1.0f, 1.0f);
+
+    REQUIRE_FALSE(normalScale.SwapsHandedness());
+    REQUIRE(mirrorX.SwapsHandedness());
+}
+
+TEST_CASE("Ray transform moves origin as a point and direction as a vector", "[transform]") {
+    Transform t = Transform::Translate(Vector3f(10.0f, 0.0f, 0.0f));
+    Ray r(Point3f(0,0,0), Vector3f(0,0,1));
+    Ray transformed = t(r);
+
+    REQUIRE(transformed.o == Point3f(10.0f, 0.0f, 0.0f));
+    REQUIRE(transformed.d == Vector3f(0.0f, 0.0f, 1.0f));  // unaffected by translation
+}
