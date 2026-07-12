@@ -34,7 +34,7 @@ bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     isect->p = objectToWorld_(pObject);
     isect->n = Normalize(objectToWorld_(nObject));
     // Transform incoming ray direction to world space explicitly
-    isect->wo = Normalize(objectToWorld_(Vector3f(-objectRay.d.x, -objectRay.d.y, -objectRay.d.z)));
+    isect->wo = Normalize(objectToWorld_(-objectRay.d));
     isect->t = tHit;
     isect->shape = this;
 
