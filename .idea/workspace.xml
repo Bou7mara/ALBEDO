@@ -62,11 +62,12 @@
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/materials/bsdf.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/bsdf.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/materials/lambertian.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/lambertian.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/scene/scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/scene/scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/shape.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/sphere.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/sphere.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shapes/sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/sphere.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sphere.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -362,7 +363,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783863011977</updated>
-      <workItem from="1783863014206" duration="17180000" />
+      <workItem from="1783863014206" duration="18125000" />
     </task>
     <servers />
   </component>

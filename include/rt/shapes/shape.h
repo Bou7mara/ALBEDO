@@ -6,6 +6,7 @@
 #include "rt/core/normal3.h"
 #include "rt/core/ray.h"
 #include "rt/materials/bsdf.h"
+#include "rt/core/bounds3.h"
 #include <memory>
 
 namespace rt {
@@ -29,6 +30,7 @@ public:
     // Returns true if ray hits this shape within (0, ray.tMax).
     // On success, fills isect and shrinks ray.tMax to the hit distance.
     virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
+    virtual Bounds3f WorldBound() const = 0;
 
     // Cheaper boolean-only test. Default implementation just discards Intersect's output.
     virtual bool IntersectP(const Ray& ray) const {

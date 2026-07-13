@@ -16,6 +16,7 @@ public:
           radius_(radius) {}
 
     bool Intersect(const Ray& ray, SurfaceInteraction* isect) const override;
+    Bounds3f WorldBound() const override;
 
 private:
     Transform objectToWorld_;

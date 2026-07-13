@@ -86,3 +86,10 @@ TEST_CASE("IntersectP returns true/false consistently with Intersect", "[sphere]
     REQUIRE(s.IntersectP(hit));
     REQUIRE_FALSE(s.IntersectP(miss));
 }
+
+TEST_CASE("Translated sphere's WorldBound is centered at its world position", "[sphere]") {
+    Sphere s(Transform::Translate(Vector3f(5, 0, 0)), 1.0f);
+    Bounds3f b = s.WorldBound();
+    REQUIRE(b.pMin == Point3f(4, -1, -1));
+    REQUIRE(b.pMax == Point3f(6, 1, 1));
+}

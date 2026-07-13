@@ -89,6 +89,8 @@ int main() {
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, -100.5f, -1.0f)), 100.0f, groundMaterial));
 
+    scene.Build();
+
     std::string outputPath = NextImagePath();
     std::ofstream out(outputPath);
     if (!out) {

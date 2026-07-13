@@ -1,6 +1,7 @@
 #ifndef RT_SCENE_SCENE_H
 #define RT_SCENE_SCENE_H
 
+#include "rt/accel/bvh.h"
 #include "rt/shapes/shape.h"
 #include <memory>
 #include <vector>
@@ -13,22 +14,21 @@ public:
         shapes_.push_back(std::move(shape));
     }
 
-    // Returns true if ray hits anything in the scene within (0, ray.tMax).
-    // On success, isect holds the CLOSEST hit -- achieved by relying on
-    // each Shape::Intersect shrinking ray.tMax as it finds a hit, so
-    // later shapes in the scan can only report something strictly closer.
+    // Must be called once, after all Add() calls, before Intersect().
+    // Not lazy/implicit on purpose -- see the plan doc's note on
+    // explicit over clever for why an auto-rebuilding BVH isn't the
+    // safer choice here.
+    void Build() {
+        bvh_ = std::make_unique<BVH>(shapes_);
+    }
+
     bool Intersect(const Ray& ray, SurfaceInteraction* isect) const {
-        bool hitAnything = false;
-        for (const auto& shape : shapes_) {
-            if (shape->Intersect(ray, isect)) {
-                hitAnything = true;
-            }
-        }
-        return hitAnything;
+        return bvh_ && bvh_->Intersect(ray, isect);
     }
 
 private:
     std::vector<std::shared_ptr<Shape>> shapes_;
+    std::unique_ptr<BVH> bvh_;
 };
 
 } // namespace rt
