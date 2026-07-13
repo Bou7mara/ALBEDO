@@ -24,6 +24,7 @@
       <config projectName="raytracer" targetName="NightlySubmit" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyTest" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="raytracer" />
+      <config projectName="raytracer" targetName="benchmark_bvh" />
       <config projectName="raytracer" targetName="ExperimentalBuild" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyBuild" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ContinuousConfigure" folderName="CTestDashboardTargets" />
@@ -60,14 +61,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/scene/scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/scene/scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/shapes/shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/shapes/sphere.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/sphere.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shapes/sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/sphere.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sphere.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,6 +101,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "C/C++ File.main.cpp.executor": "Run",
+    "CMake Application.benchmark_bvh.executor": "Run",
     "CMake Application.raytracer.executor": "Run",
     "Catch.rt_tests.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
@@ -129,7 +126,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="CMake Application.raytracer">
+  <component name="RunManager" selected="CMake Application.benchmark_bvh">
     <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="CLION.EXTERNAL.BUILD" enabled="true" />
@@ -291,6 +288,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="benchmark_bvh" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="benchmark_bvh" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="benchmark_bvh">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="raytracer" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="raytracer" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="raytracer">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -344,6 +346,7 @@
       <item itemvalue="CMake Application.NightlySubmit" />
       <item itemvalue="CMake Application.NightlyTest" />
       <item itemvalue="CMake Application.NightlyUpdate" />
+      <item itemvalue="CMake Application.benchmark_bvh" />
       <item itemvalue="CMake Application.raytracer" />
       <item itemvalue="CMake Application.rt_core" />
       <item itemvalue="CMake Application.Catch2" />
@@ -363,7 +366,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783863011977</updated>
-      <workItem from="1783863014206" duration="18125000" />
+      <workItem from="1783863014206" duration="20631000" />
     </task>
     <servers />
   </component>

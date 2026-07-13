@@ -70,3 +70,4 @@ Testing/
 # Rendered output -- kept locally, not versioned (uncompressed PPM
 # grows the repo fast; see commit adding images/ for reasoning)
 images/
+benchmark_results/

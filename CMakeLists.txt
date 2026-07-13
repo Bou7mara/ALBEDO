@@ -28,5 +28,14 @@ endif()
 add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE rt_core)
 
+add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp)
+target_link_libraries(benchmark_bvh PRIVATE rt_core)
+
+if(MSVC)
+    target_compile_options(benchmark_bvh PRIVATE /O2)
+else()
+    target_compile_options(benchmark_bvh PRIVATE -O3)
+endif()
+
 enable_testing()
 add_subdirectory(tests)
