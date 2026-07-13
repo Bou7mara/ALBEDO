@@ -9,7 +9,7 @@ class Lambertian : public BSDF {
 public:
     explicit Lambertian(const Vector3f& albedo) : albedo_(albedo) {}
 
-    Vector3f f(const Vector3f& wo, const Vector3f& wi) const override;
+    Vector3f f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const override;
     Vector3f Sample_f(const Vector3f& wo, const Vector3f& n,
                        const Point2f& u, Vector3f* wi,
                        float* pdf) const override;

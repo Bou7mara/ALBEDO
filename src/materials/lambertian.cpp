@@ -5,7 +5,8 @@
 
 namespace rt {
 
-Vector3f Lambertian::f(const Vector3f& /*wo*/, const Vector3f& /*wi*/) const {
+Vector3f Lambertian::f(const Vector3f& /*wo*/, const Vector3f& /*wi*/,
+                       const Vector3f& /*n*/) const {
     // Ideal diffuse: constant over the hemisphere, direction-independent.
     // wo/wi stay in the signature (unused here) to match the general BSDF
     // interface -- the day a non-Lambertian BSDF lands, this parameter
@@ -28,7 +29,7 @@ Vector3f Lambertian::Sample_f(const Vector3f& /*wo*/, const Vector3f& n,
     // product on every single sample.
     *pdf = CosineHemispherePdf(localDir.z);
 
-    return f(Vector3f(), *wi);
+    return f(Vector3f(), *wi, n);
 }
 
 } // namespace rt

@@ -61,9 +61,12 @@
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_geometry.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_main.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_rng.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_rng.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/bsdf.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/bsdf.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/lambertian.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/lambertian.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_lambertian.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -359,7 +362,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783863011977</updated>
-      <workItem from="1783863014206" duration="16254000" />
+      <workItem from="1783863014206" duration="17180000" />
     </task>
     <servers />
   </component>

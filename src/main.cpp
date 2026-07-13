@@ -3,6 +3,7 @@
 #include "rt/cameras/perspective_camera.h"
 #include "rt/shapes/sphere.h"
 #include "rt/materials/lambertian.h"
+#include "rt/materials/metal.h"
 #include "rt/scene/scene.h"
 #include "rt/io/ppm_writer.h"
 
@@ -73,11 +74,16 @@ int main() {
 
     auto sphereMaterial = std::make_shared<Lambertian>(Vector3f(0.7f, 0.7f, 0.7f));
     auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
+    auto metalMaterial = std::make_shared<Metal>(Vector3f(0.8f, 0.8f, 0.9f));
 
     Scene scene;
     // Middle sphere (bottom edge sits at y = -0.5)
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial));
+
+    // Metal sphere (bottom edge sits at y = -0.5)
+    scene.Add(std::make_shared<Sphere>(
+        Transform::Translate(Vector3f(1.1f, 0.0f, -1.0f)), 0.5f, metalMaterial));
 
     // Huge ground sphere (top edge sits at y = -0.5, touching the middle sphere tangentially)
     scene.Add(std::make_shared<Sphere>(

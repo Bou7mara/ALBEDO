@@ -11,6 +11,7 @@ add_library(rt_core STATIC
     src/shapes/sphere.cpp
     src/cameras/perspective_camera.cpp
     src/materials/lambertian.cpp
+    src/materials/metal.cpp
 )
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(rt_core PUBLIC cxx_std_23)

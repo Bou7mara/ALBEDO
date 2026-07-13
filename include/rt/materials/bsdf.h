@@ -17,7 +17,7 @@ public:
     // BSDF value for an explicit (wo, wi) pair. Used when a future
     // light-sampling / NEE path needs to evaluate a *specific*
     // direction rather than importance-sample one (TOC 8.1).
-    virtual Vector3f f(const Vector3f& wo, const Vector3f& wi) const = 0;
+    virtual Vector3f f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const = 0;
 
     // Importance-samples wi given wo and the geometric normal n.
     // u supplies two uniform randoms in [0,1) driving the sample.

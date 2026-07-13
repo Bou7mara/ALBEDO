@@ -7,7 +7,7 @@ using Catch::Approx;
 
 TEST_CASE("Lambertian f() is direction-independent and equals albedo/pi", "[lambertian]") {
     Lambertian mat(Vector3f(0.8f, 0.4f, 0.2f));
-    Vector3f val = mat.f(Vector3f(0, 0, 1), Vector3f(1, 0, 0));
+    Vector3f val = mat.f(Vector3f(0, 0, 1), Vector3f(1, 0, 0), Vector3f(0, 1, 0));
     REQUIRE(val.x == Approx(0.8f * std::numbers::inv_pi_v<float>));
     REQUIRE(val.y == Approx(0.4f * std::numbers::inv_pi_v<float>));
     REQUIRE(val.z == Approx(0.2f * std::numbers::inv_pi_v<float>));
