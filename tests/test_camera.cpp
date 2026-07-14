@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
-#include "rt/cameras/perspective_camera.h"
+#include "rt/cam/perspective_camera.h"
 
 using namespace rt;
 using Catch::Approx;

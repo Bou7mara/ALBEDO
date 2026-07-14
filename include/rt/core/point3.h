@@ -1,6 +1,4 @@
-#ifndef RT_CORE_POINT3_H
-#define RT_CORE_POINT3_H
-
+#pragma once
 #include "rt/core/tuple3.h"
 #include "rt/core/vector3.h"
 #include <algorithm>
@@ -108,7 +106,4 @@ template <typename T>
 constexpr Point3<T> Permute(const Point3<T>& p, int ix, int iy, int iz) {
     return Point3<T>(p[ix], p[iy], p[iz]);
 }
-
-} // namespace rt
-
-#endif // RT_CORE_POINT3_H
+}

@@ -1,6 +1,4 @@
-#ifndef RT_CORE_VECTOR2_H
-#define RT_CORE_VECTOR2_H
-
+#pragma once
 #include "rt/core/tuple2.h"
 #include <cmath>
 #include <algorithm>
@@ -52,7 +50,4 @@ template <typename T>
 constexpr Vector2<T> Abs(const Vector2<T>& v) {
     return Vector2<T>(std::abs(v.x), std::abs(v.y));
 }
-
-} // namespace rt
-
-#endif // RT_CORE_VECTOR2_H
+}

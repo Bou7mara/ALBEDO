@@ -1,6 +1,4 @@
-#ifndef RT_CORE_TUPLE3_H
-#define RT_CORE_TUPLE3_H
-
+#pragma once
 #include <iostream>
 #include <cmath>
 #include <cassert>
@@ -123,7 +121,4 @@ std::ostream& operator<<(std::ostream& os, const Tuple3<Derived, T>& tuple) {
     os << "[" << tuple.x << ", " << tuple.y << ", " << tuple.z << "]";
     return os;
 }
-
-} // namespace rt
-
-#endif // RT_CORE_TUPLE3_H
+}

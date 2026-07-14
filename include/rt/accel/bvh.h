@@ -1,6 +1,4 @@
-#ifndef RT_ACCEL_BVH_H
-#define RT_ACCEL_BVH_H
-
+#pragma once
 #include "rt/core/bounds3.h"
 #include "rt/shapes/shape.h"
 #include <memory>
@@ -51,5 +49,3 @@ private:
 };
 
 } // namespace rt
-
-#endif // RT_ACCEL_BVH_H

@@ -1,5 +1,5 @@
 #include "rt/accel/bvh.h"
-#include "rt/cameras/perspective_camera.h"
+#include "rt/cam/perspective_camera.h"
 #include "rt/shapes/sphere.h"
 
 #include <chrono>

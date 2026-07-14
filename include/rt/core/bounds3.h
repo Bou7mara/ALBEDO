@@ -1,6 +1,4 @@
-#ifndef RT_CORE_BOUNDS3_H
-#define RT_CORE_BOUNDS3_H
-
+#pragma once
 #include "rt/core/point3.h"
 #include "rt/core/vector3.h"
 #include "rt/core/ray.h"
@@ -115,7 +113,4 @@ Bounds3<T> Union(const Bounds3<T>& b, const Point3<T>& p) {
         Point3<T>(std::min(b.pMin.x, p.x), std::min(b.pMin.y, p.y), std::min(b.pMin.z, p.z)),
         Point3<T>(std::max(b.pMax.x, p.x), std::max(b.pMax.y, p.y), std::max(b.pMax.z, p.z)));
 }
-
-} // namespace rt
-
-#endif // RT_CORE_BOUNDS3_H
+}

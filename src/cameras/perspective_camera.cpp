@@ -1,4 +1,4 @@
-#include "rt/cameras/perspective_camera.h"
+#include "rt/cam/perspective_camera.h"
 #include "rt/core/math_utils.h"
 #include <cmath>
 

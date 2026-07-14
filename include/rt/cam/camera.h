@@ -1,6 +1,4 @@
-#ifndef RT_CAMERAS_CAMERA_H
-#define RT_CAMERAS_CAMERA_H
-
+#pragma once
 #include "rt/core/point2.h"
 #include "rt/core/ray.h"
 
@@ -19,6 +17,4 @@ public:
     virtual Ray GenerateRay(const CameraSample& sample) const = 0;
 };
 
-} // namespace rt
-
-#endif // RT_CAMERAS_CAMERA_H
+}

@@ -1,6 +1,4 @@
-#ifndef RT_CORE_RNG_H
-#define RT_CORE_RNG_H
-
+#pragma once
 #include "rt/core/point2.h"
 #include <random>
 
@@ -26,6 +24,4 @@ private:
     std::uniform_real_distribution<float> dist_;
 };
 
-} // namespace rt
-
-#endif // RT_CORE_RNG_H
+}

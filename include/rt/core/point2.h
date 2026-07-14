@@ -1,6 +1,4 @@
-#ifndef RT_CORE_POINT2_H
-#define RT_CORE_POINT2_H
-
+#pragma once
 #include "rt/core/tuple2.h"
 #include "rt/core/vector2.h"
 #include <algorithm>
@@ -102,6 +100,4 @@ constexpr Point2<T> Max(const Point2<T>& p1, const Point2<T>& p2) {
     return Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
 }
 
-} // namespace rt
-
-#endif // RT_CORE_POINT2_H
+}

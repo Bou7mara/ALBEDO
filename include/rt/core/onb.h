@@ -1,6 +1,4 @@
-#ifndef RT_CORE_ONB_H
-#define RT_CORE_ONB_H
-
+#pragma once
 #include "rt/core/vector3.h"
 #include <cmath>
 
@@ -26,6 +24,4 @@ struct ONB {
     }
 };
 
-} // namespace rt
-
-#endif // RT_CORE_ONB_H
+}

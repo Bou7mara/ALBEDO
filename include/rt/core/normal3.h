@@ -1,6 +1,4 @@
-#ifndef RT_CORE_NORMAL3_H
-#define RT_CORE_NORMAL3_H
-
+#pragma once
 #include "rt/core/tuple3.h"
 #include "rt/core/vector3.h"
 #include <cmath>
@@ -85,7 +83,4 @@ template <typename T>
 constexpr Normal3<T> FaceForward(const Normal3<T>& n, const Normal3<T>& n2) {
     return (Dot(n, n2) < static_cast<T>(0)) ? -n : n;
 }
-
-} // namespace rt
-
-#endif // RT_CORE_NORMAL3_H
+}

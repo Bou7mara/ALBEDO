@@ -1,7 +1,5 @@
-#ifndef RT_CAMERAS_PERSPECTIVE_CAMERA_H
-#define RT_CAMERAS_PERSPECTIVE_CAMERA_H
-
-#include "rt/cameras/camera.h"
+#pragma once
+#include "rt/cam/camera.h"
 #include "rt/core/transform.h"
 
 namespace rt {
@@ -26,6 +24,4 @@ private:
     float halfWidth_;    // derived once at construction
 };
 
-} // namespace rt
-
-#endif // RT_CAMERAS_PERSPECTIVE_CAMERA_H
+}

@@ -1,6 +1,4 @@
-#ifndef RT_CORE_TUPLE2_H
-#define RT_CORE_TUPLE2_H
-
+#pragma once
 #include <iostream>
 #include <cmath>
 #include <cassert>
@@ -112,4 +110,3 @@ std::ostream& operator<<(std::ostream& os, const Tuple2<Derived, T>& tuple) {
 }
 }
 
-#endif

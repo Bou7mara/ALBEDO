@@ -1,6 +1,6 @@
 #include "rt/core/point2.h"
 #include "rt/core/rng.h"
-#include "rt/cameras/perspective_camera.h"
+#include "rt/cam/perspective_camera.h"
 #include "rt/shapes/sphere.h"
 #include "rt/materials/lambertian.h"
 #include "rt/materials/metal.h"
