@@ -18,7 +18,6 @@ public:
         assert(!HasNaN());
     }
 
-    // Element access
     constexpr T operator[](int i) const {
         assert(i >= 0 && i < 3);
         return (i == 0) ? x : ((i == 1) ? y : z);
@@ -29,12 +28,10 @@ public:
         return (i == 0) ? x : ((i == 1) ? y : z);
     }
 
-    // Unary operators
     constexpr Derived operator-() const {
         return Derived(-x, -y, -z);
     }
 
-    // Binary arithmetic operators
     constexpr Derived operator+(const Derived& other) const {
         return Derived(x + other.x, y + other.y, z + other.z);
     }
@@ -57,7 +54,6 @@ public:
         }
     }
 
-    // Compound assignment operators
     constexpr Derived& operator+=(const Derived& other) {
         x += other.x;
         y += other.y;
@@ -94,7 +90,6 @@ public:
         return static_cast<Derived&>(*this);
     }
 
-    // Equality operators
     constexpr bool operator==(const Derived& other) const {
         return x == other.x && y == other.y && z == other.z;
     }
@@ -103,19 +98,16 @@ public:
         return !(*this == other);
     }
 
-    // Checks for NaNs
     constexpr bool HasNaN() const {
         return std::isnan(x) || std::isnan(y) || std::isnan(z);
     }
 };
 
-// Scalar multiplication: scalar * tuple
 template <typename Derived, typename T>
 constexpr Derived operator*(T scalar, const Tuple3<Derived, T>& tuple) {
     return static_cast<const Derived&>(tuple) * scalar;
 }
 
-// Stream insertion
 template <typename Derived, typename T>
 std::ostream& operator<<(std::ostream& os, const Tuple3<Derived, T>& tuple) {
     os << "[" << tuple.x << ", " << tuple.y << ", " << tuple.z << "]";
