@@ -23,16 +23,12 @@ namespace rt {
         return r * Point2f(std::cos(theta), std::sin(theta));
     }
 
-    // Returns a unit direction in a LOCAL frame where +z is "up" (i.e.
-    // aligned with whatever normal the caller's ONB was built from).
     inline Vector3f CosineSampleHemisphere(const Point2f& u) {
         Point2f d = ConcentricSampleDisk(u);
         float z = std::sqrt(std::max(0.0f, 1.0f - d.x * d.x - d.y * d.y));
         return Vector3f(d.x, d.y, z);
     }
 
-    // cosTheta measured against the same local +z axis CosineSampleHemisphere
-    // samples around.
     inline float CosineHemispherePdf(float cosTheta) {
         return cosTheta * std::numbers::inv_pi_v<float>;
     }
