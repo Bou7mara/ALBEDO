@@ -4,9 +4,6 @@
 
 namespace rt {
 
-// Orthonormal basis (u, v, w) built around a unit vector n, with
-// w == n. ToWorld() maps a direction expressed in this local frame
-// (z-axis == n) into world space.
 struct ONB {
     Vector3f u, v, w;
 
@@ -23,5 +20,4 @@ struct ONB {
         return local.x * u + local.y * v + local.z * w;
     }
 };
-
 }
