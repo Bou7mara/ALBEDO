@@ -3,14 +3,6 @@
 #include <random>
 
 namespace rt {
-
-// Minimal uniform random source -- just enough to drive Monte Carlo
-// estimation (BSDF sampling, pixel jitter) for this step. This is
-// NOT the Sampler abstraction from TOC 8 (stratification,
-// low-discrepancy sequences, per-pixel sample streams) -- that's real
-// future work once convergence quality actually demands it. This is
-// std::mt19937 wrapped just enough to stop every call site from
-// hand-rolling <random> boilerplate.
 class RNG {
 public:
     RNG() : engine_(std::random_device{}()), dist_(0.0f, 1.0f) {}
