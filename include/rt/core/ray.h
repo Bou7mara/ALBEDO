@@ -10,10 +10,6 @@ namespace rt {
         Vector3f d;
         mutable float tMax;
         float time;
-
-        // Note: no Medium* yet. Add when participating media (TOC 6.11 / 7.4)
-        // is implemented; do not guess at the interface prematurely.
-
         constexpr Ray()
             : o(), d(), tMax(std::numeric_limits<float>::infinity()), time(0.0f) {}
 
@@ -22,7 +18,6 @@ namespace rt {
                       float time_ = 0.0f)
             : o(origin), d(direction), tMax(tMax_), time(time_) {}
 
-        // Evaluates the point along the ray at parameter t: o + t*d
         constexpr Point3f operator()(float t) const {
             return o + t * d;
         }
