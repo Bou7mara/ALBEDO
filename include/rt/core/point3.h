@@ -12,17 +12,11 @@ class Point3 : public Tuple3<Point3<T>, T> {
 public:
     using Tuple3<Point3<T>, T>::Tuple3;
 
-    // Explicitly construct from Vector3
     explicit constexpr Point3(const Vector3<T>& v) : Tuple3<Point3<T>, T>(v.x, v.y, v.z) {}
 
-    // Disable adding two points (non-affine operation)
     Point3 operator+(const Point3& other) const = delete;
     Point3& operator+=(const Point3& other) = delete;
 
-    // NOTE: Unary operator- is intentionally hidden by these member operator- overloads.
-    // Negating a Point3 is mathematically non-affine, so name hiding is treated as a feature here.
-
-    // Point + Vector -> Point
     constexpr Point3<T> operator+(const Vector3<T>& v) const {
         return Point3<T>(this->x + v.x, this->y + v.y, this->z + v.z);
     }
@@ -34,7 +28,6 @@ public:
         return *this;
     }
 
-    // Point - Vector -> Point
     constexpr Point3<T> operator-(const Vector3<T>& v) const {
         return Point3<T>(this->x - v.x, this->y - v.y, this->z - v.z);
     }
@@ -46,24 +39,19 @@ public:
         return *this;
     }
 
-    // Point - Point -> Vector
     constexpr Vector3<T> operator-(const Point3<T>& p) const {
         return Vector3<T>(this->x - p.x, this->y - p.y, this->z - p.z);
     }
 };
 
-// Typedefs for convenience
 using Point3f = Point3<float>;
 using Point3d = Point3<double>;
 using Point3i = Point3<int>;
 
-// Commutative operator: Vector3 + Point3 -> Point3
 template <typename T>
 constexpr Point3<T> operator+(const Vector3<T>& v, const Point3<T>& p) {
     return p + v;
 }
-
-// Free Functions
 
 template <typename T>
 constexpr T DistanceSquared(const Point3<T>& p1, const Point3<T>& p2) {
