@@ -11,20 +11,15 @@ class Normal3 : public Tuple3<Normal3<T>, T> {
 public:
     using Tuple3<Normal3<T>, T>::Tuple3;
 
-    // Explicit construct from Vector3
     explicit constexpr Normal3(const Vector3<T>& v) : Tuple3<Normal3<T>, T>(v.x, v.y, v.z) {}
 
-    // Explicit convert to Vector3 (resolves circular dependency perfectly)
     explicit constexpr operator Vector3<T>() const {
         return Vector3<T>(this->x, this->y, this->z);
     }
 };
 
-// Typedefs for convenience
 using Normal3f = Normal3<float>;
 using Normal3d = Normal3<double>;
-
-// Free Functions
 
 template <typename T>
 constexpr T LengthSquared(const Normal3<T>& n) {
@@ -73,7 +68,6 @@ constexpr T AbsDot(const Normal3<T>& n1, const Normal3<T>& n2) {
     return std::abs(Dot(n1, n2));
 }
 
-// FaceForward: flips normal if it points away from the reference direction
 template <typename T>
 constexpr Normal3<T> FaceForward(const Normal3<T>& n, const Vector3<T>& v) {
     return (Dot(n, v) < static_cast<T>(0)) ? -n : n;
