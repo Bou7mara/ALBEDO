@@ -27,7 +27,6 @@ public:
         return *this;
     }
 
-    // Point - Vector -> Point
     constexpr Point2<T> operator-(const Vector2<T>& v) const {
         return Point2<T>(this->x - v.x, this->y - v.y);
     }
@@ -88,5 +87,4 @@ template <typename T>
 constexpr Point2<T> Max(const Point2<T>& p1, const Point2<T>& p2) {
     return Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
 }
-
 }
