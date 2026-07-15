@@ -17,16 +17,11 @@ namespace rt {
             SetIdentity(mInv);
         }
 
-        // Construct directly from a matrix, computing the inverse via
-        // Gauss-Jordan elimination.
         explicit Transform(const float mat[4][4]) {
             std::memcpy(m, mat, sizeof(m));
             Inverse4x4(m, mInv);
         }
 
-        // Construct from both matrix and its already-known inverse
-        // (used internally by composition and by named constructors below,
-        // to avoid re-deriving an inverse we already have in closed form).
         Transform(const float mat[4][4], const float matInv[4][4]) {
             std::memcpy(m, mat, sizeof(m));
             std::memcpy(mInv, matInv, sizeof(mInv));
@@ -60,17 +55,14 @@ namespace rt {
             return Transform(mat, inv);
         }
 
-        // RotateX/Y/Z: rotation matrices are orthogonal, so inverse == transpose
         static Transform RotateX(float thetaDeg);
         static Transform RotateY(float thetaDeg);
         static Transform RotateZ(float thetaDeg);
 
-        // LookAt: builds a camera-to-world transform from eye position,
-        // look-at point, and up vector. Needed before Camera exists.
         static Transform LookAt(const Point3f& eye, const Point3f& look, const Vector3f& up);
 
         Transform Inverse() const {
-            return Transform(mInv, m);   // swap roles: no recomputation needed
+            return Transform(mInv, m);
         }
 
         bool SwapsHandedness() const {
@@ -81,7 +73,6 @@ namespace rt {
             return det < 0.0f;
         }
 
-        // --- Point3: full affine transform ---
         Point3f operator()(const Point3f& p) const {
             float x = p.x, y = p.y, z = p.z;
             float xp = m[0][0]*x + m[0][1]*y + m[0][2]*z + m[0][3];
@@ -92,7 +83,6 @@ namespace rt {
             return Point3f(xp, yp, zp) / wp;
         }
 
-        // --- Vector3: linear part only, no translation ---
         Vector3f operator()(const Vector3f& v) const {
             float x = v.x, y = v.y, z = v.z;
             return Vector3f(
@@ -102,7 +92,6 @@ namespace rt {
             );
         }
 
-        // --- Normal3: inverse-transpose of the linear part ---
         Normal3f operator()(const Normal3f& n) const {
             float x = n.x, y = n.y, z = n.z;
             return Normal3f(
@@ -112,14 +101,12 @@ namespace rt {
             );
         }
 
-        // --- Ray: origin as point, direction as vector ---
         Ray operator()(const Ray& r) const {
             Point3f newO = (*this)(r.o);
             Vector3f newD = (*this)(r.d);
             return Ray(newO, newD, r.tMax, r.time);
         }
 
-        // --- Composition: (T1*T2) applied to p == T1(T2(p)) ---
         Transform operator*(const Transform& other) const {
             float newM[4][4], newMInv[4][4];
             Multiply4x4(m, other.m, newM);
@@ -143,7 +130,6 @@ namespace rt {
                 }
         }
 
-        // General 4x4 inverse via Gauss-Jordan elimination with partial pivoting.
         static void Inverse4x4(const float mat[4][4], float out[4][4]);
     };
 }
