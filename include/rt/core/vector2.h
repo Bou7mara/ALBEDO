@@ -12,12 +12,9 @@ public:
     using Tuple2<Vector2<T>, T>::Tuple2;
 };
 
-// Typedefs for convenience
 using Vector2f = Vector2<float>;
 using Vector2d = Vector2<double>;
 using Vector2i = Vector2<int>;
-
-// Free Functions
 
 template <typename T>
 constexpr T LengthSquared(const Vector2<T>& v) {
