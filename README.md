@@ -6,19 +6,22 @@ of it.
 
 ## Status
 
-🚧 Early development — math core, shapes, camera, scene, and Lambertian materials complete.
+🚧 ALBEDO is currently in active development. CPU architecture / transport algorithms are optimized. But integrators and GPU pipelines are mapped out for future development.
 
-| Component            | Status       |
-|-----------------------|--------------|
-| Math core (Tuple/Vector/Point/Normal/Point2/Vector2) | ✅ Complete, tested |
-| Ray                    | ✅ Complete, tested |
-| Transform              | ✅ Complete, tested |
-| Shape / Sphere         | ✅ Complete, tested |
-| Camera                 | ✅ Complete, tested |
-| Scene / Renderer       | ✅ Complete, tested |
-| Materials / BSDFs      | ✅ Complete, tested (`Lambertian`) |
-| Acceleration (BVH)     | ⬜ Not started |
+| System / Feature | Status | Implementation Notes |
+|---|---|---|
+| **Core Architecture** | 🟢 Implemented | ECS model, Thread pool, Custom math, Catch2 testing |
+| **Acceleration (BVH)** | 🟢 Implemented | SAH construction, Wide BVH (BVH4/BVH8), SIMD traversal |
+| **Basic Materials** | 🟢 Implemented | Lambertian, Dielectrics (Glass), Beer-Lambert |
+| **Microfacet BSDFs** | 🟢 Implemented | Cook-Torrance, GGX / Beckmann distributions |
+| **Advanced Materials** | ⚪ Planned | Disney Principled, Layered, Participating Media |
+| **Light Transport** | 🟢 Implemented | Unidirectional Path Tracing, Direct/Indirect decomposition |
+| **Sampling Methods** | 🟢 Implemented | Multiple Importance Sampling (MIS), Next Event Estimation |
+| **Advanced Integrators**| ⚪ Planned | BDPT, Metropolis (MLT), ReSTIR (DI & GI) |
+| **Spectral Rendering** | ⚪ Planned | Hero Wavelength Sampling, CIE matching, Dispersion |
+| **Hardware / GPU** | ⚪ Planned | Megakernel/Wavefront, RTX/DXR Hardware Traversal |
 
+*Legend: 🟢 Core Implementation Complete | 🟡 Work in Progress | ⚪ Planned*
 ## Why a new repository
 
 Developing my ray tracer ultimately diverged into a dichotomy. The original repository
