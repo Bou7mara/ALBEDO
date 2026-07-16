@@ -1,8 +1,6 @@
 # ALBEDO
 
-A physically based ray tracer written in modern C++23, made as an independent
-successor to the *Ray Tracing in One Weekend* trilogy rather than a direct extension
-of it.
+A physically based ray tracer written in modern C++23.
 
 ## Status
 
