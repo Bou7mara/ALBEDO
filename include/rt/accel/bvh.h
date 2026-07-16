@@ -42,7 +42,7 @@ private:
                         const int dirIsNeg[3], SurfaceInteraction* isect) const;
 
     std::vector<std::shared_ptr<Shape>> originalShapes_;
-    std::vector<std::shared_ptr<Shape>> orderedShapes_;   // reordered to match leaf ranges
+    std::vector<std::shared_ptr<Shape>> orderedShapes_;
     std::unique_ptr<BVHNode> root_;
     int maxPrimsInNode_;
     SplitMethod splitMethod_;
