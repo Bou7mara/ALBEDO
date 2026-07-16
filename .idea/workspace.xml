@@ -18,39 +18,39 @@
   </component>
   <component name="CMakeRunConfigurationManager">
     <generated>
+      <config projectName="raytracer" targetName="raytracer" />
+      <config projectName="raytracer" targetName="ExperimentalStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Catch2WithMain" />
+      <config projectName="raytracer" targetName="NightlyMemoryCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ExperimentalMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="ContinuousCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="NightlyStart" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="rt_core" />
+      <config projectName="raytracer" targetName="Catch2" />
+      <config projectName="raytracer" targetName="rt_tests" />
+      <config projectName="raytracer" targetName="ExperimentalSubmit" folderName="CTestDashboardTargets" />
+      <config projectName="raytracer" targetName="Nightly" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ExperimentalCoverage" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyConfigure" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ContinuousBuild" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlySubmit" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyTest" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="raytracer" />
       <config projectName="raytracer" targetName="benchmark_bvh" />
       <config projectName="raytracer" targetName="ExperimentalBuild" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyBuild" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ContinuousConfigure" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="ExperimentalStart" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyMemCheck" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="Catch2WithMain" />
       <config projectName="raytracer" targetName="ContinuousSubmit" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="NightlyMemoryCheck" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ExperimentalConfigure" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="ExperimentalMemCheck" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ContinuousTest" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="ContinuousUpdate" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="ContinuousStart" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="ContinuousCoverage" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="NightlyStart" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ExperimentalTest" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="rt_core" />
       <config projectName="raytracer" targetName="NightlyCoverage" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="Catch2" />
       <config projectName="raytracer" targetName="ExperimentalUpdate" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="Experimental" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="rt_tests" />
-      <config projectName="raytracer" targetName="ExperimentalSubmit" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="ContinuousMemCheck" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="Continuous" folderName="CTestDashboardTargets" />
-      <config projectName="raytracer" targetName="Nightly" folderName="CTestDashboardTargets" />
       <config projectName="raytracer" targetName="NightlyUpdate" folderName="CTestDashboardTargets" />
     </generated>
   </component>
@@ -61,15 +61,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/rt/materials/fresnel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/benchmark_bvh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/benchmark_bvh.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/accel/bvh.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/accel/bvh.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/cameras/camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/cam/camera.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/cameras/perspective_camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/cam/perspective_camera.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cameras/perspective_camera.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/cameras/perspective_camera.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_camera.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_camera.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/metal.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/metal.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,6 +129,11 @@
   }
 }</component>
   <component name="RunManager" selected="CMake Application.benchmark_bvh">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="rt_tests" type="CMakeCatchTestRunConfigurationType" factoryName="Catch Test" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="rt_tests" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="rt_tests" TEST_MODE="SUITE_TEST">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -289,11 +290,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="benchmark_bvh" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="benchmark_bvh" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="benchmark_bvh">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -309,7 +305,7 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="All CTest" type="CTestRunConfiguration" factoryName="CTestRun" PROGRAM_PARAMS="--extra-verbose" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$CMakeCurrentLocalGenerationDir$" PASS_PARENT_ENVS_2="true" RUN_PATH="$CTestCurrentExecutableName$" EXPLICIT_BUILD_TARGET_NAME="all" TEST_MODE="SUITE_TEST">
+    <configuration name="All CTest" type="CTestRunConfiguration" factoryName="CTestRun" PROGRAM_PARAMS="--extra-verbose" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$CMakeCurrentLocalGenerationDir$" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" RUN_PATH="$CTestCurrentExecutableName$" EXPLICIT_BUILD_TARGET_NAME="all" TEST_MODE="SUITE_TEST">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
         <option name="BeforeTestRunTask" enabled="true" />

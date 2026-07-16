@@ -28,7 +28,8 @@ endif()
 add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE rt_core)
 
-add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp)
+add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp
+        include/rt/materials/fresnel.h)
 target_link_libraries(benchmark_bvh PRIVATE rt_core)
 
 if(MSVC)
