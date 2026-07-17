@@ -67,8 +67,6 @@ Transform Transform::RotateZ(float thetaDeg) {
 }
 
 Transform Transform::LookAt(const Point3f& eye, const Point3f& look, const Vector3f& up) {
-    // Precondition: 'up' vector must not be parallel to the viewing direction 'look - eye'
-    // (otherwise Cross(up, dir) yields a zero vector, causing NaNs during normalization).
     Vector3f dir = Normalize(look - eye);
     Vector3f right = Normalize(Cross(Normalize(up), dir));
     Vector3f newUp = Cross(dir, right);
@@ -96,7 +94,6 @@ void Transform::Inverse4x4(const float mat[4][4], float out[4][4]) {
     SetIdentity(out);
 
     for (int i = 0; i < 4; ++i) {
-        // Find pivot row
         int pivot = i;
         float maxVal = std::abs(temp[i][i]);
         for (int j = i + 1; j < 4; ++j) {
@@ -107,8 +104,6 @@ void Transform::Inverse4x4(const float mat[4][4], float out[4][4]) {
         }
 
         assert(maxVal > 0.0f && "Singular matrix inside Transform!");
-        
-        // Swap rows in temp and out
         if (pivot != i) {
             for (int col = 0; col < 4; ++col) {
                 std::swap(temp[i][col], temp[pivot][col]);
@@ -116,14 +111,12 @@ void Transform::Inverse4x4(const float mat[4][4], float out[4][4]) {
             }
         }
 
-        // Normalize pivot row
         float div = temp[i][i];
         for (int j = 0; j < 4; ++j) {
             temp[i][j] /= div;
             out[i][j] /= div;
         }
 
-        // Eliminate column elements in other rows
         for (int row = 0; row < 4; ++row) {
             if (row != i) {
                 float factor = temp[row][i];
@@ -136,4 +129,4 @@ void Transform::Inverse4x4(const float mat[4][4], float out[4][4]) {
     }
 }
 
-} // namespace rt
+}

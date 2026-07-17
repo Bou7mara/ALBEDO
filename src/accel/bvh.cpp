@@ -10,7 +10,7 @@ struct BucketInfo {
     int count = 0;
     Bounds3f bounds;
 };
-} // namespace
+}
 
 BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode,
          SplitMethod splitMethod)
@@ -54,10 +54,6 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
     for (int i = start; i < end; ++i) centroidBounds = Union(centroidBounds, primInfo[i].centroid);
     int axis = centroidBounds.MaxExtent();
 
-    // Degenerate case: all centroids coincide on the split axis (e.g.
-    // every primitive stacked at the same point). Neither midpoint nor
-    // bucket-index math is well-defined when the extent is zero --
-    // fall straight to a leaf rather than dividing by zero.
     if (centroidBounds.pMax[axis] == centroidBounds.pMin[axis]) {
         return MakeLeaf(primInfo, start, end, nodeBounds);
     }
@@ -69,21 +65,12 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
         auto midIter = std::partition(primInfo.begin() + start, primInfo.begin() + end,
             [axis, pmid](const PrimitiveInfo& p) { return p.centroid[axis] < pmid; });
         mid = static_cast<int>(midIter - primInfo.begin());
-        // Partition can degenerate to "everything on one side" (e.g.
-        // two distinct centroid clusters that don't straddle the
-        // midpoint). Force an equal-count split so recursion always
-        // makes progress instead of looping on an unsplit range.
         if (mid == start || mid == end) {
             mid = (start + end) / 2;
             std::nth_element(primInfo.begin() + start, primInfo.begin() + mid, primInfo.begin() + end,
                 [axis](const PrimitiveInfo& a, const PrimitiveInfo& b) { return a.centroid[axis] < b.centroid[axis]; });
         }
     } else {
-        // Binned SAH (TOC 5.3.2). Assign each primitive to one of
-        // kNumBuckets buckets by where its centroid falls along the
-        // split axis, then evaluate the SAH cost of splitting between
-        // every adjacent pair of buckets in O(kNumBuckets) rather than
-        // O(nPrimitives) candidate splits.
         std::array<BucketInfo, kNumBuckets> buckets;
         float cMin = centroidBounds.pMin[axis];
         float cExtent = centroidBounds.pMax[axis] - cMin;
@@ -99,12 +86,6 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
             buckets[b].bounds = Union(buckets[b].bounds, primInfo[i].bounds);
         }
 
-        // Cost of splitting after bucket i (i.e. buckets [0,i] left,
-        // [i+1, kNumBuckets) right): traversalCost + relative surface
-        // area of each side, weighted by primitive count -- the
-        // standard SAH cost model (TOC 5.3.1). 0.125 is the assumed
-        // relative cost of a traversal step vs. a primitive
-        // intersection test (1.0) -- pbrt's own default constant.
         std::array<float, kNumBuckets - 1> cost{};
         for (int i = 0; i < kNumBuckets - 1; ++i) {
             Bounds3f b0, b1;
@@ -129,17 +110,10 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
 
         float leafCost = static_cast<float>(nPrimitives);
         if (minCost < leafCost || nPrimitives > maxPrimsInNode_) {
-            // Either the split is worth it outright, or it isn't but
-            // the leaf would exceed maxPrimsInNode_ -- in which case
-            // splitting anyway (even at a locally suboptimal point) is
-            // still required to respect the leaf-size cap.
             auto midIter = std::partition(primInfo.begin() + start, primInfo.begin() + end,
                 [&](const PrimitiveInfo& p) { return bucketFor(p) <= minCostBucket; });
             mid = static_cast<int>(midIter - primInfo.begin());
             if (mid == start || mid == end) {
-                // Buckets can still degenerate to a no-op split (all
-                // primitives landed in the same bucket range) -- same
-                // equal-count fallback as the Midpoint path.
                 mid = (start + end) / 2;
                 std::nth_element(primInfo.begin() + start, primInfo.begin() + mid, primInfo.begin() + end,
                     [axis](const PrimitiveInfo& a, const PrimitiveInfo& b) { return a.centroid[axis] < b.centroid[axis]; });
@@ -180,15 +154,6 @@ bool BVH::IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& inv
         return hit;
     }
 
-    // Visit the near child first (per the ray's direction sign on the
-    // split axis), then the far child. No extra bookkeeping needed for
-    // the classic "skip the far child if the near hit is already
-    // closer" pruning: ray.tMax is mutable and already shrunk by any
-    // hit in the near subtree, so the far child's own bounds.IntersectP
-    // call re-reads that shrunk tMax automatically and can reject
-    // early on its own -- this is the mutable-tMax convention (from
-    // Ray's original design) doing real work here, not just carried
-    // along for consistency.
     const BVHNode* first  = dirIsNeg[node->splitAxis] ? node->right.get() : node->left.get();
     const BVHNode* second = dirIsNeg[node->splitAxis] ? node->left.get()  : node->right.get();
 
@@ -203,4 +168,4 @@ bool BVH::IntersectP(const Ray& ray) const {
     return Intersect(r, &isect);
 }
 
-} // namespace rt
+}

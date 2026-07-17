@@ -28,16 +28,8 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
 
             float cosTheta = AbsDot(wi, isect.n);
 
-            // Sample_f() has just produced `wi` here — this offset can only be computed
-            // once the new ray direction is known, since (as of Dielectric) the correct
-            // offset side depends on it.
             constexpr float kEpsilon = 1e-4f;
 
-            // -- wi on the outward side (reflect, diffuse scatter): nudge outward,
-            //    same behavior every existing material already relies on.
-            // -- wi on the inward side (Dielectric's refract branch): nudge inward,
-            //    so the new ray starts on the far side of the surface it just
-            //    crossed, instead of re-landing inside the shape it came from.
             Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
             Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
             Ray scattered(offsetOrigin, wi);
@@ -45,9 +37,6 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
             Vector3f Li = RayColor(scattered, scene, rng, depth - 1);
             return f * cosTheta * Li / pdf;
         }
-        // No BSDF attached: fall back to normal-visualization debug
-        // shading, so any future un-textured shape stays diagnosable
-        // rather than silently rendering black.
         Vector3f n = Vector3f(isect.n);
         return Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f),
                          0.5f * (n.z + 1.0f));
@@ -81,15 +70,12 @@ int main() {
     auto metalMaterial = std::make_shared<Metal>(Vector3f(0.8f, 0.8f, 0.9f));
 
     Scene scene;
-    // Middle sphere (bottom edge sits at y = -0.5)
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial));
 
-    // Metal sphere (bottom edge sits at y = -0.5)
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(1.1f, 0.0f, -1.0f)), 0.5f, metalMaterial));
 
-    // Huge ground sphere (top edge sits at y = -0.5, touching the middle sphere tangentially)
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, -100.5f, -1.0f)), 100.0f, groundMaterial));
 
@@ -103,7 +89,7 @@ int main() {
     }
 
     WritePPMHeader(out, imageWidth, imageHeight);
-    RNG rng;   // single-threaded for now -- see rng.h note on per-thread RNGs
+    RNG rng;
 
     for (int y = 0; y < imageHeight; ++y) {
         for (int x = 0; x < imageWidth; ++x) {
