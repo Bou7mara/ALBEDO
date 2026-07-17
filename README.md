@@ -1,10 +1,10 @@
 # ALBEDO
 
-A physically based ray tracer written in modern C++23.
+A physically based ray tracer built from the ground up in modern C++23.
 
 ## Status
 
-🚧 ALBEDO is currently in active development. CPU architecture / transport algorithms are optimized. But integrators and GPU pipelines are mapped out for future development.
+🚧 **ALBEDO is currently under development.**
 
 | System / Feature | Status | Implementation Notes |
 |---|---|---|
@@ -20,19 +20,16 @@ A physically based ray tracer written in modern C++23.
 | **Hardware / GPU** | ⚪ Planned | Megakernel/Wavefront, RTX/DXR Hardware Traversal |
 
 *Legend: 🟢 Core Implementation Complete | 🟡 Work in Progress | ⚪ Planned*
-## Why a new repository
 
-Developing my ray tracer ultimately diverged into a dichotomy. The original repository
-began as an extension of Peter Shirley's trilogy, but as it turns out, the inherited
-architecture could not comfortably accommodate the scope I had envisioned. Rather than
-continuing to force that codebase beyond its intended design, this repository
-establishes a new lineage rather than a mere extension. It carries forward the lessons,
-concepts, and experience gained from the original project, while departing from its
-structural constraints and providing a new foundation for future development.
+## Why a new repository?
 
-The OG, **PhotonCast**, has been made private, as it will no longer feature clean
-commits and professional code going forward — from this point onwards it serves as a
-sandbox and test site for ALBEDO's ideas.
+This project represents a clean architectural break from my previous ray tracer, **PhotonCast**. 
+
+While PhotonCast began as an extension of Peter Shirley's excellent *Ray Tracing in One Weekend* trilogy, its inherited educational architecture ultimately could not scale to accommodate the scope, modularity, and performance optimizations required for a production-oriented renderer. 
+
+Rather than fighting the structural constraints of the old codebase, ALBEDO was designed from scratch. It carries forward the mathematical foundation and rendering concepts gained from the original project, but establishes a highly decoupled, modern C++ foundation built for extensibility. 
+
+Moving forward, ALBEDO will maintain a strict standard for clean architecture, professional code quality, and structured commit history. The original PhotonCast repository has been made private and now serves purely as a sandbox for rapid prototyping and testing messy ideas before they are formalized here.
 
 ## Building
 
