@@ -26,8 +26,6 @@ TEST_CASE("GgxD is non-negative and peaks at NdotH == 1", "[microfacet]") {
 }
 
 TEST_CASE("GgxD approaches a delta as alpha shrinks", "[microfacet][regression]") {
-    // At tiny alpha, almost all density sits right at NdotH == 1; density
-    // just off-peak should be dramatically smaller than the peak itself.
     float alpha = 0.01f;
     float atPeak = GgxD(1.0f, alpha);
     float offPeak = GgxD(0.95f, alpha);
@@ -35,11 +33,6 @@ TEST_CASE("GgxD approaches a delta as alpha shrinks", "[microfacet][regression]"
 }
 
 TEST_CASE("SmithG times 4*NdotV*NdotL stays within [0, 1]", "[microfacet][regression]") {
-    // This is the convention-boundary check: SmithG returns
-    // G / (4*NdotV*NdotL), not plain G -- multiplying back out must land
-    // in a valid [0,1] visibility fraction. A doubled or missing
-    // denominator anywhere in the assembly would show up here as a value
-    // outside this range.
     float alpha = 0.4f;
     for (float NdotV = 0.1f; NdotV <= 1.0f; NdotV += 0.15f) {
         for (float NdotL = 0.1f; NdotL <= 1.0f; NdotL += 0.15f) {
@@ -59,13 +52,11 @@ TEST_CASE("SmithG is symmetric in V and L", "[microfacet]") {
 }
 
 TEST_CASE("FrConductor at normal incidence matches the closed-form conductor reflectance", "[microfacet]") {
-    // R0 = ((eta-1)^2 + k^2) / ((eta+1)^2 + k^2). Using gold-like values
-    // (eta=0.2, k=3.0) as a representative, clearly-absorbing conductor.
     float eta = 0.2f, k = 3.0f;
     float expected = ((eta - 1.0f) * (eta - 1.0f) + k * k) /
                       ((eta + 1.0f) * (eta + 1.0f) + k * k);
     REQUIRE(FrConductor(1.0f, eta, k) == Approx(expected).margin(1e-4));
-    REQUIRE(FrConductor(1.0f, eta, k) > 0.9f);   // gold reflects almost everything
+    REQUIRE(FrConductor(1.0f, eta, k) > 0.9f);
 }
 
 TEST_CASE("FrConductor always stays within [0, 1]", "[microfacet][regression]") {
@@ -100,13 +91,6 @@ TEST_CASE("SampleGgxVndf never returns a normal below the local hemisphere", "[m
 }
 
 TEST_CASE("GgxVndfPdf integrates to approximately 1 over the hemisphere", "[microfacet][regression]") {
-    // Monte Carlo consistency check: for samples drawn from SampleGgxVndf,
-    // reflected about h into wi, the estimator (1/N) * sum(1/pdf(wi)) over
-    // the sampled solid angle should converge to that same solid angle --
-    // here, approximated by checking convergence toward a stable value
-    // rather than a literal 2*Pi (the sampled region is direction-limited
-    // by wo, not the full hemisphere), which is enough to catch a sampler
-    // and PDF that have drifted out of sync with each other.
     Vector3f wo = Normalize(Vector3f(0.2f, 0.1f, 0.97f));
     float alpha = 0.5f;
     float NdotV = wo.z;
@@ -128,12 +112,6 @@ TEST_CASE("GgxVndfPdf integrates to approximately 1 over the hemisphere", "[micr
         sum += 1.0 / pdf;
     }
     double estimate = sum / N;
-
-    // Not asserting a precise closed-form target here -- just that the
-    // estimator is finite, positive, and within a broad sane band. A
-    // sampler/PDF pair that's badly out of sync tends to blow up toward
-    // infinity or collapse toward zero, not land in a plausible middle
-    // range, so this is a real check despite the loose bound.
     REQUIRE(estimate > 0.0);
     REQUIRE(estimate < 1000.0);
 }

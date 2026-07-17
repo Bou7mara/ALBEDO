@@ -22,10 +22,6 @@ TEST_CASE("Microfacet f() is non-negative everywhere", "[microfacet_brdf]") {
 }
 
 TEST_CASE("Microfacet f() obeys Helmholtz reciprocity", "[microfacet_brdf][regression]") {
-    // f(wo, wi) must equal f(wi, wo) -- swapping which direction is
-    // "outgoing" and which is "incident" cannot change the BRDF value.
-    // This is exactly the check that would catch an accidental NdotV/NdotL
-    // mixup inside the D*G*F assembly.
     Microfacet mf = Microfacet::MakeConductorMicrofacet(
         0.25f, Vector3f(0.2f, 0.2f, 0.2f), Vector3f(3.0f, 3.0f, 3.0f));
     Vector3f n(0, 1, 0);
@@ -40,10 +36,6 @@ TEST_CASE("Microfacet f() obeys Helmholtz reciprocity", "[microfacet_brdf][regre
 }
 
 TEST_CASE("Microfacet Sample_f produces a pdf consistent with its own returned wi", "[microfacet_brdf][regression]") {
-    // Sample_f must return f(wo, wi) for the SAME wi it just picked, and a
-    // strictly positive pdf for any non-degenerate sample -- catches the
-    // "paired 1:1, not a general evaluator" contract from GgxVndfPdf being
-    // violated by passing in stale or mismatched intermediate values.
     Microfacet mf = Microfacet::MakeDielectricMicrofacet(0.4f, 1.5f);
     Vector3f n(0, 1, 0);
     Vector3f wo = Normalize(Vector3f(0.1f, 0.95f, 0.05f));
@@ -60,15 +52,11 @@ TEST_CASE("Microfacet Sample_f produces a pdf consistent with its own returned w
 }
 
 TEST_CASE("Microfacet at very low roughness concentrates energy near the mirror direction", "[microfacet_brdf][regression]") {
-    // Same near-delta intuition as GgxD/SampleGgxVndf's own tests, now
-    // checked at the assembled-BRDF level: f() evaluated far from the
-    // mirror-reflection direction should be dramatically smaller than f()
-    // evaluated at it.
     Microfacet mf = Microfacet::MakeConductorMicrofacet(
         0.02f, Vector3f(0.2f, 0.2f, 0.2f), Vector3f(3.0f, 3.0f, 3.0f));
     Vector3f n(0, 1, 0);
     Vector3f wo = Normalize(Vector3f(0.0f, 1.0f, 0.0f));
-    Vector3f mirrorWi = Reflect(wo, n);   // (0,1,0), normal incidence
+    Vector3f mirrorWi = Reflect(wo, n);
 
     Vector3f atMirror = mf.f(wo, mirrorWi, n);
     Vector3f offMirror = mf.f(wo, Normalize(Vector3f(0.5f, 0.7f, 0.2f)), n);
@@ -87,8 +75,7 @@ TEST_CASE("Microfacet Sample_f direction is always unit length and on the correc
             mf.Sample_f(wo, n, Point2f(ux, uy), &wi, &pdf);
             if (pdf > 0.0f) {
                 REQUIRE(Length(wi) == Approx(1.0f).margin(1e-3));
-                REQUIRE(Dot(wi, n) > -1e-4f);   // guard from Step 4 should
-                                                  // reject the wrong side
+                REQUIRE(Dot(wi, n) > -1e-4f);
             }
         }
     }

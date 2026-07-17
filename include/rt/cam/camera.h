@@ -11,9 +11,6 @@ struct CameraSample {
 class Camera {
 public:
     virtual ~Camera() = default;
-
-    // Given a sample position in continuous raster space, returns the
-    // corresponding world-space ray. Direction is always normalized.
     virtual Ray GenerateRay(const CameraSample& sample) const = 0;
 };
 
