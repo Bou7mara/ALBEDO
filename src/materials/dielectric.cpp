@@ -25,7 +25,7 @@ Vector3f Dielectric::Sample_f(const Vector3f& wo, const Vector3f& n,
             return Vector3f(0.0f, 0.0f, 0.0f);
         }
 
-        return Vector3f(1.0f, 1.0f, 1.0f) / cosThetaWi;
+        return Vector3f(R, R, R) / cosThetaWi;
     } else {
 
         Vector3f nf = entering ? n : -n;
@@ -39,7 +39,7 @@ Vector3f Dielectric::Sample_f(const Vector3f& wo, const Vector3f& n,
             return Vector3f(0.0f, 0.0f, 0.0f);
         }
 
-        return Vector3f(1.0f, 1.0f, 1.0f) / (eta * eta) / cosThetaWi;
+        return Vector3f(1.0f - R, 1.0f - R, 1.0f - R) / (eta * eta) / cosThetaWi;
     }
 }
 }
