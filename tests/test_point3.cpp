@@ -19,7 +19,7 @@ TEST_CASE("Point3 + Vector3 yields Point3, both directions", "[point3]") {
     Vector3f v(1.0f, 2.0f, 3.0f);
 
     REQUIRE(p + v == Point3f(2.0f, 3.0f, 4.0f));
-    REQUIRE(v + p == Point3f(2.0f, 3.0f, 4.0f));  // commutative free function
+    REQUIRE(v + p == Point3f(2.0f, 3.0f, 4.0f)); 
 }
 
 TEST_CASE("Point3 - Vector3 yields Point3", "[point3]") {
@@ -55,6 +55,5 @@ TEST_CASE("Min and Max produce componentwise results", "[point3]") {
     REQUIRE(Max(p1, p2) == Point3f(4.0f, 5.0f, 6.0f));
 }
 
-// --- Compile-time affine-correctness checks ---
 static_assert(!std::is_invocable_v<std::plus<>, Point3f, Point3f>,
               "Point3 + Point3 should not be a valid operation (non-affine)");
