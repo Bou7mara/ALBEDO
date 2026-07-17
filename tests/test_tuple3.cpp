@@ -71,16 +71,13 @@ TEST_CASE("Vector3 arithmetic operators", "[tuple3]") {
 }
 
 TEST_CASE("Vector3i integer division does not truncate to zero", "[tuple3][regression]") {
-    // Regression test for the bug where (1/scalar) was computed as a
-    // float/double inverse and multiplied, truncating to 0 for any
-    // |scalar| > 1 when T = int.
     Vector3i v(4, 6, 8);
     Vector3i r = v / 2;
     REQUIRE(r == Vector3i(2, 3, 4));
 
     Vector3i v2(9, 10, 11);
     Vector3i r2 = v2 / 3;
-    REQUIRE(r2 == Vector3i(3, 3, 3));  // integer truncation is expected here, just not to 0
+    REQUIRE(r2 == Vector3i(3, 3, 3));
 }
 
 TEST_CASE("Vector3 equality and inequality", "[tuple3]") {
@@ -95,10 +92,4 @@ TEST_CASE("Vector3 equality and inequality", "[tuple3]") {
 TEST_CASE("HasNaN detects NaN components", "[tuple3]") {
     Vector3f v(1.0f, 2.0f, 3.0f);
     REQUIRE_FALSE(v.HasNaN());
-
-    // Constructing with a NaN component should trip the assert in
-    // debug builds. Catch2 can't easily test assert() firing without
-    // extra scaffolding (e.g. compiling a death-test variant), so this
-    // is left as a documented manual check rather than an automated one:
-    //   Vector3f bad(std::nanf(""), 0.0f, 0.0f);  // should assert in debug
 }
