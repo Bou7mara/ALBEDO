@@ -24,8 +24,6 @@ TEST_CASE("Ray misses a sphere entirely", "[sphere]") {
 }
 
 TEST_CASE("Ray originating inside the sphere hits the far side", "[sphere][regression]") {
-    // Regression case: t0 < 0 (behind the origin) must fall through to
-    // t1, not be rejected outright.
     Sphere s(Transform::Identity(), 1.0f);
     Ray r(Point3f(0, 0, 0), Vector3f(0, 0, 1));
 
@@ -36,7 +34,7 @@ TEST_CASE("Ray originating inside the sphere hits the far side", "[sphere][regre
 
 TEST_CASE("Tangent ray grazes the sphere at exactly one point", "[sphere]") {
     Sphere s(Transform::Identity(), 1.0f);
-    Ray r(Point3f(1.0f, 0.0f, -5.0f), Vector3f(0, 0, 1));   // grazes at x=1
+    Ray r(Point3f(1.0f, 0.0f, -5.0f), Vector3f(0, 0, 1));
 
     SurfaceInteraction isect;
     REQUIRE(s.Intersect(r, &isect));
@@ -50,7 +48,6 @@ TEST_CASE("Hit normal points radially outward and is unit length", "[sphere]") {
     SurfaceInteraction isect;
     REQUIRE(s.Intersect(r, &isect));
     REQUIRE(Length(Vector3f(isect.n)) == Approx(1.0f).margin(1e-5));
-    // At (0,0,-1), outward normal should point along -Z
     REQUIRE(isect.n.z == Approx(-1.0f).margin(1e-5));
 }
 
@@ -66,9 +63,6 @@ TEST_CASE("Translated sphere hits at the correct world-space location", "[sphere
 }
 
 TEST_CASE("Non-uniformly scaled sphere (ellipsoid) still produces a unit normal", "[sphere][regression]") {
-    // This is the sphere-level equivalent of the Transform regression
-    // test: confirms the inverse-transpose normal rule survives being
-    // applied through a real Shape, not just directly on a Normal3.
     Transform t = Transform::Scale(1.0f, 1.0f, 2.0f);
     Sphere s(t, 1.0f);
     Ray r(Point3f(0.0f, 0.0f, -5.0f), Vector3f(0.0f, 0.0f, 1.0f));
