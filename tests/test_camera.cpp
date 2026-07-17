@@ -9,7 +9,6 @@ TEST_CASE("Center-of-image ray points straight down the look direction", "[camer
     PerspectiveCamera cam(Point3f(0, 0, 0), Point3f(0, 0, 1), Vector3f(0, 1, 0),
                           90.0f, 200, 100);
 
-    // Center of a 200x100 image, in continuous raster coords, is (100, 50).
     Ray r = cam.GenerateRay(CameraSample{Point2f(100.0f, 50.0f)});
 
     REQUIRE(r.o == Point3f(0, 0, 0));
