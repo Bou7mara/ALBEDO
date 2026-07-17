@@ -11,11 +11,11 @@ namespace rt {
     class Shape;
 
     struct SurfaceInteraction {
-        Point3f p;                      // hit point, in world space
-        Normal3f n;                      // geometric surface normal, in world space, always normalized
-        Vector3f wo;                     // outgoing direction, pointing back toward ray origin
-        float t = 0.0f;                  // parametric distance along the ray
-        const Shape* shape = nullptr;    // pointer to the shape hit
+        Point3f p;
+        Normal3f n;
+        Vector3f wo;
+        float t = 0.0f;
+        const Shape* shape = nullptr;
     };
 
     class Shape {
@@ -24,15 +24,12 @@ namespace rt {
             : bsdf_(std::move(bsdf)) {}
         virtual ~Shape() = default;
 
-        // Returns true if ray hits this shape within (0, ray.tMax).
-        // On success, fills isect and shrinks ray.tMax to the hit distance.
         virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
         virtual Bounds3f WorldBound() const = 0;
 
-        // Cheaper boolean-only test. Default implementation just discards Intersect's output.
         virtual bool IntersectP(const Ray& ray) const {
             SurfaceInteraction isect;
-            Ray r = ray;   // local copy so tMax mutation doesn't leak to caller
+            Ray r = ray;
             return Intersect(r, &isect);
         }
 

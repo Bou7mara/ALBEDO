@@ -104,7 +104,7 @@ int main() {
                  "SAH build/query (ms) | SAH speedup\n";
 
     for (int n : sphereCounts) {
-        auto shapes = GenerateRandomSpheres(n, /*seed=*/12345);
+        auto shapes = GenerateRandomSpheres(n, 12345);
 
         auto [linearMs, linearHits] = RunFramePass(frameRays,
             [&](const Ray& r, SurfaceInteraction* isect) { return LinearIntersect(shapes, r, isect); });

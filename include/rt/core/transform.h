@@ -110,7 +110,7 @@ namespace rt {
         Transform operator*(const Transform& other) const {
             float newM[4][4], newMInv[4][4];
             Multiply4x4(m, other.m, newM);
-            Multiply4x4(other.mInv, mInv, newMInv);   // reversed order
+            Multiply4x4(other.mInv, mInv, newMInv);
             return Transform(newM, newMInv);
         }
 

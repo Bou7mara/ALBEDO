@@ -11,10 +11,6 @@ namespace rt {
             shapes_.push_back(std::move(shape));
         }
 
-        // Must be called once, after all Add() calls, before Intersect().
-        // Not lazy/implicit on purpose -- see the plan doc's note on
-        // explicit over clever for why an auto-rebuilding BVH isn't the
-        // safer choice here.
         void Build() {
             bvh_ = std::make_unique<BVH>(shapes_);
         }

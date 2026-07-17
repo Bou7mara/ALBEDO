@@ -34,7 +34,7 @@ TEST_CASE("BVH (SAH) matches brute-force linear scan across random rays", "[bvh]
     for (int i = 0; i < 200; ++i) {
         Ray rBvh(Point3f(dist(rng), dist(rng), -20.0f),
                   Normalize(Vector3f(dist(rng) * 0.1f, dist(rng) * 0.1f, 1.0f)));
-        Ray rLinear = rBvh;   // separate tMax state per call
+        Ray rLinear = rBvh;
 
         SurfaceInteraction isectBvh, isectLinear;
         bool hitBvh = bvh.Intersect(rBvh, &isectBvh);

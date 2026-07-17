@@ -3,7 +3,7 @@
 
 namespace rt {
 
-Vector3f Dielectric::f(const Vector3f& /*wo*/, const Vector3f& /*wi*/, const Vector3f& /*n*/) const {
+Vector3f Dielectric::f(const Vector3f&, const Vector3f&, const Vector3f&) const {
     return Vector3f(0.0f, 0.0f, 0.0f);
 }
 

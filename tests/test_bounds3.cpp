@@ -29,7 +29,6 @@ TEST_CASE("Default-constructed bounds absorb the first union unchanged", "[bound
 
 TEST_CASE("SurfaceArea matches a hand-computed box", "[bounds3]") {
     Bounds3f b(Point3f(0, 0, 0), Point3f(2, 3, 4));
-    // 2*(2*3 + 3*4 + 4*2) = 2*(6+12+8) = 52
     REQUIRE(b.SurfaceArea() == Approx(52.0f));
 }
 

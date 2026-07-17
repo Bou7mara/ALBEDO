@@ -30,7 +30,7 @@ private:
         std::unique_ptr<BVHNode> left, right;
         int splitAxis = 0;
         int firstPrimOffset = 0;
-        int nPrimitives = 0;   // > 0 iff leaf
+        int nPrimitives = 0;
         bool IsLeaf() const { return nPrimitives > 0; }
     };
 
@@ -47,5 +47,4 @@ private:
     int maxPrimsInNode_;
     SplitMethod splitMethod_;
 };
-
-} // namespace rt
+}

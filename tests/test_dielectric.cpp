@@ -52,7 +52,7 @@ TEST_CASE("Total internal reflection forces the reflect branch regardless of u.x
     Dielectric d(1.5f);
     Vector3f n(0, 1, 0);
     float rad = 60.0f * std::numbers::pi_v<float> / 180.0f;
-    Vector3f wo = Normalize(Vector3f(std::sin(rad), -std::cos(rad), 0.0f));  // inside, exiting
+    Vector3f wo = Normalize(Vector3f(std::sin(rad), -std::cos(rad), 0.0f));
     Vector3f wi;
     float pdf;
     d.Sample_f(wo, n, Point2f(0.99f, 0.5f), &wi, &pdf);

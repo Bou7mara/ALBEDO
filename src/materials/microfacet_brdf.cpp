@@ -46,8 +46,6 @@ namespace rt {
         float NdotH = AbsDot(wh, n);
         float D = GgxD(NdotH, alpha_);
 
-        // Note: SmithG already returns G / (4 * NdotV * NdotL).
-        // Therefore, we do NOT divide by 4 * NdotV * NdotL again below.
         float Gterm = SmithG(NdotV, NdotL, alpha_);
 
         float VdotH = AbsDot(wo, wh);
@@ -59,16 +57,12 @@ namespace rt {
     Vector3f Microfacet::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf) const {
         ONB onb(n);
 
-        // Transform wo to local shading space (where n is (0,0,1))
         Vector3f localWo = Vector3f(Dot(wo, onb.u), Dot(wo, onb.v), Dot(wo, onb.w));
 
-        // Sample half-vector in local space
         Vector3f localWh = SampleGgxVndf(localWo, alpha_, u.x, u.y);
 
-        // Transform half-vector back to world space
         Vector3f wh = onb.ToWorld(localWh);
 
-        // Reflect wo about wh to get wi
         *wi = Reflect(wo, wh);
 
         if (Dot(*wi, n) <= 0.0f) {
@@ -82,7 +76,6 @@ namespace rt {
 
         *pdf = GgxVndfPdf(NdotV, NdotH, VdotH, alpha_);
 
-        // Do not hand-reassemble D*G*F here; delegate to f()
         return f(wo, *wi, n);
     }
 }

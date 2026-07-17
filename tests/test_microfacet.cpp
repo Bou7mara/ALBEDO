@@ -81,7 +81,7 @@ TEST_CASE("SampleGgxVndf collapses toward the macro normal as alpha shrinks", "[
 
 TEST_CASE("SampleGgxVndf never returns a normal below the local hemisphere", "[microfacet][regression]") {
     Vector3f wo = Normalize(Vector3f(0.6f, 0.1f, 0.8f));
-    float alpha = 0.8f;   // deliberately rough -- most likely to expose a missing clamp
+    float alpha = 0.8f;
     for (float u1 = 0.05f; u1 < 1.0f; u1 += 0.1f) {
         for (float u2 = 0.05f; u2 < 1.0f; u2 += 0.1f) {
             Vector3f h = SampleGgxVndf(wo, alpha, u1, u2);
