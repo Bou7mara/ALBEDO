@@ -39,7 +39,7 @@ TEST_CASE("Vector2 geometric free functions", "[vector2]") {
 
     SECTION("Dot") {
         Vector2f other(2.0f, -1.0f);
-        REQUIRE(Dot(v, other) == Approx(2.0f)); // 6 - 4
+        REQUIRE(Dot(v, other) == Approx(2.0f));
     }
 
     SECTION("AbsDot") {
