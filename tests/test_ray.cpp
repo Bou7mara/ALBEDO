@@ -34,15 +34,13 @@ TEST_CASE("Ray operator() with non-axis-aligned direction", "[ray]") {
     Ray r(Point3f(1.0f, 1.0f, 1.0f), Vector3f(1.0f, 2.0f, 3.0f));
     Point3f p = r(2.0f);
 
-    REQUIRE(p.x == Approx(3.0f));   // 1 + 2*1
-    REQUIRE(p.y == Approx(5.0f));   // 1 + 2*2
-    REQUIRE(p.z == Approx(7.0f));   // 1 + 2*3
+    REQUIRE(p.x == Approx(3.0f));  
+    REQUIRE(p.y == Approx(5.0f));   
+    REQUIRE(p.z == Approx(7.0f));   
 }
 
 TEST_CASE("Ray tMax can be shrunk via mutable field", "[ray]") {
     const Ray r(Point3f(0,0,0), Vector3f(1,0,0));
-    // Simulates what an intersection routine does: shrink tMax on a
-    // const Ray& without needing a non-const reference.
     r.tMax = 4.0f;
     REQUIRE(r.tMax == Approx(4.0f));
 }
