@@ -9,7 +9,7 @@ using Catch::Approx;
 
 TEST_CASE("Normal3 explicit construction from Vector3", "[normal3]") {
     Vector3f v(1.0f, 2.0f, 3.0f);
-    Normal3f n(v);  // explicit constructor
+    Normal3f n(v);
     REQUIRE(n.x == Approx(1.0f));
     REQUIRE(n.y == Approx(2.0f));
     REQUIRE(n.z == Approx(3.0f));
@@ -17,7 +17,7 @@ TEST_CASE("Normal3 explicit construction from Vector3", "[normal3]") {
 
 TEST_CASE("Normal3 explicit conversion back to Vector3", "[normal3]") {
     Normal3f n(1.0f, 2.0f, 3.0f);
-    Vector3f v(n);  // explicit conversion operator
+    Vector3f v(n);
     REQUIRE(v == Vector3f(1.0f, 2.0f, 3.0f));
 }
 
@@ -37,9 +37,6 @@ TEST_CASE("FaceForward flips normal away from reference direction", "[normal3]")
     REQUIRE(FaceForward(n, towardOppositeSide) == -n);
 }
 
-// Compile-time check: implicit Vector3 -> Normal3 conversion must not
-// exist (this is the exact bug this type separation prevents: silently
-// treating a normal as a vector under a non-uniform scale).
 static_assert(!std::is_convertible_v<Vector3f, Normal3f>,
               "Vector3 -> Normal3 conversion must be explicit, not implicit");
 static_assert(!std::is_convertible_v<Normal3f, Vector3f>,
