@@ -13,6 +13,7 @@ add_library(rt_core STATIC
     src/materials/lambertian.cpp
     src/materials/metal.cpp
     src/accel/bvh.cpp
+        src/materials/dielectric.cpp
 )
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(rt_core PUBLIC cxx_std_23)
@@ -29,7 +30,8 @@ add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE rt_core)
 
 add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp
-        include/rt/materials/fresnel.h)
+        include/rt/materials/fresnel.h
+        include/rt/materials/dielectric.h)
 target_link_libraries(benchmark_bvh PRIVATE rt_core)
 
 if(MSVC)
