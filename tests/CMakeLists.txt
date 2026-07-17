@@ -29,6 +29,8 @@ add_executable(rt_tests
     test_metal.cpp
     test_bounds3.cpp
     test_bvh.cpp
+    test_dielectric.cpp
+    test_fresnel.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

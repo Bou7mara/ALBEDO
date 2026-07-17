@@ -2,14 +2,11 @@
 #include "rt/accel/bvh.h"
 #include "rt/shapes/sphere.h"
 #include <random>
+#include <catch2/catch_approx.hpp>
 
 using namespace rt;
 
 namespace {
-// Brute-force linear scan, independent of BVH, used as the ground
-// truth every BVH test is checked against -- an acceleration structure
-// that changes WHICH hit is reported (not just how fast) is broken,
-// no matter how fast it is.
 bool LinearIntersect(const std::vector<std::shared_ptr<Shape>>& shapes,
                       const Ray& ray, SurfaceInteraction* isect) {
     bool hit = false;

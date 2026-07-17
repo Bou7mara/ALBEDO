@@ -28,14 +28,18 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
 
             float cosTheta = AbsDot(wi, isect.n);
 
-            // Offset the next ray's origin along the normal -- floating
-            // point error in isect.p means a ray from the exact hit
-            // point can re-intersect the same surface it just left
-            // ("shadow acne"). Flagged as a real concern back when Ray
-            // was designed (TOC 3.1.1); this is where it first actually
-            // bites.
+            // Sample_f() has just produced `wi` here — this offset can only be computed
+            // once the new ray direction is known, since (as of Dielectric) the correct
+            // offset side depends on it.
             constexpr float kEpsilon = 1e-4f;
-            Point3f offsetOrigin = isect.p + kEpsilon * Vector3f(isect.n);
+
+            // -- wi on the outward side (reflect, diffuse scatter): nudge outward,
+            //    same behavior every existing material already relies on.
+            // -- wi on the inward side (Dielectric's refract branch): nudge inward,
+            //    so the new ray starts on the far side of the surface it just
+            //    crossed, instead of re-landing inside the shape it came from.
+            Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
+            Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
             Ray scattered(offsetOrigin, wi);
 
             Vector3f Li = RayColor(scattered, scene, rng, depth - 1);
