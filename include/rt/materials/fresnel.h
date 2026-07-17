@@ -37,4 +37,36 @@ namespace rt {
         float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) / ((etaI * cosThetaI) + (etaT * cosThetaT));
         return (Rparl * Rparl + Rperp * Rperp) / 2.0f;
     }
+
+    // Exact Fresnel reflectance for a dielectric-conductor interface (TOC
+    // 6.6, needed for rough-metal shading) -- companion to FrDielectric, not
+    // an overload of it, because conductors absorb light at the interface and
+    // dielectrics don't; that's a genuine physical fork, not a parameter
+    // variant. eta and k together form the conductor's complex index of
+    // refraction (eta + i*k) -- k is the extinction coefficient, the part
+    // that encodes absorption and is exactly what makes this formula differ
+    // from FrDielectric's. cosThetaI is assumed >= 0 (the caller-side
+    // convention: light is always incident from the dielectric side, e.g.
+    // air, onto the metal -- unlike FrDielectric, there's no "exiting the
+    // medium" case to resolve here, since light doesn't transmit through an
+    // opaque conductor to exit the far side).
+    inline float FrConductor(float cosThetaI, float eta, float k) {
+        float cosThetaI2 = cosThetaI * cosThetaI;
+        float sinThetaI2 = std::max(0.0f, 1.0f - cosThetaI2);
+        float eta2 = eta * eta;
+        float k2 = k * k;
+
+        float t0 = eta2 - k2 - sinThetaI2;
+        float a2plusb2 = std::sqrt(std::max(0.0f, t0 * t0 + 4.0f * eta2 * k2));
+        float t1 = a2plusb2 + cosThetaI2;
+        float a = std::sqrt(std::max(0.0f, 0.5f * (a2plusb2 + t0)));
+        float t2 = 2.0f * a * cosThetaI;
+        float Rperp2 = (t1 - t2) / (t1 + t2);
+
+        float t3 = cosThetaI2 * a2plusb2 + sinThetaI2 * sinThetaI2;
+        float t4 = t2 * sinThetaI2;
+        float Rparl2 = Rperp2 * (t3 - t4) / (t3 + t4);
+
+        return 0.5f * (Rparl2 + Rperp2);
+    }
 }
