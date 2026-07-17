@@ -16,9 +16,6 @@ namespace {
 constexpr int kImageWidth = 400;
 constexpr int kImageHeight = 200;
 
-// Deliberately no BSDF: this benchmark only exercises Shape::Intersect
-// and BVH traversal, never GetBSDF(). Attaching materials would just
-// be construction cost with no bearing on what's being measured.
 std::vector<std::shared_ptr<Shape>> GenerateRandomSpheres(int n, uint32_t seed) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> xDist(-10.0f, 10.0f);
@@ -35,8 +32,6 @@ std::vector<std::shared_ptr<Shape>> GenerateRandomSpheres(int n, uint32_t seed) 
     return shapes;
 }
 
-// Duplicated from test_bvh.cpp deliberately -- see the plan doc's note
-// on why this doesn't belong in a shared header.
 bool LinearIntersect(const std::vector<std::shared_ptr<Shape>>& shapes,
                       const Ray& ray, SurfaceInteraction* isect) {
     bool hit = false;
@@ -57,9 +52,6 @@ PerspectiveCamera MakeBenchmarkCamera() {
                               90.0f, kImageWidth, kImageHeight);
 }
 
-// One non-jittered ray per pixel -- fixed, reproducible ray set reused
-// identically across linear scan and both BVH split methods, so the
-// comparison is apples-to-apples.
 std::vector<Ray> GenerateFrameRays(const PerspectiveCamera& camera) {
     std::vector<Ray> rays;
     rays.reserve(kImageWidth * kImageHeight);
@@ -72,9 +64,6 @@ std::vector<Ray> GenerateFrameRays(const PerspectiveCamera& camera) {
     return rays;
 }
 
-// Casts every ray in `rays` against `intersectFn`, returns {elapsed ms,
-// hit count}. Each ray gets a fresh copy so tMax mutation from one ray
-// never leaks into the next (same convention as test_bvh.cpp).
 template <typename IntersectFn>
 std::pair<double, int> RunFramePass(const std::vector<Ray>& rays, IntersectFn&& intersectFn) {
     int hitCount = 0;
@@ -99,7 +88,7 @@ std::string NextResultsPath(const std::string& directory = "benchmark_results") 
     return path;
 }
 
-} // namespace
+}
 
 int main() {
     const std::vector<int> sphereCounts = {10, 50, 100, 500, 1000, 5000};
