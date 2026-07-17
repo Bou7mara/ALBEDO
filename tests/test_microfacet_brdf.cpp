@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <rt/materials/fresnel.h>
 #include "rt/materials/microfacet_brdf.h"
 
 using namespace rt;

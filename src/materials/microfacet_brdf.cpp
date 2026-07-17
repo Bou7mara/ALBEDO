@@ -72,9 +72,8 @@ namespace rt {
 
         float NdotV = AbsDot(wo, n);
         float NdotH = AbsDot(wh, n);
-        float VdotH = AbsDot(wo, wh);
 
-        *pdf = GgxVndfPdf(NdotV, NdotH, VdotH, alpha_);
+        *pdf = GgxVndfPdf(NdotV, NdotH, alpha_);
 
         return f(wo, *wi, n);
     }

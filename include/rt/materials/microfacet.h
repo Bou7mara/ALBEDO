@@ -4,6 +4,7 @@
 #include <numbers>
 #include "rt/core/vector3.h"
 #include "rt/core/onb.h"
+#include "rt/core/sampling.h"
 
 namespace rt {
 
@@ -35,14 +36,12 @@ namespace rt {
     inline Vector3f SampleGgxVndf(const Vector3f& wo, float alpha, float u1, float u2) {
         Vector3f wStretched = Normalize(Vector3f(alpha * wo.x, alpha * wo.y, wo.z));
 
-        ONB onb(wStretched);
-        Vector3f T1 = onb.u;
-        Vector3f T2 = onb.v;
+        Vector3f T1 = (wStretched.z > 0.9999f) ? Vector3f(1.0f, 0.0f, 0.0f) : Normalize(Vector3f(-wStretched.y, wStretched.x, 0.0f));
+        Vector3f T2 = Cross(wStretched, T1);
 
-        float r = std::sqrt(u1);
-        float phi = 2.0f * std::numbers::pi_v<float> * u2;
-        float p1 = r * std::cos(phi);
-        float p2 = r * std::sin(phi);
+        Point2f p = ConcentricSampleDisk(Point2f(u1, u2));
+        float p1 = p.x;
+        float p2 = p.y;
         float s = 0.5f * (1.0f + wStretched.z);
         p2 = (1.0f - s) * std::sqrt(std::max(0.0f, 1.0f - p1 * p1)) + s * p2;
 
@@ -52,7 +51,7 @@ namespace rt {
         return Normalize(Vector3f(alpha * nStretched.x, alpha * nStretched.y, std::max(0.0f, nStretched.z)));
     }
 
-    inline float GgxVndfPdf(float NdotV, float NdotH, float VdotH, float alpha) {
+    inline float GgxVndfPdf(float NdotV, float NdotH, float alpha) {
         if (NdotV <= 0.0f) {
             return 0.0f;
         }

@@ -106,8 +106,7 @@ TEST_CASE("GgxVndfPdf integrates to approximately 1 over the hemisphere", "[micr
 
         Vector3f h = SampleGgxVndf(wo, alpha, u1, u2);
         float NdotH = h.z;
-        float VdotH = Dot(wo, h);
-        float pdf = GgxVndfPdf(NdotV, NdotH, VdotH, alpha);
+        float pdf = GgxVndfPdf(NdotV, NdotH, alpha);
         REQUIRE(pdf > 0.0f);
         sum += 1.0 / pdf;
     }
