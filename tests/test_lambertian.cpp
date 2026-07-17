@@ -30,10 +30,6 @@ TEST_CASE("Lambertian Sample_f always stays on the same side as the normal", "[l
 }
 
 TEST_CASE("f * cosTheta / pdf collapses exactly to albedo (cosine-sampling cancellation)", "[lambertian][regression]") {
-    // This is the identity the whole cosine-weighted-sampling choice
-    // rests on. If this test ever fails, either Sample_f's pdf or its
-    // cosTheta convention has drifted out of sync with f() -- treat it
-    // as load-bearing, not incidental.
     Vector3f albedo(0.7f, 0.3f, 0.9f);
     Lambertian mat(albedo);
     Vector3f n(0.0f, 0.0f, 1.0f);
