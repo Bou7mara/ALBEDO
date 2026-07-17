@@ -24,10 +24,6 @@ TEST_CASE("ONB w axis matches the input normal exactly", "[onb]") {
 }
 
 TEST_CASE("ONB is well-defined for a normal pointing straight down -Z", "[onb][regression]") {
-    // The classic degenerate case for naive "cross with an arbitrary up
-    // vector" ONB constructions -- Duff et al.'s branchless method is
-    // used specifically to not have this failure mode. This test is the
-    // whole reason that choice was made, not a decorative afterthought.
     ONB onb(Vector3f(0.0f, 0.0f, -1.0f));
     REQUIRE(Length(onb.u) == Approx(1.0f).margin(1e-4));
     REQUIRE(Length(onb.v) == Approx(1.0f).margin(1e-4));
