@@ -12,7 +12,7 @@ TEST_CASE("Point2 construction and explicit Vector2 conversion", "[point2]") {
     REQUIRE(p.y == Approx(2.5f));
 
     Vector2f v(4.0f, 5.0f);
-    Point2f pFromV(v); // explicit constructor
+    Point2f pFromV(v);
     REQUIRE(pFromV.x == Approx(4.0f));
     REQUIRE(pFromV.y == Approx(5.0f));
 }
@@ -73,7 +73,6 @@ TEST_CASE("Point2 geometric free functions", "[point2]") {
     }
 }
 
-// Compile-time checks verifying that Point2 + Point2 cannot compile
 template <typename T, typename = void>
 struct HasAddition : std::false_type {};
 
