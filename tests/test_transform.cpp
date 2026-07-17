@@ -21,7 +21,7 @@ TEST_CASE("Translate affects points but not vectors", "[transform]") {
     Vector3f v(1.0f, 1.0f, 1.0f);
 
     REQUIRE(t(p) == Point3f(11.0f, 1.0f, 1.0f));
-    REQUIRE(t(v) == v);   // vectors are translation-invariant
+    REQUIRE(t(v) == v);
 }
 
 TEST_CASE("Scale affects points and vectors identically", "[transform]") {
@@ -34,16 +34,12 @@ TEST_CASE("Scale affects points and vectors identically", "[transform]") {
 }
 
 TEST_CASE("Non-uniform scale transforms normals differently than vectors", "[transform][regression]") {
-    // A normal perpendicular to a surface must remain perpendicular after a non-uniform scale,
-    // which requires the inverse-transpose rule.
-    Transform t = Transform::Scale(1.0f, 1.0f, 2.0f);   // stretch along Z
+    Transform t = Transform::Scale(1.0f, 1.0f, 2.0f);
 
-    // A normal pointing along +Z on a surface, transformed under a Z-stretch,
-    // should shrink (inverse-transpose), not grow like a vector would.
     Normal3f n(0.0f, 0.0f, 1.0f);
     Normal3f transformed = t(n);
 
-    REQUIRE(transformed.z == Approx(0.5f));   // 1/scale, not scale
+    REQUIRE(transformed.z == Approx(0.5f));
 }
 
 TEST_CASE("Inverse transform undoes the original", "[transform]") {
@@ -60,7 +56,7 @@ TEST_CASE("Inverse transform undoes the original", "[transform]") {
 TEST_CASE("Composition applies right-to-left, matching function composition", "[transform]") {
     Transform translate = Transform::Translate(Vector3f(1.0f, 0.0f, 0.0f));
     Transform scale = Transform::Scale(2.0f, 2.0f, 2.0f);
-    Transform composed = translate * scale;   // should scale first, then translate
+    Transform composed = translate * scale;
 
     Point3f p(1.0f, 1.0f, 1.0f);
     Point3f expected = translate(scale(p));
@@ -82,7 +78,7 @@ TEST_CASE("Ray transform moves origin as a point and direction as a vector", "[t
     Ray transformed = t(r);
 
     REQUIRE(transformed.o == Point3f(10.0f, 0.0f, 0.0f));
-    REQUIRE(transformed.d == Vector3f(0.0f, 0.0f, 1.0f));  // unaffected by translation
+    REQUIRE(transformed.d == Vector3f(0.0f, 0.0f, 1.0f));
 }
 
 TEST_CASE("RotateZ by 90 degrees maps +X to +Y", "[transform]") {
