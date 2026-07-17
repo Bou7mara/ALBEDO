@@ -8,7 +8,7 @@ using Catch::Approx;
 TEST_CASE("Dot product", "[vector3]") {
     Vector3f a(1.0f, 2.0f, 3.0f);
     Vector3f b(4.0f, 5.0f, 6.0f);
-    REQUIRE(Dot(a, b) == Approx(32.0f));  // 1*4 + 2*5 + 3*6
+    REQUIRE(Dot(a, b) == Approx(32.0f));
 }
 
 TEST_CASE("Dot product of orthogonal unit vectors is zero", "[vector3]") {
@@ -21,7 +21,6 @@ TEST_CASE("Cross product", "[vector3]") {
     Vector3f z = Cross(x, y);
     REQUIRE(z == Vector3f(0.0f, 0.0f, 1.0f));
 
-    // Anticommutativity: a x b == -(b x a)
     REQUIRE(Cross(y, x) == -z);
 }
 
