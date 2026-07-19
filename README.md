@@ -23,11 +23,9 @@ A physically based ray tracer built from the ground up in modern C++23.
 
 ## Why a new repository?
 
-This project represents a clean architectural break from my previous ray tracer, **PhotonCast**. 
+Give infinitely many monkeys a keyboard, and eventually one of them will write a working ray tracer.
 
-While PhotonCast began as an extension of Peter Shirley's *Ray Tracing in One Weekend* trilogy, its inherited educational architecture ultimately could not scale to accommodate the scope, modularity, and performance optimizations required for a production-oriented renderer. 
-
-Rather than fighting the structural constraints of the old codebase, ALBEDO was designed from scratch. It carries forward the mathematical foundation and rendering concepts gained from the original project, but establishes a highly decoupled, modern C++ foundation built for extensibility. 
+That was essentially the case with PhotonCast (ALBEDO's predecessor), which began as an extension of Shirley's *Ray Tracing in one Weekend trilogy*, until its architecture couldn't scale cleanly to accomodate the modularity, and performanec optimizations dictated by the scope of this project. So we're back to square one, with ALBEDO!
 
 Moving forward, ALBEDO will maintain a strict standard for clean architecture, professional code quality, and structured commit history. The original PhotonCast repository has been made private and now serves purely as a sandbox for rapid prototyping and testing messy ideas before they are formalized here.
 
