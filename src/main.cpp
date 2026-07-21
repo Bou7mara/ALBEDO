@@ -14,47 +14,98 @@
 
 using namespace rt;
 
-Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
-    if (depth <= 0) return Vector3f(0.0f, 0.0f, 0.0f);
+inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
+    float f = nf * fPdf;
+    float g = ng * gPdf;
+    return (f * f) / (f * f + g * g);
+}
 
-    SurfaceInteraction isect;
-    if (scene.Intersect(r, &isect)) {
-        const BSDF* bsdf = isect.shape->GetBSDF();
-        if (bsdf) {
-            Vector3f emitted = bsdf->Le(isect.wo, Vector3f(isect.n));
+Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
+    Vector3f L(0.0f, 0.0f, 0.0f);
+    Vector3f throughput(1.0f, 1.0f, 1.0f);
+    bool specularBounce = true;
+    float prevBsdfPdf = 0.0f;
 
-            Vector3f wi;
-            float pdf;
-            Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n),
-                                         rng.Uniform2D(), &wi, &pdf);
-            if (pdf <= 0.0f) return emitted;
-
-            float cosTheta = AbsDot(wi, isect.n);
-
-            constexpr float kEpsilon = 1e-4f;
-
-            Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
-            Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
-            Ray scattered(offsetOrigin, wi);
-
-            Vector3f Li = RayColor(scattered, scene, rng, depth - 1);
-            return emitted + f * cosTheta * Li / pdf;
+    for (int depth = 0; depth < maxDepth; ++depth) {
+        SurfaceInteraction isect;
+        if (!scene.Intersect(r, &isect)) {
+            Vector3f unitDir = Normalize(r.d);
+            float t = 0.5f * (unitDir.y + 1.0f);
+            Vector3f bg = (1.0f - t) * Vector3f(1.0f, 1.0f, 1.0f) + t * Vector3f(0.5f, 0.7f, 1.0f);
+            L += throughput * bg;
+            break;
         }
-        Vector3f n = Vector3f(isect.n);
-        return Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f),
-                         0.5f * (n.z + 1.0f));
-    }
 
-    Vector3f unitDir = Normalize(r.d);
-    float t = 0.5f * (unitDir.y + 1.0f);
-    return (1.0f - t) * Vector3f(1.0f, 1.0f, 1.0f)
-         + t * Vector3f(0.5f, 0.7f, 1.0f);
+        const BSDF* bsdf = isect.shape->GetBSDF();
+        if (!bsdf) {
+            Vector3f n = Vector3f(isect.n);
+            L += throughput * Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f), 0.5f * (n.z + 1.0f));
+            break;
+        }
+
+        Vector3f emitted = bsdf->Le(isect.wo, Vector3f(isect.n));
+        if (emitted.x > 0.0f || emitted.y > 0.0f || emitted.z > 0.0f) {
+            if (specularBounce || scene.Lights().empty()) {
+                L += throughput * emitted;
+            } else {
+                float lightPdf = isect.shape->Pdf(r.o, r.d) / scene.Lights().size();
+                float weight = PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
+                L += throughput * emitted * weight;
+            }
+        }
+
+        if (!scene.Lights().empty()) {
+            int numLights = scene.Lights().size();
+            int lightIdx = std::min(static_cast<int>(rng.Uniform1D() * numLights), numLights - 1);
+            const auto& light = scene.Lights()[lightIdx];
+            
+            Light::LiSample lightSample = light->Sample_Li(isect.p, rng.Uniform2D());
+            if (lightSample.pdf > 0.0f) {
+                constexpr float kEpsilon = 1e-4f;
+                Vector3f offsetNormal = (Dot(lightSample.wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
+                Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
+                
+                Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
+                if (!scene.IntersectP(shadowRay)) {
+                    Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n));
+                    if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
+                        float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, Vector3f(isect.n));
+                        if (bsdfPdf > 0.0f) {
+                            float lPdf = lightSample.pdf / numLights;
+                            float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
+                            float cosTheta = AbsDot(lightSample.wi, isect.n);
+                            L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                        }
+                    }
+                }
+            }
+        }
+
+        Vector3f wi;
+        float pdf;
+        Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf);
+        
+        if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+
+        float cosTheta = AbsDot(wi, isect.n);
+        throughput = throughput * f * cosTheta / pdf;
+        
+        prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n));
+        specularBounce = (prevBsdfPdf == 0.0f);
+
+        constexpr float kEpsilon = 1e-4f;
+        Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
+        Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
+        
+        r = Ray(offsetOrigin, wi);
+    }
+    return L;
 }
 
 int main() {
     const int imageWidth = 800;
     const int imageHeight = 400;
-    const int samplesPerPixel = 500;
+    const int samplesPerPixel = 100; // Lowered to 100 to show off MIS!
     const int maxDepth = 50;
 
     std::cout << "Rendering a " << imageWidth << "x" << imageHeight
@@ -72,6 +123,7 @@ int main() {
     auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
     auto metalMaterial = std::make_shared<Metal>(Vector3f(0.8f, 0.8f, 0.9f));
     auto lightMaterial = std::make_shared<Emissive>(Vector3f(8.0f, 7.2f, 5.6f));
+    auto lightMaterial2 = std::make_shared<Emissive>(Vector3f(2.0f, 5.0f, 10.0f));
 
     Scene scene;
     scene.Add(std::make_shared<Sphere>(
@@ -85,6 +137,9 @@ int main() {
 
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(-0.6f, 0.8f, -1.2f)), 0.3f, lightMaterial));
+
+    scene.Add(std::make_shared<Sphere>(
+        Transform::Translate(Vector3f(1.5f, 1.2f, -2.0f)), 0.2f, lightMaterial2));
 
     scene.Build();
 

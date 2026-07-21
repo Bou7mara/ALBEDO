@@ -15,6 +15,9 @@ namespace rt {
         bool Intersect(const Ray& ray, SurfaceInteraction* isect) const override;
         Bounds3f WorldBound() const override;
 
+        ShapeSample Sample(const Point3f& ref, const Point2f& u) const override;
+        float Pdf(const Point3f& ref, const Vector3f& wi) const override;
+
     private:
         Transform objectToWorld_;
         Transform worldToObject_;

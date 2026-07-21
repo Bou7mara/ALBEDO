@@ -77,4 +77,16 @@ namespace rt {
 
         return f(wo, *wi, n);
     }
+
+    float Microfacet::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
+        if (Dot(wo, n) * Dot(wi, n) <= 0.0f) {
+            return 0.0f;
+        }
+        Vector3f wh = wo + wi;
+        if (LengthSquared(wh) == 0.0f) return 0.0f;
+        wh = Normalize(wh);
+        float NdotV = AbsDot(wo, n);
+        float NdotH = AbsDot(wh, n);
+        return GgxVndfPdf(NdotV, NdotH, alpha_);
+    }
 }

@@ -34,6 +34,9 @@ add_executable(rt_tests
     test_microfacet.cpp
     test_microfacet_brdf.cpp
     test_emissive.cpp
+    test_bsdf_pdf.cpp
+    test_sphere_sampling.cpp
+    test_mis_weights.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

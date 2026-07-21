@@ -18,11 +18,20 @@ namespace rt {
         const Shape* shape = nullptr;
     };
 
+    struct ShapeSample {
+        Point3f p;
+        Normal3f n;
+        float pdf;
+    };
+
     class Shape {
     public:
         explicit Shape(std::shared_ptr<BSDF> bsdf = nullptr)
             : bsdf_(std::move(bsdf)) {}
         virtual ~Shape() = default;
+
+        virtual ShapeSample Sample(const Point3f& ref, const Point2f& u) const = 0;
+        virtual float Pdf(const Point3f& ref, const Vector3f& wi) const = 0;
 
         virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
         virtual Bounds3f WorldBound() const = 0;

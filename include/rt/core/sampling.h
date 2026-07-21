@@ -32,4 +32,16 @@ namespace rt {
     inline float CosineHemispherePdf(float cosTheta) {
         return cosTheta * std::numbers::inv_pi_v<float>;
     }
+
+    inline Vector3f UniformSampleSphere(const Point2f& u) {
+        float z = 1.0f - 2.0f * u.x;
+        float r = std::sqrt(std::max(0.0f, 1.0f - z * z));
+        float phi = 2.0f * std::numbers::pi_v<float> * u.y;
+        return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
+    }
+
+    inline float UniformSpherePdf() {
+        return 1.0f / (4.0f * std::numbers::pi_v<float>);
+    }
 }
+

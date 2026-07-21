@@ -1,5 +1,7 @@
 #include "rt/shapes/sphere.h"
 #include "rt/core/quadratic.h"
+#include "rt/core/onb.h"
+#include "rt/core/sampling.h"
 
 namespace rt {
 
@@ -46,6 +48,81 @@ Bounds3f Sphere::WorldBound() const {
         worldBounds = Union(worldBounds, objectToWorld_(p));
     }
     return worldBounds;
+}
+
+ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
+    Point3f center = objectToWorld_(Point3f(0, 0, 0));
+    float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
+    Vector3f wc = center - ref;
+    float d2 = LengthSquared(wc);
+    float r2 = worldRadius * worldRadius;
+
+    ShapeSample sample;
+    
+    if (d2 <= r2) {
+        Vector3f objDir = UniformSampleSphere(u);
+        Point3f pObj(objDir.x * radius_, objDir.y * radius_, objDir.z * radius_);
+        Normal3f nObj(objDir.x, objDir.y, objDir.z);
+        sample.p = objectToWorld_(pObj);
+        sample.n = Normalize(objectToWorld_(nObj));
+        
+        Vector3f wi = sample.p - ref;
+        float distSq = LengthSquared(wi);
+        if (distSq == 0.0f) { sample.pdf = 0.0f; return sample; }
+        wi = wi / std::sqrt(distSq);
+        float cosTheta = AbsDot(sample.n, -wi);
+        float areaPdf = 1.0f / (4.0f * std::numbers::pi_v<float> * r2);
+        sample.pdf = areaPdf * distSq / cosTheta;
+        return sample;
+    }
+
+    float sinThetaMax2 = r2 / d2;
+    float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
+
+    float cosTheta = (1.0f - u.x) + u.x * cosThetaMax;
+    float sinTheta = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
+    float phi = u.y * 2.0f * std::numbers::pi_v<float>;
+
+    float d = std::sqrt(d2);
+    float ds = d * cosTheta - std::sqrt(std::max(0.0f, r2 - d * d * sinTheta * sinTheta));
+    float cosAlpha = (d * d + r2 - ds * ds) / (2.0f * d * worldRadius);
+    float sinAlpha = std::sqrt(std::max(0.0f, 1.0f - cosAlpha * cosAlpha));
+
+    ONB onbCenter(Normalize(-wc));
+    Vector3f nWorld = onbCenter.ToWorld(Vector3f(sinAlpha * std::cos(phi), sinAlpha * std::sin(phi), cosAlpha));
+    
+    sample.n = Normal3f(nWorld.x, nWorld.y, nWorld.z);
+    sample.p = center + worldRadius * nWorld;
+    sample.pdf = 1.0f / (2.0f * std::numbers::pi_v<float> * (1.0f - cosThetaMax));
+    
+    return sample;
+}
+
+float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
+    Point3f center = objectToWorld_(Point3f(0, 0, 0));
+    float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
+    Vector3f wc = center - ref;
+    float d2 = LengthSquared(wc);
+    float r2 = worldRadius * worldRadius;
+
+    if (d2 <= r2) {
+        SurfaceInteraction isect;
+        if (!Intersect(Ray(ref, wi), &isect)) return 0.0f;
+        float areaPdf = 1.0f / (4.0f * std::numbers::pi_v<float> * r2);
+        float distSq = isect.t * isect.t;
+        float cosTheta = AbsDot(isect.n, -wi);
+        return areaPdf * distSq / cosTheta;
+    }
+
+    float sinThetaMax2 = r2 / d2;
+    float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
+    
+    float cosTheta = Dot(Normalize(wc), wi);
+    if (cosTheta < cosThetaMax) {
+        return 0.0f;
+    }
+
+    return 1.0f / (2.0f * std::numbers::pi_v<float> * (1.0f - cosThetaMax));
 }
 
 }

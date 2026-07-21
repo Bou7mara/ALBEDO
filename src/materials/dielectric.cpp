@@ -42,4 +42,8 @@ Vector3f Dielectric::Sample_f(const Vector3f& wo, const Vector3f& n,
         return Vector3f(1.0f - R, 1.0f - R, 1.0f - R) / (eta * eta) / cosThetaWi;
     }
 }
+
+float Dielectric::Pdf(const Vector3f&, const Vector3f&, const Vector3f&) const {
+    return 0.0f;
+}
 }

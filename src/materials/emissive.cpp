@@ -15,4 +15,8 @@ namespace rt {
     Vector3f Emissive::Le(const Vector3f& wo, const Vector3f& n) const {
         return Dot(wo, n) > 0.0f ? radiance_ : Vector3f(0.0f, 0.0f, 0.0f);
     }
+
+    float Emissive::Pdf(const Vector3f&, const Vector3f&, const Vector3f&) const {
+        return 0.0f;
+    }
 }

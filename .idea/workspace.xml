@@ -61,13 +61,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/include/rt/materials/emissive.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/materials/emissive.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/benchmark_bvh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/benchmark_bvh.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/core/sampling.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/core/sampling.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/rt/materials/bsdf.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/bsdf.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/dielectric.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/dielectric.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/emissive.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/emissive.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/lambertian.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/lambertian.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/metal.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/metal.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/microfacet_brdf.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/microfacet_brdf.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/scene/scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/scene/scene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/shape.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/sphere.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/sphere.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/dielectric.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/dielectric.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/emissive.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/emissive.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/metal.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/metal.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/microfacet_brdf.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/microfacet_brdf.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shapes/sphere.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/sphere.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/CMakeLists.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -132,12 +144,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="CMake Application.raytracer">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Catch.rt_tests">
     <configuration name="rt_tests" type="CMakeCatchTestRunConfigurationType" factoryName="Catch Test" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="rt_tests" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="rt_tests" TEST_MODE="SUITE_TEST">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -294,6 +301,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="benchmark_bvh" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="benchmark_bvh" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="benchmark_bvh">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -374,7 +386,8 @@
       <updated>1783863011977</updated>
       <workItem from="1783863014206" duration="21928000" />
       <workItem from="1784002044034" duration="2160000" />
-      <workItem from="1784389736011" duration="15180000" />
+      <workItem from="1784389736011" duration="17212000" />
+      <workItem from="1784640504115" duration="2427000" />
     </task>
     <servers />
   </component>

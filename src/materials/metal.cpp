@@ -20,4 +20,7 @@ namespace rt {
         return albedo_ / cosTheta;
     }
 
+    float Metal::Pdf(const Vector3f&, const Vector3f&, const Vector3f&) const {
+        return 0.0f;
+    }
 }
