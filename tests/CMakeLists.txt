@@ -33,6 +33,7 @@ add_executable(rt_tests
     test_fresnel.cpp
     test_microfacet.cpp
     test_microfacet_brdf.cpp
+    test_emissive.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

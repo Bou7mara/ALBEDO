@@ -14,6 +14,7 @@ add_library(rt_core STATIC
     src/accel/bvh.cpp
     src/materials/dielectric.cpp
     src/materials/microfacet_brdf.cpp
+        src/materials/emissive.cpp
 )
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(rt_core PUBLIC cxx_std_23)
@@ -31,7 +32,8 @@ add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp
         include/rt/materials/fresnel.h
         include/rt/materials/dielectric.h
         include/rt/materials/microfacet.h
-        include/rt/materials/microfacet_brdf.h)
+        include/rt/materials/microfacet_brdf.h
+        include/rt/materials/emissive.h)
 target_link_libraries(benchmark_bvh PRIVATE rt_core)
 
 if(MSVC)

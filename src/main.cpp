@@ -4,6 +4,7 @@
 #include "rt/shapes/sphere.h"
 #include "rt/materials/lambertian.h"
 #include "rt/materials/metal.h"
+#include "rt/materials/emissive.h"
 #include "rt/scene/scene.h"
 #include "rt/io/ppm_writer.h"
 
@@ -20,11 +21,13 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
     if (scene.Intersect(r, &isect)) {
         const BSDF* bsdf = isect.shape->GetBSDF();
         if (bsdf) {
+            Vector3f emitted = bsdf->Le(isect.wo, Vector3f(isect.n));
+
             Vector3f wi;
             float pdf;
             Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n),
                                          rng.Uniform2D(), &wi, &pdf);
-            if (pdf <= 0.0f) return Vector3f(0.0f, 0.0f, 0.0f);
+            if (pdf <= 0.0f) return emitted;
 
             float cosTheta = AbsDot(wi, isect.n);
 
@@ -35,7 +38,7 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
             Ray scattered(offsetOrigin, wi);
 
             Vector3f Li = RayColor(scattered, scene, rng, depth - 1);
-            return f * cosTheta * Li / pdf;
+            return emitted + f * cosTheta * Li / pdf;
         }
         Vector3f n = Vector3f(isect.n);
         return Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f),
@@ -49,9 +52,9 @@ Vector3f RayColor(const Ray& r, const Scene& scene, RNG& rng, int depth) {
 }
 
 int main() {
-    const int imageWidth = 400;
-    const int imageHeight = 200;
-    const int samplesPerPixel = 100;
+    const int imageWidth = 800;
+    const int imageHeight = 400;
+    const int samplesPerPixel = 500;
     const int maxDepth = 50;
 
     std::cout << "Rendering a " << imageWidth << "x" << imageHeight
@@ -68,6 +71,7 @@ int main() {
     auto sphereMaterial = std::make_shared<Lambertian>(Vector3f(0.7f, 0.7f, 0.7f));
     auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
     auto metalMaterial = std::make_shared<Metal>(Vector3f(0.8f, 0.8f, 0.9f));
+    auto lightMaterial = std::make_shared<Emissive>(Vector3f(8.0f, 7.2f, 5.6f));
 
     Scene scene;
     scene.Add(std::make_shared<Sphere>(
@@ -78,6 +82,9 @@ int main() {
 
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, -100.5f, -1.0f)), 100.0f, groundMaterial));
+
+    scene.Add(std::make_shared<Sphere>(
+        Transform::Translate(Vector3f(-0.6f, 0.8f, -1.2f)), 0.3f, lightMaterial));
 
     scene.Build();
 

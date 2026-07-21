@@ -91,7 +91,7 @@ std::string NextResultsPath(const std::string& directory = "benchmark_results") 
 }
 
 int main() {
-    const std::vector<int> sphereCounts = {10, 50, 100, 500, 1000, 5000};
+    const std::vector<int> sphereCounts = {1, 10, 100, 1000, 10000};
     PerspectiveCamera camera = MakeBenchmarkCamera();
     std::vector<Ray> frameRays = GenerateFrameRays(camera);
 
