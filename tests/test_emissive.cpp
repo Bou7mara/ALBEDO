@@ -28,7 +28,7 @@ TEST_CASE("Emissive Le returns the stored radiance on the normal's side", "[emis
     Vector3f radiance(3.0f, 2.0f, 1.0f);
     Emissive light(radiance);
     Vector3f n(0.0f, 1.0f, 0.0f);
-    Vector3f wo(0.0f, 1.0f, 0.0f); // same side as n
+    Vector3f wo(0.0f, 1.0f, 0.0f);
 
     Vector3f le = light.Le(wo, n);
     REQUIRE(le.x == Approx(radiance.x));
@@ -39,7 +39,7 @@ TEST_CASE("Emissive Le returns the stored radiance on the normal's side", "[emis
 TEST_CASE("Emissive Le is black on the back side of the surface", "[emissive]") {
     Emissive light(Vector3f(3.0f, 2.0f, 1.0f));
     Vector3f n(0.0f, 1.0f, 0.0f);
-    Vector3f wo(0.0f, -1.0f, 0.0f); // opposite side of n
+    Vector3f wo(0.0f, -1.0f, 0.0f);
 
     Vector3f le = light.Le(wo, n);
     REQUIRE(le == Vector3f(0.0f, 0.0f, 0.0f));
@@ -48,7 +48,7 @@ TEST_CASE("Emissive Le is black on the back side of the surface", "[emissive]") 
 TEST_CASE("Emissive Le is black exactly at grazing incidence", "[emissive][regression]") {
     Emissive light(Vector3f(3.0f, 2.0f, 1.0f));
     Vector3f n(0.0f, 1.0f, 0.0f);
-    Vector3f wo(1.0f, 0.0f, 0.0f); // perpendicular to n, Dot == 0
+    Vector3f wo(1.0f, 0.0f, 0.0f);
 
     Vector3f le = light.Le(wo, n);
     REQUIRE(le == Vector3f(0.0f, 0.0f, 0.0f));

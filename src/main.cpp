@@ -6,11 +6,16 @@
 #include "rt/materials/metal.h"
 #include "rt/materials/emissive.h"
 #include "rt/scene/scene.h"
+#include "rt/scene/showcase.h"
 #include "rt/io/ppm_writer.h"
+#include "rt/core/progress.h"
 
 #include <fstream>
 #include <memory>
 #include <iostream>
+#include <thread>
+#include <vector>
+#include <atomic>
 
 using namespace rt;
 
@@ -31,7 +36,7 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         if (!scene.Intersect(r, &isect)) {
             Vector3f unitDir = Normalize(r.d);
             float t = 0.5f * (unitDir.y + 1.0f);
-            Vector3f bg = (1.0f - t) * Vector3f(1.0f, 1.0f, 1.0f) + t * Vector3f(0.5f, 0.7f, 1.0f);
+            Vector3f bg = 0.15f * ((1.0f - t) * Vector3f(0.8f, 0.8f, 0.9f) + t * Vector3f(0.4f, 0.5f, 0.7f));
             L += throughput * bg;
             break;
         }
@@ -48,33 +53,36 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
             if (specularBounce || scene.Lights().empty()) {
                 L += throughput * emitted;
             } else {
-                float lightPdf = isect.shape->Pdf(r.o, r.d) / scene.Lights().size();
+                float pmf = scene.LightPmf(isect.shape);
+                float lightPdf = isect.shape->Pdf(r.o, r.d) * pmf;
                 float weight = PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
                 L += throughput * emitted * weight;
             }
         }
 
         if (!scene.Lights().empty()) {
-            int numLights = scene.Lights().size();
-            int lightIdx = std::min(static_cast<int>(rng.Uniform1D() * numLights), numLights - 1);
-            const auto& light = scene.Lights()[lightIdx];
+            int lightIdx = -1;
+            float pmf = 0.0f;
+            const Light* light = scene.SampleLight(rng.Uniform1D(), &lightIdx, &pmf);
             
-            Light::LiSample lightSample = light->Sample_Li(isect.p, rng.Uniform2D());
-            if (lightSample.pdf > 0.0f) {
-                constexpr float kEpsilon = 1e-4f;
-                Vector3f offsetNormal = (Dot(lightSample.wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
-                Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
-                
-                Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
-                if (!scene.IntersectP(shadowRay)) {
-                    Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n));
-                    if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
-                        float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, Vector3f(isect.n));
-                        if (bsdfPdf > 0.0f) {
-                            float lPdf = lightSample.pdf / numLights;
-                            float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
-                            float cosTheta = AbsDot(lightSample.wi, isect.n);
-                            L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+            if (light && pmf > 0.0f) {
+                Light::LiSample lightSample = light->Sample_Li(isect.p, rng.Uniform2D());
+                if (lightSample.pdf > 0.0f) {
+                    constexpr float kEpsilon = 1e-4f;
+                    Vector3f offsetNormal = (Dot(lightSample.wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
+                    Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
+                    
+                    Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
+                    if (!scene.IntersectP(shadowRay)) {
+                        Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n));
+                        if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
+                            float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, Vector3f(isect.n));
+                            if (bsdfPdf > 0.0f) {
+                                float lPdf = lightSample.pdf * pmf;
+                                float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
+                                float cosTheta = AbsDot(lightSample.wi, isect.n);
+                                L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                            }
                         }
                     }
                 }
@@ -103,45 +111,47 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
 }
 
 int main() {
-    const int imageWidth = 800;
-    const int imageHeight = 400;
-    const int samplesPerPixel = 100; // Lowered to 100 to show off MIS!
-    const int maxDepth = 50;
+    ShowcaseSetup setup = CreateShowcaseScene(1600, 1000, 500);
 
-    std::cout << "Rendering a " << imageWidth << "x" << imageHeight
-              << " image at " << samplesPerPixel << " spp...\n";
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 4;
 
-    PerspectiveCamera camera(
-        Point3f(0.0f, 0.0f, 0.0f),
-        Point3f(0.0f, 0.0f, -1.0f),
-        Vector3f(0.0f, 1.0f, 0.0f),
-        90.0f,
-        imageWidth, imageHeight
-    );
+    std::cout << "Rendering Showcase Scene: " << setup.imageWidth << "x" << setup.imageHeight
+              << " image at " << setup.samplesPerPixel << " spp using " << numThreads << " threads...\n";
 
-    auto sphereMaterial = std::make_shared<Lambertian>(Vector3f(0.7f, 0.7f, 0.7f));
-    auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.2f, 0.15f, 0.1f));
-    auto metalMaterial = std::make_shared<Metal>(Vector3f(0.8f, 0.8f, 0.9f));
-    auto lightMaterial = std::make_shared<Emissive>(Vector3f(8.0f, 7.2f, 5.6f));
-    auto lightMaterial2 = std::make_shared<Emissive>(Vector3f(2.0f, 5.0f, 10.0f));
+    std::vector<Vector3f> framebuffer(setup.imageWidth * setup.imageHeight);
+    std::atomic<int> nextRow{0};
+    ProgressReporter progress(setup.imageHeight);
 
-    Scene scene;
-    scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0.0f, 0.0f, -1.0f)), 0.5f, sphereMaterial));
+    std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
-    scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(1.1f, 0.0f, -1.0f)), 0.5f, metalMaterial));
+    for (unsigned int t = 0; t < numThreads; ++t) {
+        threads.emplace_back([&, t]() {
+            RNG rng(1337 + t * 997);
+            int y = 0;
+            while ((y = nextRow.fetch_add(1, std::memory_order_relaxed)) < setup.imageHeight) {
+                for (int x = 0; x < setup.imageWidth; ++x) {
+                    Vector3f colorSum(0.0f, 0.0f, 0.0f);
+                    for (int s = 0; s < setup.samplesPerPixel; ++s) {
+                        Point2f jitter = rng.Uniform2D();
+                        CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
+                        Ray ray = setup.camera.GenerateRay(sample);
+                        colorSum += RayColor(ray, setup.scene, rng, setup.maxDepth);
+                    }
+                    Vector3f avgColor = colorSum / static_cast<float>(setup.samplesPerPixel);
+                    framebuffer[y * setup.imageWidth + x] = avgColor;
+                }
+                progress.Advance();
+            }
+        });
+    }
 
-    scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0.0f, -100.5f, -1.0f)), 100.0f, groundMaterial));
+    for (auto& thread : threads) {
+        thread.join();
+    }
 
-    scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(-0.6f, 0.8f, -1.2f)), 0.3f, lightMaterial));
-
-    scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(1.5f, 1.2f, -2.0f)), 0.2f, lightMaterial2));
-
-    scene.Build();
+    progress.Finish();
 
     std::string outputPath = NextImagePath();
     std::ofstream out(outputPath);
@@ -150,20 +160,11 @@ int main() {
         return 1;
     }
 
-    WritePPMHeader(out, imageWidth, imageHeight);
-    RNG rng;
-
-    for (int y = 0; y < imageHeight; ++y) {
-        for (int x = 0; x < imageWidth; ++x) {
-            Vector3f colorSum(0.0f, 0.0f, 0.0f);
-            for (int s = 0; s < samplesPerPixel; ++s) {
-                Point2f jitter = rng.Uniform2D();
-                CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
-                Ray ray = camera.GenerateRay(sample);
-                colorSum += RayColor(ray, scene, rng, maxDepth);
-            }
-            Vector3f avgColor = colorSum / static_cast<float>(samplesPerPixel);
-            WritePixel(out, avgColor.x, avgColor.y, avgColor.z);
+    WritePPMHeader(out, setup.imageWidth, setup.imageHeight);
+    for (int y = 0; y < setup.imageHeight; ++y) {
+        for (int x = 0; x < setup.imageWidth; ++x) {
+            const Vector3f& color = framebuffer[y * setup.imageWidth + x];
+            WritePixel(out, color.x, color.y, color.z);
         }
     }
 

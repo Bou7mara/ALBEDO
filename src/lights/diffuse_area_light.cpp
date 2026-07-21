@@ -20,7 +20,6 @@ namespace rt {
         sample.wi = wi / sample.dist;
         sample.pdf = shapeSample.pdf;
         
-        // Evaluate emitted radiance
         const BSDF* bsdf = shape_->GetBSDF();
         if (bsdf) {
             sample.Li = bsdf->Le(-sample.wi, Vector3f(shapeSample.n));
@@ -33,5 +32,13 @@ namespace rt {
 
     float DiffuseAreaLight::Pdf_Li(const Point3f& ref, const Vector3f& wi) const {
         return shape_->Pdf(ref, wi);
+    }
+
+    float DiffuseAreaLight::Power() const {
+        const BSDF* bsdf = shape_->GetBSDF();
+        if (!bsdf) return 0.0f;
+        Vector3f le = bsdf->Le(Vector3f(0, 0, 1), Vector3f(0, 0, 1));
+        float lum = 0.2126f * le.x + 0.7152f * le.y + 0.0722f * le.z;
+        return lum * shape_->Area();
     }
 }

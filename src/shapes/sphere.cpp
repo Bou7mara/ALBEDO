@@ -125,4 +125,9 @@ float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
     return 1.0f / (2.0f * std::numbers::pi_v<float> * (1.0f - cosThetaMax));
 }
 
+float Sphere::Area() const {
+    float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
+    return 4.0f * std::numbers::pi_v<float> * worldRadius * worldRadius;
+}
+
 }

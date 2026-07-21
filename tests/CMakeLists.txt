@@ -37,6 +37,9 @@ add_executable(rt_tests
     test_bsdf_pdf.cpp
     test_sphere_sampling.cpp
     test_mis_weights.cpp
+    test_power_sampling.cpp
+    test_progress.cpp
+    test_multithreading.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

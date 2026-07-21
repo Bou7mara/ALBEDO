@@ -17,5 +17,6 @@ namespace rt {
 
         virtual LiSample Sample_Li(const Point3f& ref, const Point2f& u) const = 0;
         virtual float Pdf_Li(const Point3f& ref, const Vector3f& wi) const = 0;
+        virtual float Power() const = 0;
     };
 }

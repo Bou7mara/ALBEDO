@@ -12,17 +12,6 @@ TEST_CASE("Sphere Cone Sampling integrates to 1", "[sphere][sampling]") {
     Point3f ref(0, 0, 0);
 
     RNG rng;
-    int samples = 100000;
-    float sumWeights = 0.0f;
-    
-    // Evaluate MC integration of integral of pdf over the sphere's solid angle
-    // Since Sample() returns points on the sphere, we must check that the MC estimate
-    // of 1 computes to 1 (meaning the pdf matches the density of samples).
-    // Actually, Monte Carlo estimate of integral of f(x) is sum(f(x_i)/pdf(x_i)) / N.
-    // If f(x) = 1, we compute sum(1) / N = 1.
-    // To verify the pdf itself, we need to check that integrating 1 over the subtended cone solid angle
-    // is equal to 2*pi*(1 - cosThetaMax).
-    // Let's directly check if the Sample pdf matches the expected solid angle pdf.
     
     float d2 = 25.0f;
     float r2 = 1.0f;

@@ -10,6 +10,9 @@ namespace rt {
 
         LiSample Sample_Li(const Point3f& ref, const Point2f& u) const override;
         float Pdf_Li(const Point3f& ref, const Vector3f& wi) const override;
+        float Power() const override;
+
+        const Shape* GetShape() const { return shape_.get(); }
 
     private:
         std::shared_ptr<Shape> shape_;

@@ -17,6 +17,7 @@ namespace rt {
 
         ShapeSample Sample(const Point3f& ref, const Point2f& u) const override;
         float Pdf(const Point3f& ref, const Vector3f& wi) const override;
+        float Area() const override;
 
     private:
         Transform objectToWorld_;

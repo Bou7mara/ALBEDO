@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-// Assuming PowerHeuristic is available. I will redefine it here for the test just in case.
 inline float PowerHeuristicTest(int nf, float fPdf, int ng, float gPdf) {
     float f = nf * fPdf;
     float g = ng * gPdf;
