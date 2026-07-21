@@ -4,61 +4,87 @@
 #include <cstdio>
 #include <string>
 
+// Ray Tracer Core Namespace
 namespace rt {
+    // =================================================
+    // THREAD-SAFE CONSOLE PROGRESS REPORTER (LOCK-FREE)
+    // =================================================
 
-class ProgressReporter {
-public:
-    explicit ProgressReporter(int totalUnits, double reportIntervalSeconds = 0.2)
-        : total_(totalUnits), interval_(reportIntervalSeconds),
-          start_(std::chrono::steady_clock::now()), lastReport_(start_) {}
+    // Tracks and prints rendering progress bar and ETA estimates to stderr.
+    // Designed for lock-free multi-threaded rendering (hundreds of worker threads calling Advance simultaneously!).
+    class ProgressReporter {
+    public:
+        // ------------
+        // CONSTRUCTORS
+        // ------------
 
-    void Advance(int n = 1) {
-        int done = completed_.fetch_add(n, std::memory_order_relaxed) + n;
-        MaybeReport(done);
-    }
+        // Constructs reporter for totalUnits (e.g. image height in rows) updating at reportIntervalSeconds interval
+        explicit ProgressReporter(int totalUnits, double reportIntervalSeconds = 0.2)
+            : total_(totalUnits), interval_(reportIntervalSeconds),
+              start_(std::chrono::steady_clock::now()), lastReport_(start_) {}
 
-    void Finish() {
-        Report(completed_.load(std::memory_order_relaxed), true);
-        std::fprintf(stderr, "\n");
-    }
+        // -----------------
+        // CONTROL INTERFACE
+        // -----------------
 
-private:
-    void MaybeReport(int done) {
-        auto now = std::chrono::steady_clock::now();
-        auto lastMs = lastReportMs_.load(std::memory_order_relaxed);
-        auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-            now - start_).count();
-        if (nowMs - lastMs < static_cast<long long>(interval_ * 1000) && done < total_) return;
-        if (!lastReportMs_.compare_exchange_strong(lastMs, nowMs, std::memory_order_relaxed)) return;
-        Report(done, false);
-    }
+        // Advances progress by n completed units (default n = 1 row/tile completed).
+        // Uses atomic fetch_add with relaxed memory order for minimal CPU overhead during rendering!
+        void Advance(int n = 1) {
+            int done = completed_.fetch_add(n, std::memory_order_relaxed) + n;
+            MaybeReport(done);
+        }
 
-    void Report(int done, bool force) {
-        double elapsed = std::chrono::duration<double>(
-            std::chrono::steady_clock::now() - start_).count();
-        double frac = total_ > 0 ? static_cast<double>(done) / total_ : 1.0;
-        double rate = elapsed > 0.0 ? done / elapsed : 0.0;
-        double eta = rate > 0.0 ? (total_ - done) / rate : 0.0;
+        // Forces 100% completion print and appends newline
+        void Finish() {
+            Report(completed_.load(std::memory_order_relaxed), true);
+            std::fprintf(stderr, "\n");
+        }
 
-        std::fprintf(stderr,
-            "\r[%-30s] %5.1f%%  %6d/%-6d rows  %6.1f rows/s  elapsed %6.1fs  eta %6.1fs   ",
-            ProgressBar(frac).c_str(), frac * 100.0, done, total_, rate, elapsed,
-            force ? 0.0 : eta);
-        std::fflush(stderr);
-    }
+    private:
+        // Lock-free check: decides whether to update terminal output without blocking worker threads
+        void MaybeReport(int done) {
+            auto now = std::chrono::steady_clock::now();
+            auto lastMs = lastReportMs_.load(std::memory_order_relaxed);
+            auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - start_).count();
 
-    static std::string ProgressBar(double frac) {
-        int filled = static_cast<int>(frac * 30);
-        if (filled < 0) filled = 0;
-        if (filled > 30) filled = 30;
-        return std::string(filled, '=') + std::string(30 - filled, ' ');
-    }
+            // Don't update terminal if interval haven't elapsed yet
+            if (nowMs - lastMs < static_cast<long long>(interval_ * 1000) && done < total_) return;
+            
+            // Compare-And-Swap (CAS): Only ONE thread wins the right to print terminal updates!
+            if (!lastReportMs_.compare_exchange_strong(lastMs, nowMs, std::memory_order_relaxed)) return;
+            
+            Report(done, false);
+        }
 
-    int total_;
-    double interval_;
-    std::chrono::steady_clock::time_point start_, lastReport_;
-    std::atomic<int> completed_{0};
-    std::atomic<long long> lastReportMs_{0};
-};
+        // Formats and prints progress statistics (\r carriage return overwrites previous line in terminal!)
+        void Report(int done, bool force) {
+            double elapsed = std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - start_).count();
+            double frac = total_ > 0 ? static_cast<double>(done) / total_ : 1.0;
+            double rate = elapsed > 0.0 ? done / elapsed : 0.0;
+            double eta = rate > 0.0 ? (total_ - done) / rate : 0.0;
 
+            std::fprintf(stderr,
+                "\r[%-30s] %5.1f%%  %6d/%-6d rows  %6.1f rows/s  elapsed %6.1fs  eta %6.1fs   ",
+                ProgressBar(frac).c_str(), frac * 100.0, done, total_, rate, elapsed,
+                force ? 0.0 : eta);
+            std::fflush(stderr);
+        }
+
+        // Generates 30-character ASCII bar string: [==========                    ]
+        static std::string ProgressBar(double frac) {
+            int filled = static_cast<int>(frac * 30);
+            if (filled < 0) filled = 0;
+            if (filled > 30) filled = 30;
+            return std::string(filled, '=') + std::string(30 - filled, ' ');
+        }
+
+        // --- Data Members ---
+        int total_;
+        double interval_;
+        std::chrono::steady_clock::time_point start_, lastReport_;
+        std::atomic<int> completed_{0};        // Atomic count of completed rendering units
+        std::atomic<long long> lastReportMs_{0}; // Timestamp of last console report in milliseconds
+    };
 }
