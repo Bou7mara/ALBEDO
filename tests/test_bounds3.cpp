@@ -9,22 +9,22 @@ TEST_CASE("Union of two bounds produces the enclosing box", "[bounds3]") {
     Bounds3f a(Point3f(0, 0, 0), Point3f(1, 1, 1));
     Bounds3f b(Point3f(2, -1, 0.5f), Point3f(3, 2, 2));
     Bounds3f u = Union(a, b);
-    REQUIRE(u.pMin == Point3f(0, -1, 0));
-    REQUIRE(u.pMax == Point3f(3, 2, 2));
+    REQUIRE(u.minPt == Point3f(0, -1, 0));
+    REQUIRE(u.maxPt == Point3f(3, 2, 2));
 }
 
 TEST_CASE("Union with a point that's already inside doesn't change bounds", "[bounds3]") {
     Bounds3f a(Point3f(0, 0, 0), Point3f(2, 2, 2));
     Bounds3f u = Union(a, Point3f(1, 1, 1));
-    REQUIRE(u.pMin == a.pMin);
-    REQUIRE(u.pMax == a.pMax);
+    REQUIRE(u.minPt == a.minPt);
+    REQUIRE(u.maxPt == a.maxPt);
 }
 
 TEST_CASE("Default-constructed bounds absorb the first union unchanged", "[bounds3][regression]") {
     Bounds3f empty;
     Bounds3f u = Union(empty, Point3f(5, -3, 1));
-    REQUIRE(u.pMin == Point3f(5, -3, 1));
-    REQUIRE(u.pMax == Point3f(5, -3, 1));
+    REQUIRE(u.minPt == Point3f(5, -3, 1));
+    REQUIRE(u.maxPt == Point3f(5, -3, 1));
 }
 
 TEST_CASE("SurfaceArea matches a hand-computed box", "[bounds3]") {

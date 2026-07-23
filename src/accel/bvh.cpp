@@ -54,7 +54,7 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
     for (int i = start; i < end; ++i) centroidBounds = Union(centroidBounds, primInfo[i].centroid);
     int axis = centroidBounds.MaxExtent();
 
-    if (centroidBounds.pMax[axis] == centroidBounds.pMin[axis]) {
+    if (centroidBounds.maxPt[axis] == centroidBounds.minPt[axis]) {
         return MakeLeaf(primInfo, start, end, nodeBounds);
     }
 
@@ -72,8 +72,8 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
         }
     } else {
         std::array<BucketInfo, kNumBuckets> buckets;
-        float cMin = centroidBounds.pMin[axis];
-        float cExtent = centroidBounds.pMax[axis] - cMin;
+        float cMin = centroidBounds.minPt[axis];
+        float cExtent = centroidBounds.maxPt[axis] - cMin;
 
         auto bucketFor = [&](const PrimitiveInfo& p) {
             int b = static_cast<int>(kNumBuckets * (p.centroid[axis] - cMin) / cExtent);

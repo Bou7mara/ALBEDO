@@ -2,8 +2,9 @@
 #include <cmath>
 #include <utility>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // =========================================================
     // NUMERICALLY STABLE QUADRATIC SOLVER (a*t^2 + b*t + c = 0)
     // =========================================================

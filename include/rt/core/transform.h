@@ -6,8 +6,9 @@
 #include <cmath>
 #include <cstring>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // ===========================================
     // 4X4 HOMOGENEOUS TRANSFORMATION MATRIX CLASS
     // ===========================================

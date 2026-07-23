@@ -42,9 +42,9 @@ Bounds3f Sphere::WorldBound() const {
                            Point3f(radius_, radius_, radius_));
     Bounds3f worldBounds;
     for (int corner = 0; corner < 8; ++corner) {
-        Point3f p((corner & 1) ? objectBounds.pMax.x : objectBounds.pMin.x,
-                   (corner & 2) ? objectBounds.pMax.y : objectBounds.pMin.y,
-                   (corner & 4) ? objectBounds.pMax.z : objectBounds.pMin.z);
+        Point3f p((corner & 1) ? objectBounds.maxPt.x : objectBounds.minPt.x,
+                   (corner & 2) ? objectBounds.maxPt.y : objectBounds.minPt.y,
+                   (corner & 4) ? objectBounds.maxPt.z : objectBounds.minPt.z);
         worldBounds = Union(worldBounds, objectToWorld_(p));
     }
     return worldBounds;

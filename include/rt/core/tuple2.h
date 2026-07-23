@@ -4,8 +4,9 @@
 #include <cassert>
 #include <type_traits>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // ==========================
     // 2D TUPLE BASE CLASS (CRTP)
     // ==========================

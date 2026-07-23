@@ -5,8 +5,9 @@
 #include <cmath>
 #include <type_traits>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // =================================
     // 3D POINT CLASS (SPATIAL POSITION)
     // =================================

@@ -3,8 +3,9 @@
 #include "rt/core/vector3.h"
 #include <limits>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // =============================================
     // 3D RAY CLASS (PARAMETRIC LINE P(t) = o + t*d)
     // =============================================

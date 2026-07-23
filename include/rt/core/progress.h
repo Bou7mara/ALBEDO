@@ -4,8 +4,9 @@
 #include <cstdio>
 #include <string>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // =================================================
     // THREAD-SAFE CONSOLE PROGRESS REPORTER (LOCK-FREE)
     // =================================================

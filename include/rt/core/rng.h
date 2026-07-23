@@ -2,8 +2,9 @@
 #include "rt/core/point2.h"
 #include <random>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // ==========================================
     // PSEUDO-RANDOM NUMBER GENERATOR CLASS (RNG)
     // ==========================================

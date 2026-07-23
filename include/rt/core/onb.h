@@ -2,8 +2,9 @@
 #include "rt/core/vector3.h"
 #include <cmath>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // =============================================
     // ORTHONORMAL BASIS CLASS (ONB / SHADING FRAME)
     // =============================================
@@ -12,21 +13,26 @@ namespace rt {
     // Heavily used in Monte Carlo path tracing to transform local hemisphere samples into world directions!
     struct ONB {
         // --- Data Members ---
-        Vector3f u, v, w; // Basis vectors (w = normal, u = tangent, v = bitangent)
+        // Basis vectors (tangent, bitangent, normal)
+        Vector3f u, v, w;
 
-        // ------------
-        // CONSTRUCTORS
-        // ------------
+        // -----------
+        // CONSTRUCTOR
+        // -----------
 
-        // Constructs an orthonormal basis from a single unit normal vector 'n'.
-        // Obscure Math Rationale: Uses Duff et al. (2017) "Building an Orthonormal Basis, Revisited".
-        // Eliminates branch conditionals (if), square roots (sqrt), and pole singularities at (0,0,-1)!
+        // - A Constructor for an orthonormal basis from a single unit normal vector 'n' -
+        // Obscure Math Thinking: Useing Duff et al. (2017) "Building an Orthonormal Basis, Revisited"
+        // Eliminates branch conditionals, square roots, and pole singularities at (0,0,-1)!
+        // Hope user thinks to use a normalized vector
         explicit ONB(const Vector3f& n) {
+            // set the normal vector to the parameter
             w = n;
-            // Preserves sign of w.z (+1.0f or -1.0f) to avoid divide-by-zero when normal points straight down
+
+            // Preserve sign of w.z (+1.0f or -1.0f) to avoid divide-by-zero when normal points straight down
             float sign = std::copysign(1.0f, w.z);
-            float a = -1.0f / (sign + w.z); // Duff et al. magic constant
-            float b = w.x * w.y * a;
+
+            // Duffy's smart helper constants
+            float a {-1.0f / (sign + w.z)}; float b {w.x * w.y * a};
             
             // Construct tangent u and bitangent v orthogonal to w
             u = Vector3f(1.0f + sign * w.x * w.x * a, sign * b, -sign * w.x);
@@ -37,7 +43,7 @@ namespace rt {
         // COORDINATE TRANSFORMATIONS
         // --------------------------
 
-        // Converts a vector from local shading space (where Z is normal) to world space coordinates.
+        // Converts a vector from local space (where Z is normal) to world space coordinates.
         // World Vector = local.x * u + local.y * v + local.z * w
         Vector3f ToWorld(const Vector3f& local) const {
             return local.x * u + local.y * v + local.z * w;

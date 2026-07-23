@@ -5,8 +5,9 @@
 #include <cmath>
 #include <numbers>
 
-// Ray Tracer Core Namespace
+// My Ray Tracer's Core Namespace
 namespace rt {
+
     // ================================================
     // MONTE CARLO SAMPLING & PROBABILITY DENSITY (PDF)
     // ================================================
