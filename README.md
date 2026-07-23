@@ -4,22 +4,7 @@ A physically based ray tracer built from the ground up in modern C++23.
 
 ## Status
 
-🚧 **ALBEDO is currently under development.**
-
-| System / Feature | Status | Implementation Notes |
-|---|---|---|
-| **Core Architecture** | 🟢 Implemented | ECS model, Thread pool, Custom math, Catch2 testing |
-| **Acceleration (BVH)** | 🟢 Implemented | SAH construction, Wide BVH (BVH4/BVH8), SIMD traversal |
-| **Basic Materials** | 🟢 Implemented | Lambertian, Dielectrics (Glass), Beer-Lambert |
-| **Microfacet BSDFs** | 🟢 Implemented | Cook-Torrance, GGX / Beckmann distributions |
-| **Advanced Materials** | ⚪ Planned | Disney Principled, Layered, Participating Media |
-| **Light Transport** | 🟢 Implemented | Unidirectional Path Tracing, Direct/Indirect decomposition |
-| **Sampling Methods** | 🟢 Implemented | Multiple Importance Sampling (MIS), Next Event Estimation |
-| **Advanced Integrators**| ⚪ Planned | BDPT, Metropolis (MLT), ReSTIR (DI & GI) |
-| **Spectral Rendering** | ⚪ Planned | Hero Wavelength Sampling, CIE matching, Dispersion |
-| **Hardware / GPU** | ⚪ Planned | Megakernel/Wavefront, RTX/DXR Hardware Traversal |
-
-*Legend: 🟢 Core Implementation Complete | 🟡 Work in Progress | ⚪ Planned*
+*to be filled in later*
 
 ## Why a new repository?
 
