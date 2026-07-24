@@ -4,61 +4,38 @@
 #include <cstdio>
 #include <string>
 
-// My Ray Tracer's Core Namespace
 namespace rt {
 
-    // =================================================
-    // THREAD-SAFE CONSOLE PROGRESS REPORTER (LOCK-FREE)
-    // =================================================
-
-    // Tracks and prints rendering progress bar and ETA estimates to stderr.
-    // Designed for lock-less multithreaded rendering (simultanneous advance calls)
     class ProgressReporter {
     public:
-        // ------------
-        // CONSTRUCTORS
-        // ------------
-
-        // Constructs reporter for totalUnits (e.g. image height in rows) updating at reportIntervalSeconds interval
         explicit ProgressReporter(int totalUnits, double reportIntervalSeconds = 0.2)
             : total_(totalUnits), interval_(reportIntervalSeconds),
               start_(std::chrono::steady_clock::now()), lastReport_(start_) {}
 
-        // -----------------
-        // CONTROL INTERFACE
-        // -----------------
-
-        // Advances progress by n completed units (default n = 1 row/tile completed).
-        // Uses atomic fetch_add with relaxed memory order for minimal CPU overhead during rendering
         void Advance(int n = 1) {
             int done = completed_.fetch_add(n, std::memory_order_relaxed) + n;
             MaybeReport(done);
         }
 
-        // Forces 100% completion print and appends newline
         void Finish() {
             Report(completed_.load(std::memory_order_relaxed), true);
             std::fprintf(stderr, "\n");
         }
 
     private:
-        // Lock-free check: decides whether to update terminal output without blocking worker threads
         void MaybeReport(int done) {
             auto now = std::chrono::steady_clock::now();
             auto lastMs = lastReportMs_.load(std::memory_order_relaxed);
             auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                 now - start_).count();
 
-            // Don't update terminal if interval haven't elapsed yet
             if (nowMs - lastMs < static_cast<long long>(interval_ * 1000) && done < total_) return;
             
-            // Compare-And-Swap (CAS): Only ONE thread wins the right to print terminal updates.
             if (!lastReportMs_.compare_exchange_strong(lastMs, nowMs, std::memory_order_relaxed)) return;
             
             Report(done, false);
         }
 
-        // Formats and prints progress statistics (\r carriage return overwrites previous line in terminal.)
         void Report(int done, bool force) {
             double elapsed = std::chrono::duration<double>(
                 std::chrono::steady_clock::now() - start_).count();
@@ -73,7 +50,6 @@ namespace rt {
             std::fflush(stderr);
         }
 
-        // Generates 30-character ASCII bar string: [==========                    ]
         static std::string ProgressBar(double frac) {
             int filled = static_cast<int>(frac * 30);
             if (filled < 0) filled = 0;
@@ -81,11 +57,10 @@ namespace rt {
             return std::string(filled, '=') + std::string(30 - filled, ' ');
         }
 
-        // --- Data Members ---
         int total_;
         double interval_;
         std::chrono::steady_clock::time_point start_, lastReport_;
-        std::atomic<int> completed_{0};        // Atomic count of completed rendering units
-        std::atomic<long long> lastReportMs_{0}; // Timestamp of last console report in milliseconds
+        std::atomic<int> completed_{0};
+        std::atomic<long long> lastReportMs_{0};
     };
 }

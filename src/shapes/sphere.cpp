@@ -5,22 +5,17 @@
 
 namespace rt {
 
-// Tests ray-sphere intersection in object space using quadratic solver (a*t^2 + b*t + c = 0)
 bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
-    // Transform ray from world space into sphere local object space
     Ray objectRay = worldToObject_(ray);
 
-    // Set up quadratic equation coefficients a, b, c
     Vector3f oVec(objectRay.o.x, objectRay.o.y, objectRay.o.z);
     float a = LengthSquared(objectRay.d);
     float b = 2.0f * Dot(objectRay.d, oVec);
     float c = LengthSquared(oVec) - radius_ * radius_;
 
-    // Solve quadratic equation for intersection parameters t0 and t1
     float t0, t1;
     if (!Quadratic(a, b, c, &t0, &t1)) return false;
 
-    // Check if valid intersection distance parameter falls within range [0, tMax]
     if (t0 > objectRay.tMax || t1 <= 0.0f) return false;
     float tHit = t0;
     if (tHit <= 0.0f) {
@@ -28,14 +23,11 @@ bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
         if (tHit > objectRay.tMax) return false;
     }
 
-    // Calculate hit point and surface normal in object space
     Point3f pObject = objectRay(tHit);
     Normal3f nObject(pObject.x / radius_, pObject.y / radius_, pObject.z / radius_);
 
-    // Shrink ray tMax in place to prune further intersections
     ray.tMax = tHit;
 
-    // Fill surface interaction struct transformed to world space
     isect->p = objectToWorld_(pObject);
     isect->n = Normalize(objectToWorld_(nObject));
     isect->wo = Normalize(objectToWorld_(-objectRay.d));
@@ -45,7 +37,6 @@ bool Sphere::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     return true;
 }
 
-// Calculates world-space bounding box enclosing the sphere by transforming all 8 corners of object-space box
 Bounds3f Sphere::WorldBound() const {
     Bounds3f objectBounds(Point3f(-radius_, -radius_, -radius_),
                            Point3f(radius_, radius_, radius_));
@@ -59,7 +50,6 @@ Bounds3f Sphere::WorldBound() const {
     return worldBounds;
 }
 
-// Samples a point on the sphere surface visible from reference point ref using solid angle sampling
 ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
     Point3f center = objectToWorld_(Point3f(0, 0, 0));
     float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
@@ -69,7 +59,6 @@ ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
 
     ShapeSample sample;
     
-    // If reference point is inside sphere, use uniform sphere surface area sampling
     if (d2 <= r2) {
         Vector3f objDir = UniformSampleSphere(u);
         Point3f pObj(objDir.x * radius_, objDir.y * radius_, objDir.z * radius_);
@@ -87,7 +76,6 @@ ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
         return sample;
     }
 
-    // Otherwise sample sphere inside subtended cone of directions (solid angle sampling)
     float sinThetaMax2 = r2 / d2;
     float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
 
@@ -110,7 +98,6 @@ ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
     return sample;
 }
 
-// Calculates PDF for sampling direction wi towards the sphere from reference point ref
 float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
     Point3f center = objectToWorld_(Point3f(0, 0, 0));
     float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
@@ -118,7 +105,6 @@ float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
     float d2 = LengthSquared(wc);
     float r2 = worldRadius * worldRadius;
 
-    // If inside sphere, convert surface area PDF to solid angle PDF
     if (d2 <= r2) {
         SurfaceInteraction isect;
         if (!Intersect(Ray(ref, wi), &isect)) return 0.0f;
@@ -128,7 +114,6 @@ float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
         return areaPdf * distSq / cosTheta;
     }
 
-    // Outside sphere: return 0 if direction misses the subtended cone
     float sinThetaMax2 = r2 / d2;
     float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
     
@@ -137,15 +122,12 @@ float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
         return 0.0f;
     }
 
-    // Return solid angle PDF = 1 / (2 * pi * (1 - cosThetaMax))
     return 1.0f / (2.0f * std::numbers::pi_v<float> * (1.0f - cosThetaMax));
 }
 
-// Calculates surface area of the sphere (4 * pi * r^2)
 float Sphere::Area() const {
     float worldRadius = Length(objectToWorld_(Vector3f(radius_, 0, 0)));
     return 4.0f * std::numbers::pi_v<float> * worldRadius * worldRadius;
 }
 
 }
-
