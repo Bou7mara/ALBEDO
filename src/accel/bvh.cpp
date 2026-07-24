@@ -27,7 +27,35 @@ BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode,
     }
 
     orderedShapes_.reserve(originalShapes_.size());
-    root_ = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()));
+    auto root = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()));
+    if (root) {
+        int totalNodes = CountNodes(root.get());
+        nodes_.resize(totalNodes);
+        int offset = 0;
+        FlattenBVHTree(root.get(), &offset);
+    }
+}
+
+int BVH::CountNodes(const BVHNode* node) const {
+    if (!node) return 0;
+    if (node->IsLeaf()) return 1;
+    return 1 + CountNodes(node->left.get()) + CountNodes(node->right.get());
+}
+
+int BVH::FlattenBVHTree(const BVHNode* node, int* offset) {
+    LinearBVHNode* linearNode = &nodes_[*offset];
+    int myOffset = (*offset)++;
+    linearNode->bounds = node->bounds;
+    if (node->IsLeaf()) {
+        linearNode->primitivesOffset = node->firstPrimOffset;
+        linearNode->nPrimitives = static_cast<uint16_t>(node->nPrimitives);
+    } else {
+        linearNode->axis = static_cast<uint8_t>(node->splitAxis);
+        linearNode->nPrimitives = 0;
+        FlattenBVHTree(node->left.get(), offset);
+        linearNode->secondChildOffset = FlattenBVHTree(node->right.get(), offset);
+    }
+    return myOffset;
 }
 
 std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(std::vector<PrimitiveInfo>& primInfo,
@@ -133,40 +161,82 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
 }
 
 Bounds3f BVH::WorldBound() const {
-    return root_ ? root_->bounds : Bounds3f();
+    return nodes_.empty() ? Bounds3f() : nodes_[0].bounds;
 }
 
 bool BVH::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
-    if (!root_) return false;
+    if (nodes_.empty()) return false;
+    bool hit = false;
     Vector3f invDir(1.0f / ray.d.x, 1.0f / ray.d.y, 1.0f / ray.d.z);
     int dirIsNeg[3] = {invDir.x < 0, invDir.y < 0, invDir.z < 0};
-    return IntersectNode(root_.get(), ray, invDir, dirIsNeg, isect);
-}
 
-bool BVH::IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir,
-                         const int dirIsNeg[3], SurfaceInteraction* isect) const {
-    if (!node->bounds.IntersectP(ray, invDir, dirIsNeg)) return false;
+    int toVisitTop = 0;
+    int nodesToVisit[64];
+    int currentNodeIndex = 0;
 
-    if (node->IsLeaf()) {
-        bool hit = false;
-        for (int i = 0; i < node->nPrimitives; ++i) {
-            if (orderedShapes_[node->firstPrimOffset + i]->Intersect(ray, isect)) hit = true;
+    while (true) {
+        const LinearBVHNode* node = &nodes_[currentNodeIndex];
+        if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {
+            if (node->nPrimitives > 0) {
+                for (int i = 0; i < node->nPrimitives; ++i) {
+                    if (orderedShapes_[node->primitivesOffset + i]->Intersect(ray, isect)) {
+                        hit = true;
+                    }
+                }
+                if (toVisitTop == 0) break;
+                currentNodeIndex = nodesToVisit[--toVisitTop];
+            } else {
+                if (dirIsNeg[node->axis]) {
+                    nodesToVisit[toVisitTop++] = currentNodeIndex + 1;
+                    currentNodeIndex = node->secondChildOffset;
+                } else {
+                    nodesToVisit[toVisitTop++] = node->secondChildOffset;
+                    currentNodeIndex = currentNodeIndex + 1;
+                }
+            }
+        } else {
+            if (toVisitTop == 0) break;
+            currentNodeIndex = nodesToVisit[--toVisitTop];
         }
-        return hit;
     }
-
-    const BVHNode* first  = dirIsNeg[node->splitAxis] ? node->right.get() : node->left.get();
-    const BVHNode* second = dirIsNeg[node->splitAxis] ? node->left.get()  : node->right.get();
-
-    bool hit = IntersectNode(first, ray, invDir, dirIsNeg, isect);
-    hit |= IntersectNode(second, ray, invDir, dirIsNeg, isect);
     return hit;
 }
 
 bool BVH::IntersectP(const Ray& ray) const {
-    SurfaceInteraction isect;
-    Ray r = ray;
-    return Intersect(r, &isect);
+    if (nodes_.empty()) return false;
+    Vector3f invDir(1.0f / ray.d.x, 1.0f / ray.d.y, 1.0f / ray.d.z);
+    int dirIsNeg[3] = {invDir.x < 0, invDir.y < 0, invDir.z < 0};
+
+    int toVisitTop = 0;
+    int nodesToVisit[64];
+    int currentNodeIndex = 0;
+
+    while (true) {
+        const LinearBVHNode* node = &nodes_[currentNodeIndex];
+        if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {
+            if (node->nPrimitives > 0) {
+                for (int i = 0; i < node->nPrimitives; ++i) {
+                    if (orderedShapes_[node->primitivesOffset + i]->IntersectP(ray)) {
+                        return true;
+                    }
+                }
+                if (toVisitTop == 0) break;
+                currentNodeIndex = nodesToVisit[--toVisitTop];
+            } else {
+                if (dirIsNeg[node->axis]) {
+                    nodesToVisit[toVisitTop++] = currentNodeIndex + 1;
+                    currentNodeIndex = node->secondChildOffset;
+                } else {
+                    nodesToVisit[toVisitTop++] = node->secondChildOffset;
+                    currentNodeIndex = currentNodeIndex + 1;
+                }
+            }
+        } else {
+            if (toVisitTop == 0) break;
+            currentNodeIndex = nodesToVisit[--toVisitTop];
+        }
+    }
+    return false;
 }
 
 }
