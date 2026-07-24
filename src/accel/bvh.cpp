@@ -13,14 +13,12 @@ struct BucketInfo {
 };
 }
 
-BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode,
-         SplitMethod splitMethod)
-    : originalShapes_(std::move(shapes)),
-      maxPrimsInNode_(maxPrimsInNode),
-      splitMethod_(splitMethod) {
+BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode, SplitMethod splitMethod)
+    : originalShapes_(std::move(shapes)), maxPrimsInNode_(maxPrimsInNode), splitMethod_(splitMethod) {
     if (originalShapes_.empty()) return;
-
+        
     std::vector<PrimitiveInfo> primInfo(originalShapes_.size());
+        
     for (size_t i = 0; i < originalShapes_.size(); ++i) {
         Bounds3f b = originalShapes_[i]->WorldBound();
         primInfo[i] = {i, b, b.Centroid()};
@@ -30,9 +28,7 @@ BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode,
     root_ = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()));
 }
 
-std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(std::vector<PrimitiveInfo>& primInfo,
-                                             int start, int end,
-                                             const Bounds3f& bounds) {
+std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(std::vector<PrimitiveInfo>& primInfo,int start, int end, const Bounds3f& bounds) {
     auto node = std::make_unique<BVHNode>();
     node->bounds = bounds;
     node->firstPrimOffset = static_cast<int>(orderedShapes_.size());
@@ -43,8 +39,7 @@ std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(std::vector<PrimitiveInfo>& primInfo
     return node;
 }
 
-std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& primInfo,
-                                                    int start, int end) {
+std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& primInfo, int start, int end) {
     Bounds3f nodeBounds;
     for (int i = start; i < end; ++i) nodeBounds = Union(nodeBounds, primInfo[i].bounds);
 
@@ -99,8 +94,7 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
                 b1 = Union(b1, buckets[j].bounds);
                 count1 += buckets[j].count;
             }
-            cost[i] = 0.125f + (count0 * b0.SurfaceArea() + count1 * b1.SurfaceArea())
-                                / nodeBounds.SurfaceArea();
+            cost[i] = 0.125f + (count0 * b0.SurfaceArea() + count1 * b1.SurfaceArea()) / nodeBounds.SurfaceArea();
         }
 
         int minCostBucket = 0;
@@ -111,13 +105,11 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
 
         float leafCost = static_cast<float>(nPrimitives);
         if (minCost < leafCost || nPrimitives > maxPrimsInNode_) {
-            auto midIter = std::partition(primInfo.begin() + start, primInfo.begin() + end,
-                [&](const PrimitiveInfo& p) { return bucketFor(p) <= minCostBucket; });
+            auto midIter = std::partition(primInfo.begin() + start, primInfo.begin() + end, [&](const PrimitiveInfo& p) { return bucketFor(p) <= minCostBucket; });
             mid = static_cast<int>(midIter - primInfo.begin());
             if (mid == start || mid == end) {
                 mid = (start + end) / 2;
-                std::nth_element(primInfo.begin() + start, primInfo.begin() + mid, primInfo.begin() + end,
-                    [axis](const PrimitiveInfo& a, const PrimitiveInfo& b) { return a.centroid[axis] < b.centroid[axis]; });
+                std::nth_element(primInfo.begin() + start, primInfo.begin() + mid, primInfo.begin() + end, [axis](const PrimitiveInfo& a, const PrimitiveInfo& b) { return a.centroid[axis] < b.centroid[axis]; });
             }
         } else {
             return MakeLeaf(primInfo, start, end, nodeBounds);
@@ -143,8 +135,7 @@ bool BVH::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     return IntersectNode(root_.get(), ray, invDir, dirIsNeg, isect);
 }
 
-bool BVH::IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir,
-                         const int dirIsNeg[3], SurfaceInteraction* isect) const {
+bool BVH::IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3], SurfaceInteraction* isect) const {
     if (!node->bounds.IntersectP(ray, invDir, dirIsNeg)) return false;
 
     if (node->IsLeaf()) {
