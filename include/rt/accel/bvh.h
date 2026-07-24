@@ -33,14 +33,11 @@ private:
         bool IsLeaf() const { return nPrimitives > 0; }
     };
 
-    std::unique_ptr<BVHNode> BuildRecursive(std::vector<PrimitiveInfo>& primInfo,
-                                             int start, int end);
+    std::unique_ptr<BVHNode> BuildRecursive(std::vector<PrimitiveInfo>& primInfo, int start, int end);
 
-    std::unique_ptr<BVHNode> MakeLeaf(std::vector<PrimitiveInfo>& primInfo,
-                                       int start, int end, const Bounds3f& bounds);
+    std::unique_ptr<BVHNode> MakeLeaf(std::vector<PrimitiveInfo>& primInfo, int start, int end, const Bounds3f& bounds);
 
-    bool IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir,
-                        const int dirIsNeg[3], SurfaceInteraction* isect) const;
+    bool IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3], SurfaceInteraction* isect) const;
 
     std::vector<std::shared_ptr<Shape>> originalShapes_;
     std::vector<std::shared_ptr<Shape>> orderedShapes_;
