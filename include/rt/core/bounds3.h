@@ -51,14 +51,14 @@ namespace rt {
         Vector3<T> Diagonal() const { return maxPt - minPt; }
 
         // Total surface area of the 6 box faces: 2 * (w*h + h*d + d*w).
-        // Heavily used by BVH construction to evaluate SAH (Surface Area Heuristic) cost!
+        // Heavily used by BVH construction to evaluate SAH (Surface Area Heuristic) cost.
         T SurfaceArea() const {
             Vector3<T> d = Diagonal();
             return static_cast<T>(2) * (d.x * d.y + d.y * d.z + d.z * d.x);
         }
 
         // Returns index of the longest axis (0 = X, 1 = Y, 2 = Z).
-        // Tells the BVH builder where to slice this node into left & right children!
+        // Tells the BVH builder where to slice this node into left & right children.
         int MaxExtent() const {
             Vector3<T> d = Diagonal();
             if (d.x > d.y && d.x > d.z) return 0;
@@ -92,9 +92,9 @@ namespace rt {
             return true;
         }
 
-        // Ultra-fast BVH traversal intersection overload!
-        // Uses precomputed inverse ray direction (invDir = 1/d) and direction sign flags (dirIsNeg[3]).
-        // Avoids branch mispredictions and std::swap calls inside heavy rendering inner loops!
+        // fast BVH traversal intersection overload
+        // Using precomputed inverse ray direction (invDir = 1/d) and direction sign flags (dirIsNeg[3]).
+        // Avoids branch mispredictions and std::swap calls inside heavy loops
         bool IntersectP(const Ray& ray, const Vector3<T>& invDir, const int dirIsNeg[3]) const {
             // Check X slab
             float tMin  = ((dirIsNeg[0] ? maxPt.x : minPt.x) - ray.o.x) * invDir.x;
@@ -124,7 +124,7 @@ namespace rt {
     // GLOBAL BOUNDS UNION UTILS
     // =========================
 
-    // Computes bounding box enclosing the union of two boxes b1 and b2
+    // Make a bounding box enclosing that is the union of two boxes b1 and b2
     template <typename T>
     Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2) {
         return Bounds3<T>(
@@ -132,7 +132,7 @@ namespace rt {
             Point3<T>(std::max(b1.maxPt.x, b2.maxPt.x), std::max(b1.maxPt.y, b2.maxPt.y), std::max(b1.maxPt.z, b2.maxPt.z)));
     }
 
-    // Expands bounding box b to include point p
+    // Expand bounding box b to include point p
     template <typename T>
     Bounds3<T> Union(const Bounds3<T>& b, const Point3<T>& p) {
         return Bounds3<T>(

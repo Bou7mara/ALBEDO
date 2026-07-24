@@ -30,7 +30,7 @@ namespace rt {
     // ========================
 
     // Computes squared length ||v||^2 = x^2 + y^2.
-    // Pro tip: Avoids sqrt()! Use this for distance comparisons to save CPU cycles.
+    // Avoids sqrt(). Use this for distance comparisons to save CPU cycles.
     template <typename T>
     constexpr T LengthSquared(const Vector2<T>& v) {
         return v.x * v.x + v.y * v.y;
@@ -45,7 +45,7 @@ namespace rt {
     }
 
     // Returns a unit vector in the same direction (length == 1).
-    // Division by zero risk if v is a zero vector — handle with care in physics/sampling!
+    // Division by zero risk if v is a zero vector — handle with care in physics/sampling.
     template <typename T>
     Vector2<T> Normalize(const Vector2<T>& v) {
         static_assert(std::is_floating_point_v<T>, "Normalize() requires a floating-point type");
@@ -53,14 +53,14 @@ namespace rt {
     }
 
     // Standard 2D dot product: v1 . v2 = v1.x*v2.x + v1.y*v2.y
-    // Gives cos(theta) when both vectors are unit length!
+    // Gives cos(theta) when both vectors are unit length.
     template <typename T>
     constexpr T Dot(const Vector2<T>& v1, const Vector2<T>& v2) {
         return v1.x * v2.x + v1.y * v2.y;
     }
 
     // Absolute value of the dot product |v1 . v2|.
-    // Useful for surface shading when light can shine from either side!
+    // Useful for surface shading when light can shine from either side.
     template <typename T>
     constexpr T AbsDot(const Vector2<T>& v1, const Vector2<T>& v2) {
         return std::abs(Dot(v1, v2));

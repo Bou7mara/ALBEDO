@@ -10,7 +10,7 @@ namespace rt {
     // =============================================
 
     // Represents a local 3D coordinate frame defined by 3 unit vectors (u, v, w).
-    // Heavily used in Monte Carlo path tracing to transform local hemisphere samples into world directions!
+    // Heavily used in Monte Carlo path tracing to transform local hemisphere samples into world directions.
     struct ONB {
         // --- Data Members ---
         // Basis vectors (tangent, bitangent, normal)
@@ -22,7 +22,7 @@ namespace rt {
 
         // - A Constructor for an orthonormal basis from a single unit normal vector 'n' -
         // Obscure Math Thinking: Useing Duff et al. (2017) "Building an Orthonormal Basis, Revisited"
-        // Eliminates branch conditionals, square roots, and pole singularities at (0,0,-1)!
+        // Eliminates branch conditionals, square roots, and pole singularities at (0,0,-1).
         // Hope user thinks to use a normalized vector
         explicit ONB(const Vector3f& n) {
             // set the normal vector to the parameter

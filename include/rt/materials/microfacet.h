@@ -8,11 +8,14 @@
 
 namespace rt {
 
+    // Converts perceptual roughness value in [0, 1] to GGX alpha roughness parameter (clamped above 0.001)
     inline float AlphaFromRoughness(float roughness) {
         float alpha = roughness * roughness;
         return std::max(alpha, 1e-3f);
     }
 
+    // Calculates GGX Normal Distribution Function D(H)
+    // Measures the relative area of microfacets oriented in direction H
     inline float GgxD(float NdotH, float alpha) {
         if (NdotH <= 0.0f) {
             return 0.0f;
@@ -23,6 +26,8 @@ namespace rt {
         return alpha2 / (std::numbers::pi_v<float> * denom * denom);
     }
 
+    // Calculates Smith joint height-correlated masking-shadowing function G(V, L) divided by (4 * NdotV * NdotL)
+    // Measures the fraction of microfacets visible from both viewing direction V and lighting direction L
     inline float SmithG(float NdotV, float NdotL, float alpha) {
         if (NdotV <= 0.0f || NdotL <= 0.0f) {
             return 0.0f;
@@ -33,6 +38,8 @@ namespace rt {
         return 0.5f / (lambdaV + lambdaL);
     }
 
+    // Samples microfacet normal H from the Visible Normal Distribution Function (VNDF) using Heitz (2018) algorithm
+    // wo is view direction, alpha is GGX roughness, u1 and u2 are random numbers
     inline Vector3f SampleGgxVndf(const Vector3f& wo, float alpha, float u1, float u2) {
         Vector3f wStretched = Normalize(Vector3f(alpha * wo.x, alpha * wo.y, wo.z));
 
@@ -51,6 +58,7 @@ namespace rt {
         return Normalize(Vector3f(alpha * nStretched.x, alpha * nStretched.y, std::max(0.0f, nStretched.z)));
     }
 
+    // Calculates PDF for sampling reflection direction wi generated from the VNDF microfacet distribution
     inline float GgxVndfPdf(float NdotV, float NdotH, float alpha) {
         if (NdotV <= 0.0f) {
             return 0.0f;
@@ -64,3 +72,4 @@ namespace rt {
         return (G1 * D) / (4.0f * NdotV);
     }
 }
+

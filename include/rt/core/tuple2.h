@@ -31,7 +31,7 @@ namespace rt {
 
         // Parameterized constructor
         constexpr Tuple2(T x, T y) : x(x), y(y) {
-            // 0/0 is arithmetic but yields NaN — catch edge cases early!
+            // 0/0 is arithmetic but yields NaN — catch edge cases early.
             assert(!HasNaN());
         }
 
@@ -80,7 +80,7 @@ namespace rt {
             assert(scalar != 0);
             if constexpr (std::is_floating_point_v<T>) {
                 // Division uses 2-5x more clock cycles than multiplication.
-                // We divide once and multiply twice to save time!
+                // We divide once and multiply twice to save time.
                 T inv = static_cast<T>(1) / scalar;
                 return Derived(x * inv, y * inv);
             } else {

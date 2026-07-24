@@ -12,7 +12,7 @@ namespace rt {
     // =================================================
 
     // Tracks and prints rendering progress bar and ETA estimates to stderr.
-    // Designed for lock-free multi-threaded rendering (hundreds of worker threads calling Advance simultaneously!).
+    // Designed for lock-less multithreaded rendering (simultanneous advance calls)
     class ProgressReporter {
     public:
         // ------------
@@ -29,7 +29,7 @@ namespace rt {
         // -----------------
 
         // Advances progress by n completed units (default n = 1 row/tile completed).
-        // Uses atomic fetch_add with relaxed memory order for minimal CPU overhead during rendering!
+        // Uses atomic fetch_add with relaxed memory order for minimal CPU overhead during rendering
         void Advance(int n = 1) {
             int done = completed_.fetch_add(n, std::memory_order_relaxed) + n;
             MaybeReport(done);
@@ -52,13 +52,13 @@ namespace rt {
             // Don't update terminal if interval haven't elapsed yet
             if (nowMs - lastMs < static_cast<long long>(interval_ * 1000) && done < total_) return;
             
-            // Compare-And-Swap (CAS): Only ONE thread wins the right to print terminal updates!
+            // Compare-And-Swap (CAS): Only ONE thread wins the right to print terminal updates.
             if (!lastReportMs_.compare_exchange_strong(lastMs, nowMs, std::memory_order_relaxed)) return;
             
             Report(done, false);
         }
 
-        // Formats and prints progress statistics (\r carriage return overwrites previous line in terminal!)
+        // Formats and prints progress statistics (\r carriage return overwrites previous line in terminal.)
         void Report(int done, bool force) {
             double elapsed = std::chrono::duration<double>(
                 std::chrono::steady_clock::now() - start_).count();

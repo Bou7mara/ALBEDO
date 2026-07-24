@@ -16,14 +16,14 @@ namespace rt {
     public:
         // --- Data Members ---
         Point3f o;   // Ray origin point P(0)
-        Vector3f d;  // Ray direction vector (usually normalized, but not strictly forced!)
+        Vector3f d;  // Ray direction vector (usually normalized, but not strictly forced.)
         
         // Obscure Keyword Rationale: Why is tMax 'mutable'?
         // During BVH traversal, functions accept 'const Ray&' to prevent modifying origin/dir,
-        // BUT as closer intersections are found, we shrink tMax in-place to prune distant primitives!
+        // BUT as closer intersections are found, we shrink tMax in-place to prune distant primitives.
         mutable float tMax; 
         
-        float time;  // Shutter time sample [0, 1] used for rendering motion blur!
+        float time;  // Shutter time sample [0, 1] used for rendering motion blur.
 
         // ------------
         // CONSTRUCTORS

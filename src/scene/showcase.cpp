@@ -10,7 +10,9 @@
 
 namespace rt {
 
+// Builds and returns a showcase setup containing camera, materials, shapes, lights, and BVH
 ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
+    // Configure perspective camera positioning looking at origin
     PerspectiveCamera camera(
         Point3f(0.0f, 1.2f, 4.0f),
         Point3f(0.0f, 0.3f, -1.0f),
@@ -21,9 +23,11 @@ ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
 
     Scene scene;
 
+    // Complex refractive index (eta) and absorption coefficient (k) constants for gold and copper metals
     const Vector3f eta_gold(0.143f, 0.375f, 1.442f), k_gold(3.983f, 2.386f, 1.603f);
     const Vector3f eta_copper(0.200f, 0.924f, 1.102f), k_copper(3.907f, 2.618f, 2.239f);
 
+    // Create materials: Lambertian diffuse, clear glass, frosted glass, smooth mirror metal, gold, and copper
     auto matLambertian = std::make_shared<Lambertian>(Vector3f(0.6f, 0.35f, 0.3f));
     auto matGlass = std::make_shared<Dielectric>(1.5f);
     auto matFrostedGlass = std::make_shared<Microfacet>(Microfacet::MakeDielectricMicrofacet(0.15f, 1.5f));
@@ -31,6 +35,7 @@ ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
     auto matGold = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.04f, eta_gold, k_gold));
     auto matCopper = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.35f, eta_copper, k_copper));
 
+    // Create ground sphere (large sphere positioned below the scene)
     auto groundMaterial = std::make_shared<Lambertian>(Vector3f(0.05f, 0.05f, 0.05f));
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, -100.4f, -1.0f)), 100.0f, groundMaterial));
@@ -39,6 +44,7 @@ ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
         matLambertian, matGlass, matFrostedGlass, matMirrorMetal, matGold, matCopper
     };
 
+    // Position material spheres along a circular arc
     float arcRadius = 2.2f;
     float centerZ = -1.8f;
     float startAngle = -50.0f * (std::numbers::pi_v<float> / 180.0f);
@@ -54,6 +60,7 @@ ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
             Transform::Translate(Vector3f(x, -0.05f, z)), 0.35f, heroMaterials[i]));
     }
 
+    // Create key light, fill light, and rim light spherical area light sources
     auto keyLightMat = std::make_shared<Emissive>(Vector3f(14.4f, 10.4f, 6.4f));
     auto fillLightMat = std::make_shared<Emissive>(Vector3f(4.0f, 5.6f, 9.6f));
     auto rimLightMat = std::make_shared<Emissive>(Vector3f(12.8f, 12.8f, 12.8f));
@@ -65,9 +72,11 @@ ShowcaseSetup CreateShowcaseScene(int width, int height, int spp) {
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0.0f, 2.5f, -3.0f)), 0.25f, rimLightMat));
 
+    // Build scene BVH tree and light sampling structures
     scene.Build();
 
     return ShowcaseSetup(std::move(scene), camera, width, height, spp, 50);
 }
 
 }
+

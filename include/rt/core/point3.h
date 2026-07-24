@@ -13,7 +13,7 @@ namespace rt {
     // =================================
 
     // Represents a fixed location in 3D world space.
-    // Follows strict Affine Geometry rules (Points != Vectors)!
+    // Follows strict Affine Geometry rules (Points != Vectors).
     template <typename T>
     class Point3 : public Tuple3<Point3<T>, T> {
     public:
@@ -27,7 +27,7 @@ namespace rt {
         // AFFINE GEOMETRY RULES (INTENTIONAL OPERATOR RESTRICTIONS)
         // ---------------------------------------------------------
 
-        // Adding two 3D points in space is mathematically illegal (no origin reference point)!
+        // Adding two 3D points in space is mathematically illegal (no origin reference point).
         // Deleting these operators catches illegal spatial math at compile time.
         Point3 operator+(const Point3& other) const = delete;
         Point3& operator+=(const Point3& other) = delete;
@@ -79,7 +79,7 @@ namespace rt {
     // POINT UTILITY FUNCTIONS
     // =======================
 
-    // Squared Euclidean distance between two 3D points (fast, no sqrt!)
+    // Squared Euclidean distance between two 3D points (fast, no sqrt).
     template <typename T>
     constexpr T DistanceSquared(const Point3<T>& p1, const Point3<T>& p2) {
         return LengthSquared(p1 - p2);

@@ -20,7 +20,7 @@ namespace rt {
         // Default constructor: Seeds using non-deterministic hardware entropy (std::random_device)
         RNG() : engine_(std::random_device{}()), dist_(0.0f, 1.0f) {}
 
-        // Parameterized constructor: Explicit seed for deterministic, repeatable rendering runs!
+        // Parameterized constructor: Explicit seed for deterministic, repeatable rendering runs.
         explicit RNG(uint32_t seed) : engine_(seed), dist_(0.0f, 1.0f) {}
 
         // -------------------------

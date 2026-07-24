@@ -13,13 +13,14 @@ namespace rt {
     // 4X4 HOMOGENEOUS TRANSFORMATION MATRIX CLASS
     // ===========================================
 
-    // Encapsulates 3D spatial transformations (translation, rotation, scale, camera view).
-    // Maintains both forward matrix 'm' and inverse matrix 'mInv' in tandem!
+    // Encapsulation of 3D spatial transformations (translation, rotation, scale, camera view)
+    // Maintains both forward matrix 'm' and inverse matrix 'mInv' in tandem
+
     class Transform {
     public:
         // --- Data Members ---
         float m[4][4];    // Forward 4x4 transformation matrix
-        float mInv[4][4]; // Cached Inverse 4x4 matrix (prevents runtime matrix inversion bottleneck!)
+        float mInv[4][4]; // Cached Inverse 4x4 matrix (prevents runtime matrix inversion bottleneck.)
 
         // ------------
         // CONSTRUCTORS
@@ -37,7 +38,7 @@ namespace rt {
             Inverse4x4(m, mInv);
         }
 
-        // Construct directly with both forward matrix and known inverse matrix (fast path!)
+        // Construct directly with both forward matrix and known inverse matrix (fast path.)
         Transform(const float mat[4][4], const float matInv[4][4]) {
             std::memcpy(m, mat, sizeof(m));
             std::memcpy(mInv, matInv, sizeof(mInv));
@@ -90,13 +91,13 @@ namespace rt {
         // TRANSFORMATION QUERIES
         // ----------------------
 
-        // Swaps forward and inverse matrices in O(1) time without recomputing inverse!
+        // Swaps forward and inverse matrices in O(1) time without recomputing inverse.
         Transform Inverse() const {
             return Transform(mInv, m);
         }
 
         // Checks if matrix determinant < 0 (i.e. transformation switches right-handed system to left-handed).
-        // Essential for correcting triangle vertex order and surface normal orientation after negative scaling!
+        // Essential for correcting triangle vertex order and surface normal orientation after negative scaling.
         bool SwapsHandedness() const {
             float det =
                 m[0][0] * (m[1][1]*m[2][2] - m[1][2]*m[2][1]) -
@@ -119,10 +120,10 @@ namespace rt {
             // Homogeneous w coordinate (1.0 for affine, != 1.0 for perspective projection)
             float wp = m[3][0]*x + m[3][1]*y + m[3][2]*z + m[3][3];
             if (wp == 1.0f) return Point3f(xp, yp, zp);
-            return Point3f(xp, yp, zp) / wp; // Perspective divide!
+            return Point3f(xp, yp, zp) / wp; // Perspective divide.
         }
 
-        // Transforms a 3D Vector (affected by rotation and scale, BUT NOT translation!)
+        // Transforms a 3D Vector (affected by rotation and scale, BUT NOT translation.)
         Vector3f operator()(const Vector3f& v) const {
             float x = v.x, y = v.y, z = v.z;
             return Vector3f(
@@ -132,8 +133,8 @@ namespace rt {
             );
         }
 
-        // Transforms a Surface Normal3f (Multiplied by transposed Inverse Matrix (mInv)^T!)
-        // Notice transposed array lookup: mInv[col][row] instead of m[row][col]!
+        // Transforms a Surface Normal3f (Multiplied by transposed Inverse Matrix (mInv)^T.)
+        // Notice transposed array lookup: mInv[col][row] instead of m[row][col].
         Normal3f operator()(const Normal3f& n) const {
             float x = n.x, y = n.y, z = n.z;
             return Normal3f(
@@ -150,7 +151,7 @@ namespace rt {
             return Ray(newO, newD, r.tMax, r.time);
         }
 
-        // Transform composition: (T1 * T2)(p) = T1(T2(p)). Note reverse inverse multiplication!
+        // Transform composition: (T1 * T2)(p) = T1(T2(p)). Note reverse inverse multiplication.
         Transform operator*(const Transform& other) const {
             float newM[4][4], newMInv[4][4];
             Multiply4x4(m, other.m, newM);

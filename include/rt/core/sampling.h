@@ -12,11 +12,13 @@ namespace rt {
     // MONTE CARLO SAMPLING & PROBABILITY DENSITY (PDF)
     // ================================================
 
-    // Shirley's Concentric Disk Sampling algorithm.
-    // Maps uniform square samples u in [0,1]^2 to the unit disk [-1,1]^2.
+    // Shirley's Concentric Disk Sampling algorithm
+    // Maps uniform square samples u in [0,1]^2 to the unit disk [-1,1]^2
     // Obscure Choice Rationale: Standard polar mapping (r = sqrt(u1), theta = 2*pi*u2) heavily distorts
-    // fractional area near the center! Shirley's concentric mapping maps concentric squares to concentric rings,
+    // fractional area near the center.
+    // Shirley's concentric mapping maps concentric squares to concentric rings,
     // preserving fractional area and grid adjacency for low-discrepancy patterns.
+
     inline Point2f ConcentricSampleDisk(const Point2f& u) {
         // Map uniform sample from [0, 1] to [-1, 1]
         Point2f uOffset(2.0f * u.x - 1.0f, 2.0f * u.y - 1.0f);
@@ -40,7 +42,7 @@ namespace rt {
     }
 
     // Cosine-weighted hemisphere sampling via Malley's Method.
-    // Generates directions on unit hemisphere weighted by cos(theta) (ideal for Lambertian diffuse reflection!).
+    // Generates directions on unit hemisphere weighted by cos(theta) (ideal for Lambertian diffuse reflection).
     // Projects 2D concentric disk samples straight up onto the 3D unit hemisphere.
     inline Vector3f CosineSampleHemisphere(const Point2f& u) {
         Point2f d = ConcentricSampleDisk(u);

@@ -13,7 +13,7 @@ namespace rt {
     // =================================
 
     // Represents a fixed location in 2D space.
-    // Unlike Vector2 (directions), points follow Affine Geometry rules!
+    // Unlike Vector2 (directions), points follow Affine Geometry rules.
     template <typename T>
     class Point2 : public Tuple2<Point2<T>, T> {
     public:
@@ -27,7 +27,7 @@ namespace rt {
         // AFFINE GEOMETRY RULES (INTENTIONAL OPERATOR RESTRICTIONS)
         // ---------------------------------------------------------
 
-        // Adding two points (Paris + London) makes no physical sense!
+        // Adding two points (Paris + London) makes no physical sense.
         // We explicitly delete these operators so the compiler slaps your wrist if you try.
         Point2 operator+(const Point2& other) const = delete;
         Point2& operator+=(const Point2& other) = delete;
@@ -80,7 +80,7 @@ namespace rt {
     // POINT UTILITY FUNCTIONS
     // =======================
 
-    // Squared distance between two 2D points. Saves sqrt CPU cycles!
+    // Squared distance between two 2D points. Saves sqrt CPU cycles.
     template <typename T>
     constexpr T DistanceSquared(const Point2<T>& p1, const Point2<T>& p2) {
         return LengthSquared(p1 - p2);

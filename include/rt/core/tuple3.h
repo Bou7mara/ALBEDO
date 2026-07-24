@@ -12,7 +12,7 @@ namespace rt {
     // ==========================
 
     // Methods ahead use constexpr for compile-time evaluation when possible
-    // Curiously Recurring Template Pattern (CRTP) lets base methods return Derived objects!
+    // Curiously Recurring Template Pattern (CRTP) lets base methods return Derived objects.
     template <typename Derived, typename T>
     class Tuple3 {
         // Compile-time check: T must be an arithmetic type (int, float, double, etc.)
@@ -31,7 +31,7 @@ namespace rt {
 
         // Parameterized constructor
         constexpr Tuple3(T x, T y, T z) : x(x), y(y), z(z) {
-            // Division by zero or uninitialized values yield NaN — catch edge cases early!
+            // Division by zero or uninitialized values yield NaN — catch edge cases early.
             assert(!HasNaN());
         }
 
@@ -80,11 +80,11 @@ namespace rt {
             assert(scalar != 0);
             if constexpr (std::is_floating_point_v<T>) {
                 // Division takes 2-5x more clock cycles than multiplication on x86/ARM CPUs.
-                // Invert the scalar once, then multiply 3 times to make the ALU happy!
+                // Invert the scalar once, then multiply 3 times to make the ALU happy.
                 T inv = static_cast<T>(1) / scalar;
                 return Derived(x * inv, y * inv, z * inv);
             } else {
-                // Integer division: no reciprocal trick here unless you like 1/2 becoming 0!
+                // Integer division: no reciprocal trick here unless you like 1/2 becoming 0.
                 return Derived(x / scalar, y / scalar, z / scalar);
             }
         }
