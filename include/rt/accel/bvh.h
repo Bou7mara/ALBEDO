@@ -33,7 +33,6 @@ private:
         bool IsLeaf() const { return nPrimitives > 0; }
     };
 
-<<<<<<< HEAD
     struct alignas(32) LinearBVHNode {
         Bounds3f bounds;
         union {
@@ -47,18 +46,11 @@ private:
 
     std::unique_ptr<BVHNode> BuildRecursive(std::vector<PrimitiveInfo>& primInfo,
                                              int start, int end);
-=======
-    std::unique_ptr<BVHNode> BuildRecursive(std::vector<PrimitiveInfo>& primInfo, int start, int end);
->>>>>>> c2937b739452e51d99f9e1a95d256ba02b32ca94
 
     std::unique_ptr<BVHNode> MakeLeaf(std::vector<PrimitiveInfo>& primInfo, int start, int end, const Bounds3f& bounds);
 
-<<<<<<< HEAD
     int CountNodes(const BVHNode* node) const;
     int FlattenBVHTree(const BVHNode* node, int* offset);
-=======
-    bool IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3], SurfaceInteraction* isect) const;
->>>>>>> c2937b739452e51d99f9e1a95d256ba02b32ca94
 
     std::vector<std::shared_ptr<Shape>> originalShapes_;
     std::vector<std::shared_ptr<Shape>> orderedShapes_;

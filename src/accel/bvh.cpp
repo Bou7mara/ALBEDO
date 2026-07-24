@@ -162,14 +162,9 @@ bool BVH::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
     Vector3f invDir(1.0f / ray.d.x, 1.0f / ray.d.y, 1.0f / ray.d.z);
     int dirIsNeg[3] = {invDir.x < 0, invDir.y < 0, invDir.z < 0};
 
-<<<<<<< HEAD
     int toVisitTop = 0;
     int nodesToVisit[64];
     int currentNodeIndex = 0;
-=======
-bool BVH::IntersectNode(const BVHNode* node, const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3], SurfaceInteraction* isect) const {
-    if (!node->bounds.IntersectP(ray, invDir, dirIsNeg)) return false;
->>>>>>> c2937b739452e51d99f9e1a95d256ba02b32ca94
 
     while (true) {
         const LinearBVHNode* node = &nodes_[currentNodeIndex];
