@@ -10,9 +10,7 @@ class BVH {
 public:
     enum class SplitMethod { Midpoint, SAH };
 
-    explicit BVH(std::vector<std::shared_ptr<Shape>> shapes,
-                 int maxPrimsInNode = 4,
-                 SplitMethod splitMethod = SplitMethod::SAH);
+    explicit BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode = 4, SplitMethod splitMethod = SplitMethod::SAH);
 
     bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
     bool IntersectP(const Ray& ray) const;
