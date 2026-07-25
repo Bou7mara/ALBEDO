@@ -19,13 +19,13 @@ namespace rt {
         os << toByte(r) << ' ' << toByte(g) << ' ' << toByte(b) << '\n';
     }
 
-    inline std::string NextImagePath(const std::string& directory = "images") {
+    inline std::string NextImagePath(const std::string& directory = "images", const std::string& extension = ".ppm") {
         std::filesystem::create_directories(directory);
 
         int n = 1;
         std::string path;
         do {
-            path = directory + "/image" + std::to_string(n) + ".ppm";
+            path = directory + "/image" + std::to_string(n) + extension;
             ++n;
         } while (std::filesystem::exists(path));
 

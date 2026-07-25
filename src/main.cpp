@@ -8,6 +8,7 @@
 #include "rt/scene/scene.h"
 #include "rt/scene/showcase.h"
 #include "rt/io/ppm_writer.h"
+#include "rt/io/png_writer.h"
 #include "rt/core/progress.h"
 
 #include <fstream>
@@ -153,10 +154,11 @@ int main() {
 
     progress.Finish();
 
-    std::string outputPath = NextImagePath();
-    std::ofstream out(outputPath);
+    // 1. Write PPM image (images/image[N].ppm)
+    std::string ppmPath = NextImagePath("images", ".ppm");
+    std::ofstream out(ppmPath);
     if (!out) {
-        std::cerr << "Failed to open " << outputPath << " for writing!\n";
+        std::cerr << "Failed to open " << ppmPath << " for writing!\n";
         return 1;
     }
 
@@ -167,7 +169,16 @@ int main() {
             WritePixel(out, color.x, color.y, color.z);
         }
     }
+    std::cout << "PPM output written to " << ppmPath << "\n";
 
-    std::cout << "Rendering completed. Output written to " << outputPath << "\n";
+    // 2. Write PNG image (images_png/image[N].png)
+    std::string pngPath = NextImagePath("images_png", ".png");
+    if (WritePNG(pngPath, setup.imageWidth, setup.imageHeight, framebuffer)) {
+        std::cout << "PNG output written to " << pngPath << "\n";
+    } else {
+        std::cerr << "Failed to write PNG output to " << pngPath << "!\n";
+    }
+
+    std::cout << "Rendering completed.\n";
     return 0;
 }
