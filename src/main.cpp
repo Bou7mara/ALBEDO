@@ -11,12 +11,7 @@
 #include "rt/io/png_writer.h"
 #include "rt/core/progress.h"
 
-#include <fstream>
-#include <memory>
-#include <iostream>
-#include <thread>
-#include <vector>
-#include <atomic>
+import std;
 
 using namespace rt;
 

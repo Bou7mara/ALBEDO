@@ -5,8 +5,7 @@
 #include "rt/materials/dielectric.h"
 #include "rt/materials/microfacet_brdf.h"
 #include "rt/materials/emissive.h"
-#include <numbers>
-#include <cmath>
+import std;
 
 namespace rt {
 

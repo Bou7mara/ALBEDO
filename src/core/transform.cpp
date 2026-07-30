@@ -1,8 +1,5 @@
 #include "rt/core/transform.h"
-#include <cassert>
-#include <cmath>
-#include <numbers>
-#include <utility>
+import std;
 
 namespace rt {
 

@@ -1,7 +1,7 @@
 #include "rt/materials/lambertian.h"
 #include "rt/core/onb.h"
 #include "rt/core/sampling.h"
-#include <numbers>
+import std;
 
 namespace rt {
 
