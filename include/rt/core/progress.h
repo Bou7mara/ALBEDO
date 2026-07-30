@@ -44,7 +44,7 @@ namespace rt {
             double eta = rate > 0.0 ? (total_ - done) / rate : 0.0;
 
             std::fprintf(stderr,
-                "\r[%-30s] %5.1f%%  %6d/%-6d rows  %6.1f rows/s  elapsed %6.1fs  eta %6.1fs   ",
+                "\r[%-30s] %5.1f%%  %6d/%-6d tiles  %6.1f tiles/s  elapsed %6.1fs  eta %6.1fs   ",
                 ProgressBar(frac).c_str(), frac * 100.0, done, total_, rate, elapsed,
                 force ? 0.0 : eta);
             std::fflush(stderr);

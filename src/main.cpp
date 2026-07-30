@@ -114,11 +114,9 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         specularBounce = (prevBsdfPdf == 0.0f);
 
 		if (depth >= kRRStartDepth) {
-			const float survivalProbability = std::clamp(MaxChannel(throughput), kRRProbabilityMinThreshold, kRRProbabilityMaximumThreshold);
-			if (survivalProbability < kRRProbabilityMaximumThreshold) {
-				if (rng.Uniform1D() > survivalProbability) break;
-                throughput = throughput / survivalProbability;
-			}
+			const float q = std::clamp(MaxChannel(throughput), kRRProbabilityMinThreshold, kRRProbabilityMaximumThreshold);
+			if (rng.Uniform1D() > q) break;
+			throughput = throughput / q;
 		}
 
         constexpr float kEpsilon = 1e-4f;
@@ -139,9 +137,14 @@ int main() {
     std::cout << "Rendering Showcase Scene: " << setup.imageWidth << "x" << setup.imageHeight
               << " image at " << setup.samplesPerPixel << " spp using " << numThreads << " threads...\n";
 
+    constexpr int kTileSize = 16;
+    int numTilesX = (setup.imageWidth + kTileSize - 1) / kTileSize;
+    int numTilesY = (setup.imageHeight + kTileSize - 1) / kTileSize;
+    int totalTiles = numTilesX * numTilesY;
+
     std::vector<Vector3f> framebuffer(setup.imageWidth * setup.imageHeight);
-    std::atomic<int> nextRow{0};
-    ProgressReporter progress(setup.imageHeight);
+    std::atomic<int> nextTile{0};
+    ProgressReporter progress(totalTiles);
 
     std::vector<std::thread> threads;
     threads.reserve(numThreads);
@@ -149,18 +152,28 @@ int main() {
     for (unsigned int t = 0; t < numThreads; ++t) {
         threads.emplace_back([&, t]() {
             RNG rng(1337 + t * 997);
-            int y = 0;
-            while ((y = nextRow.fetch_add(1, std::memory_order_relaxed)) < setup.imageHeight) {
-                for (int x = 0; x < setup.imageWidth; ++x) {
-                    Vector3f colorSum(0.0f, 0.0f, 0.0f);
-                    for (int s = 0; s < setup.samplesPerPixel; ++s) {
-                        Point2f jitter = rng.Uniform2D();
-                        CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
-                        Ray ray = setup.camera.GenerateRay(sample);
-                        colorSum += RayColor(ray, setup.scene, rng, setup.maxDepth);
+            int tileIdx = 0;
+            while ((tileIdx = nextTile.fetch_add(1, std::memory_order_relaxed)) < totalTiles) {
+                int tileY = tileIdx / numTilesX;
+                int tileX = tileIdx % numTilesX;
+
+                int startX = tileX * kTileSize;
+                int endX = std::min(startX + kTileSize, setup.imageWidth);
+                int startY = tileY * kTileSize;
+                int endY = std::min(startY + kTileSize, setup.imageHeight);
+
+                for (int y = startY; y < endY; ++y) {
+                    for (int x = startX; x < endX; ++x) {
+                        Vector3f colorSum(0.0f, 0.0f, 0.0f);
+                        for (int s = 0; s < setup.samplesPerPixel; ++s) {
+                            Point2f jitter = rng.Uniform2D();
+                            CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
+                            Ray ray = setup.camera.GenerateRay(sample);
+                            colorSum += RayColor(ray, setup.scene, rng, setup.maxDepth);
+                        }
+                        Vector3f avgColor = colorSum / static_cast<float>(setup.samplesPerPixel);
+                        framebuffer[y * setup.imageWidth + x] = avgColor;
                     }
-                    Vector3f avgColor = colorSum / static_cast<float>(setup.samplesPerPixel);
-                    framebuffer[y * setup.imageWidth + x] = avgColor;
                 }
                 progress.Advance();
             }
