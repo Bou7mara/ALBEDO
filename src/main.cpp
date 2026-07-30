@@ -20,6 +20,17 @@
 
 using namespace rt;
 
+namespace {
+	constexpr int kRRStartDepth = 3;
+	constexpr float kRRProbabilityMinThreshold = 0.5f;
+    constexpr float kRRProbabilityMaximumThreshold = 0.95f;
+}
+
+// Helper
+[[nodiscard]] constexpr float MaxChannel(const Vector3f& v) {
+	return std::max(v.x, std::max(v.y, v.z));
+}
+
 inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
     float f = nf * fPdf;
     float g = ng * gPdf;
@@ -102,6 +113,14 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n));
         specularBounce = (prevBsdfPdf == 0.0f);
 
+		if (depth >= kRRStartDepth) {
+			const float survivalProbability = std::clamp(MaxChannel(throughput), kRRProbabilityMinThreshold, kRRProbabilityMaximumThreshold);
+			if (survivalProbability < kRRProbabilityMaximumThreshold) {
+				if (rng.Uniform1D() > survivalProbability) break;
+                throughput = throughput / survivalProbability;
+			}
+		}
+
         constexpr float kEpsilon = 1e-4f;
         Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
         Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
@@ -154,7 +173,7 @@ int main() {
 
     progress.Finish();
 
-    // 1. Write PPM image (images/image[N].ppm)
+    // 1. Write PPM image (images/image[#N].ppm)
     std::string ppmPath = NextImagePath("images", ".ppm");
     std::ofstream out(ppmPath);
     if (!out) {
@@ -171,7 +190,7 @@ int main() {
     }
     std::cout << "PPM output written to " << ppmPath << "\n";
 
-    // 2. Write PNG image (images_png/image[N].png)
+    // 2. Write PNG image (images_png/image[#N].png)
     std::string pngPath = NextImagePath("images_png", ".png");
     if (WritePNG(pngPath, setup.imageWidth, setup.imageHeight, framebuffer)) {
         std::cout << "PNG output written to " << pngPath << "\n";
