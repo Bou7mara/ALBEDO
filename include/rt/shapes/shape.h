@@ -13,6 +13,8 @@ namespace rt {
     struct SurfaceInteraction {
         Point3f p;
         Normal3f n;
+        Normal3f ns; // shading normal
+        Point2f uv{0.0f, 0.0f}; // surface parameterization
         Vector3f wo;
         float t = 0.0f;
         const Shape* shape = nullptr;

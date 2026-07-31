@@ -40,6 +40,9 @@ add_executable(rt_tests
     test_power_sampling.cpp
     test_progress.cpp
     test_multithreading.cpp
+    test_triangle.cpp
+    test_mesh_generators.cpp
+    test_showcase.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

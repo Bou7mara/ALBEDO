@@ -1,3 +1,6 @@
+#include <fstream>
+#include <thread>
+
 #include "rt/core/point2.h"
 #include "rt/core/rng.h"
 #include "rt/cam/perspective_camera.h"
@@ -11,7 +14,8 @@
 #include "rt/io/png_writer.h"
 #include "rt/core/progress.h"
 
-import std;
+
+
 
 using namespace rt;
 
@@ -124,7 +128,7 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
 }
 
 int main() {
-    ShowcaseSetup setup = CreateShowcaseScene(1600, 1000, 500);
+    ShowcaseSetup setup = CreateShowcaseScene(2560, 1600, 1000);
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     if (numThreads == 0) numThreads = 4;

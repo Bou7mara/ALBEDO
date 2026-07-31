@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="4" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/RefactoringsMru/RenameRefactoring/DoSearchForTextInStrings/@EntryValue" value="true" type="bool" />
   </component>
@@ -64,8 +64,20 @@
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/core/progress.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/core/progress.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/dielectric.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/dielectric.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/scene/showcase.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/scene/showcase.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/shape.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/shapes/triangle.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/triangle.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/accel/bvh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel/bvh.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/transform.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/transform.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/dielectric.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/dielectric.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scene/showcase.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/scene/showcase.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shapes/Triangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/Triangle.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_triangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_triangle.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -289,6 +301,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="benchmark_bvh" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="benchmark_bvh" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="benchmark_bvh">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -373,6 +390,7 @@
       <workItem from="1784640504115" duration="11644000" />
       <workItem from="1784659751055" duration="57547000" />
       <workItem from="1784943504936" duration="1304000" />
+      <workItem from="1785480058672" duration="3238000" />
     </task>
     <servers />
   </component>

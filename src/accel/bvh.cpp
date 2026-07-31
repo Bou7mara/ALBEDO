@@ -1,5 +1,6 @@
 #include "rt/accel/bvh.h"
-import std;
+#include <algorithm>
+#include <array>
 
 namespace rt {
 

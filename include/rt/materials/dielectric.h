@@ -4,7 +4,9 @@
 namespace rt {
     class Dielectric : public BSDF {
     public:
-        explicit Dielectric(float ior) : ior_(ior){}
+        // Default tint to white so existing uncolored glass code still works
+        explicit Dielectric(float ior, const Vector3f& tint = Vector3f(1.0f, 1.0f, 1.0f))
+            : ior_(ior), tint_(tint) {}
 
         Vector3f f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const override;
 
@@ -15,5 +17,6 @@ namespace rt {
 
     private:
         float ior_;
+        Vector3f tint_;
     };
 }
