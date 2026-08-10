@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <numbers>
 #include "rt/materials/lambertian.h"
 
 using namespace rt;

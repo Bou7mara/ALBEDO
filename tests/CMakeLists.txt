@@ -28,6 +28,7 @@ add_executable(rt_tests
     test_rng.cpp
     test_metal.cpp
     test_bounds3.cpp
+    test_bounds3_transform.cpp
     test_bvh.cpp
     test_dielectric.cpp
     test_fresnel.cpp
@@ -43,6 +44,10 @@ add_executable(rt_tests
     test_triangle.cpp
     test_mesh_generators.cpp
     test_showcase.cpp
+    test_obj_loader.cpp
+    test_mesh_instance.cpp
+    test_scene_node.cpp
+    test_quad.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

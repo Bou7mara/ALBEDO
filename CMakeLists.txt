@@ -24,6 +24,10 @@ add_library(rt_core STATIC
     src/scene/showcase.cpp
     src/scene/mesh_generators.cpp
     src/shapes/Triangle.cpp
+    src/io/obj_loader.cpp
+    src/shapes/mesh_instance.cpp
+    src/scene/scene_node.cpp
+    src/shapes/quad.cpp
 )
 
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

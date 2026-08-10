@@ -1,6 +1,15 @@
 #pragma once
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4505)
+#endif
+#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#endif
 #include "rt/io/stb_image_write.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "rt/core/vector3.h"
 
 #include <vector>

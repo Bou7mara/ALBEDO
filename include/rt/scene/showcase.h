@@ -17,5 +17,6 @@ namespace rt {
 
     ShowcaseSetup CreateSphereShowcaseScene(int width = 1600, int height = 1000, int spp = 500);
     ShowcaseSetup CreateGemRoomShowcaseScene(int width = 2560, int height = 1600, int spp = 1000);
+    ShowcaseSetup CreateCornellBoxShowcaseScene(int width = 800, int height = 800, int spp = 256);
     ShowcaseSetup CreateShowcaseScene(int width = 2560, int height = 1600, int spp = 1000);
 }

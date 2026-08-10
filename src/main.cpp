@@ -25,7 +25,6 @@ namespace {
     constexpr float kRRProbabilityMaximumThreshold = 0.95f;
 }
 
-// Helper
 [[nodiscard]] constexpr float MaxChannel(const Vector3f& v) {
 	return std::max(v.x, std::max(v.y, v.z));
 }
@@ -36,7 +35,7 @@ inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
     return (f * f) / (f * f + g * g);
 }
 
-Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
+Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     Vector3f L(0.0f, 0.0f, 0.0f);
     Vector3f throughput(1.0f, 1.0f, 1.0f);
     bool specularBounce = true;
@@ -127,13 +126,25 @@ Vector3f RayColor(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     return L;
 }
 
-int main() {
-    ShowcaseSetup setup = CreateShowcaseScene(2560, 1600, 1000);
+int main(int argc, char* argv[]) {
+    int width = 2560;
+    int height = 1600;
+    int spp = 5000;
+    std::string sceneChoice = "gem";
+
+    if (argc > 1) width = std::atoi(argv[1]);
+    if (argc > 2) height = std::atoi(argv[2]);
+    if (argc > 3) spp = std::atoi(argv[3]);
+    if (argc > 4) sceneChoice = argv[4];
+
+    ShowcaseSetup setup = (sceneChoice == "sphere") ? CreateSphereShowcaseScene(width, height, spp) :
+                          (sceneChoice == "gem")    ? CreateGemRoomShowcaseScene(width, height, spp) :
+                                                      CreateCornellBoxShowcaseScene(width, height, spp);
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     if (numThreads == 0) numThreads = 4;
 
-    std::cout << "Rendering Showcase Scene: " << setup.imageWidth << "x" << setup.imageHeight
+    std::cout << "Rendering Scene (" << sceneChoice << "): " << setup.imageWidth << "x" << setup.imageHeight
               << " image at " << setup.samplesPerPixel << " spp using " << numThreads << " threads...\n";
 
     constexpr int kTileSize = 16;
@@ -168,7 +179,7 @@ int main() {
                             Point2f jitter = rng.Uniform2D();
                             CameraSample sample{Point2f(x + jitter.x, y + jitter.y)};
                             Ray ray = setup.camera.GenerateRay(sample);
-                            colorSum += RayColor(ray, setup.scene, rng, setup.maxDepth);
+                            colorSum += ALBEDO(ray, setup.scene, rng, setup.maxDepth);
                         }
                         Vector3f avgColor = colorSum / static_cast<float>(setup.samplesPerPixel);
                         framebuffer[y * setup.imageWidth + x] = avgColor;
@@ -185,7 +196,6 @@ int main() {
 
     progress.Finish();
 
-    // 1. Write PPM image (images/image[#N].ppm)
     std::string ppmPath = NextImagePath("images", ".ppm");
     std::ofstream out(ppmPath);
     if (!out) {
@@ -202,7 +212,6 @@ int main() {
     }
     std::cout << "PPM output written to " << ppmPath << "\n";
 
-    // 2. Write PNG image (images_png/image[#N].png)
     std::string pngPath = NextImagePath("images_png", ".png");
     if (WritePNG(pngPath, setup.imageWidth, setup.imageHeight, framebuffer)) {
         std::cout << "PNG output written to " << pngPath << "\n";

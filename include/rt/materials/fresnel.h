@@ -5,6 +5,13 @@
 #include <utility>
 
 namespace rt {
+    constexpr float kRefWavelengthUm = 0.589f; // Sodium D-line, reference wavelength for IOR
+
+    [[nodiscard]] inline float CauchyIOR(float iorAtRef, float dispersionB, float lambdaUm) {
+        float A = iorAtRef - dispersionB / (kRefWavelengthUm * kRefWavelengthUm);
+        return A + dispersionB / (lambdaUm * lambdaUm);
+    }
+
     inline Vector3f Reflect(const Vector3f& wo, const Vector3f& n) {
         return Normalize(2.0f * Dot(wo, n) * n - wo);
     }

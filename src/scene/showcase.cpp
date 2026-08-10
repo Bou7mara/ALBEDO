@@ -2,6 +2,7 @@
 #include "rt/scene/mesh_generators.h"
 #include "rt/shapes/sphere.h"
 #include "rt/shapes/triangle.h"
+#include "rt/shapes/quad.h"
 #include "rt/materials/lambertian.h"
 #include "rt/materials/metal.h"
 #include "rt/materials/dielectric.h"
@@ -14,9 +15,9 @@
 
 namespace rt {
 
-// =================================
-// 1. Original Sphere Showcase Scene
-// =================================
+// ===========================
+// 1. OG Sphere Showcase Scene
+// ===========================
 ShowcaseSetup CreateSphereShowcaseScene(int width, int height, int spp) {
     PerspectiveCamera camera(
         Point3f(0.0f, 1.2f, 4.0f),
@@ -214,14 +215,54 @@ namespace {
 
     void AddQuadLight(Scene& scene, const Point3f& center, float halfWidth, float halfDepth,
                       std::shared_ptr<BSDF> emissive) {
-        auto mesh = MakeQuadMesh(halfWidth, halfDepth);
-        for (auto& p : mesh->positions) {
-            p = Point3f(p.x + center.x, p.y + center.y, p.z + center.z);
-        }
-        auto faces = MakeTriangleMesh(mesh, emissive);
-        for (auto& f : faces) scene.Add(f);
+        Point3f p0(center.x - halfWidth, center.y, center.z - halfDepth);
+        Vector3f e1(2.0f * halfWidth, 0.0f, 0.0f);
+        Vector3f e2(0.0f, 0.0f, 2.0f * halfDepth);
+        scene.Add(std::make_shared<Quad>(p0, e1, e2, emissive));
     }
 
+}
+
+ShowcaseSetup CreateCornellBoxShowcaseScene(int width, int height, int spp) {
+    PerspectiveCamera camera(
+        Point3f(0.0f, 1.0f, 3.4f),
+        Point3f(0.0f, 1.0f, 0.0f),
+        Vector3f(0.0f, 1.0f, 0.0f),
+        40.0f,
+        width, height
+    );
+
+    Scene scene;
+
+    auto whiteMat = std::make_shared<Lambertian>(Vector3f(0.73f, 0.73f, 0.73f));
+    auto redMat   = std::make_shared<Lambertian>(Vector3f(0.65f, 0.05f, 0.05f));
+    auto greenMat = std::make_shared<Lambertian>(Vector3f(0.12f, 0.45f, 0.15f));
+    auto lightMat = std::make_shared<Emissive>(Vector3f(15.0f, 15.0f, 15.0f));
+    auto glassMat = std::make_shared<Dielectric>(1.5f);
+    auto metalMat = std::make_shared<Metal>(Vector3f(0.95f, 0.93f, 0.88f));
+
+    // 5-quad box walls
+    // Floor (y = 0)
+    scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, 0.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, -2.0f), whiteMat));
+    // Ceiling (y = 2)
+    scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 2.0f, -2.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 2.0f), whiteMat));
+    // Back wall (z = -2)
+    scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, -2.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 2.0f, 0.0f), whiteMat));
+    // Left wall (x = -1, red)
+    scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, -2.0f), Vector3f(0.0f, 2.0f, 0.0f), redMat));
+    // Right wall (x = 1, green)
+    scene.Add(std::make_shared<Quad>(Point3f(1.0f, 0.0f, -2.0f), Vector3f(0.0f, 0.0f, 2.0f), Vector3f(0.0f, 2.0f, 0.0f), greenMat));
+
+    // Ceiling light quad
+    scene.Add(std::make_shared<Quad>(Point3f(-0.3f, 1.99f, -1.3f), Vector3f(0.6f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 0.6f), lightMat));
+
+    // Inner hero objects
+    scene.Add(std::make_shared<Sphere>(Transform::Translate(Vector3f(-0.4f, 0.4f, -1.2f)), 0.4f, glassMat));
+    scene.Add(std::make_shared<Sphere>(Transform::Translate(Vector3f(0.4f, 0.4f, -0.7f)), 0.4f, metalMat));
+
+    scene.Build();
+
+    return ShowcaseSetup(std::move(scene), camera, width, height, spp, 50);
 }
 
 ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
@@ -240,8 +281,9 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
 
     auto matLambertian   = std::make_shared<Lambertian>(Vector3f(0.6f, 0.35f, 0.3f));
     auto matGlass        = std::make_shared<Dielectric>(1.5f);
-    auto matDiamond      = std::make_shared<Dielectric>(2.42f);
+    auto matDiamond      = std::make_shared<Dielectric>(2.42f, Vector3f(1.0f, 1.0f, 1.0f), 0.0131f);
     auto matRuby         = std::make_shared<Dielectric>(1.76f, Vector3f(0.85f, 0.05f, 0.12f));
+    auto matSapphire     = std::make_shared<Dielectric>(2.75f, Vector3f(0.12f, 0.38f, 0.88f));
     auto matFrostedGlass = std::make_shared<Microfacet>(Microfacet::MakeDielectricMicrofacet(0.15f, 1.5f));
     auto matGold         = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.04f, eta_gold, k_gold));
     auto matCopper       = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.35f, eta_copper, k_copper));
@@ -277,7 +319,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
         }
     }
 
-    AddDiamond(scene, Point3f(0.0f, 0.0f, -2.5f), 0.6f, 0.9f, matRuby);
+    AddDiamond(scene, Point3f(0.0f, 0.0f, -2.5f), 0.6f, 0.9f, matDiamond);
 
     auto keyLightMat   = std::make_shared<Emissive>(Vector3f(8.5f, 6.0f, 3.8f));
     auto fillLightMat  = std::make_shared<Emissive>(Vector3f(2.8f, 3.8f, 6.2f));

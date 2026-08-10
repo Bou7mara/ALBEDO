@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="7" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/RefactoringsMru/RenameRefactoring/DoSearchForTextInStrings/@EntryValue" value="true" type="bool" />
   </component>
@@ -63,21 +63,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d98156a5-519f-4065-a8df-fe5ff6a3146f" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/include/rt/io/obj_loader.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/rt/scene/scene_node.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/rt/shapes/mesh_instance.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/rt/shapes/quad.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/io/obj_loader.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/scene/scene_node.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/shapes/mesh_instance.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/shapes/quad.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_bounds3_transform.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_mesh_instance.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_obj_loader.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_quad.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_scene_node.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/core/transform.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/core/transform.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/io/png_writer.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/io/png_writer.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/rt/materials/dielectric.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/dielectric.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/rt/materials/fresnel.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/materials/fresnel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/rt/scene/showcase.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/scene/showcase.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/shapes/shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/rt/shapes/triangle.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/rt/shapes/triangle.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/accel/bvh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/accel/bvh.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/transform.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/transform.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/materials/dielectric.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/dielectric.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/materials/lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/materials/lambertian.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scene/mesh_generators.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/scene/mesh_generators.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/scene/showcase.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/scene/showcase.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shapes/Triangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shapes/Triangle.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_triangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_triangle.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_dielectric.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dielectric.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_lambertian.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_lambertian.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -91,6 +104,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Bou7mara&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Bou7mara/ALBEDO.git&quot;,
+    &quot;accountId&quot;: &quot;5137d150-1392-4acf-8c33-352775c1999e&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/include/rt/core/bounds3.h" root0="FORCE_HIGHLIGHTING" />
   </component>
@@ -134,6 +159,7 @@
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;ctest.advertisement.all.test.configuration.is.created&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -301,11 +327,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="benchmark_bvh" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="raytracer" TARGET_NAME="benchmark_bvh" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="raytracer" RUN_TARGET_NAME="benchmark_bvh">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -336,7 +357,6 @@
     <list>
       <item itemvalue="C/C++ File.main.cpp" />
       <item itemvalue="Catch.rt_tests" />
-      <item itemvalue="CMake Application.Continuous" />
       <item itemvalue="CMake Application.ContinuousBuild" />
       <item itemvalue="CMake Application.ContinuousConfigure" />
       <item itemvalue="CMake Application.ContinuousCoverage" />
@@ -345,7 +365,7 @@
       <item itemvalue="CMake Application.ContinuousSubmit" />
       <item itemvalue="CMake Application.ContinuousTest" />
       <item itemvalue="CMake Application.ContinuousUpdate" />
-      <item itemvalue="CMake Application.Experimental" />
+      <item itemvalue="CMake Application.Continuous" />
       <item itemvalue="CMake Application.ExperimentalBuild" />
       <item itemvalue="CMake Application.ExperimentalConfigure" />
       <item itemvalue="CMake Application.ExperimentalCoverage" />
@@ -354,7 +374,7 @@
       <item itemvalue="CMake Application.ExperimentalSubmit" />
       <item itemvalue="CMake Application.ExperimentalTest" />
       <item itemvalue="CMake Application.ExperimentalUpdate" />
-      <item itemvalue="CMake Application.Nightly" />
+      <item itemvalue="CMake Application.Experimental" />
       <item itemvalue="CMake Application.NightlyBuild" />
       <item itemvalue="CMake Application.NightlyConfigure" />
       <item itemvalue="CMake Application.NightlyCoverage" />
@@ -364,11 +384,12 @@
       <item itemvalue="CMake Application.NightlySubmit" />
       <item itemvalue="CMake Application.NightlyTest" />
       <item itemvalue="CMake Application.NightlyUpdate" />
+      <item itemvalue="CMake Application.Nightly" />
+      <item itemvalue="CMake Application.Catch2WithMain" />
+      <item itemvalue="CMake Application.Catch2" />
       <item itemvalue="CMake Application.benchmark_bvh" />
       <item itemvalue="CMake Application.raytracer" />
       <item itemvalue="CMake Application.rt_core" />
-      <item itemvalue="CMake Application.Catch2" />
-      <item itemvalue="CMake Application.Catch2WithMain" />
       <item itemvalue="CTest Application.All CTest" />
     </list>
     <recent_temporary>
@@ -391,6 +412,12 @@
       <workItem from="1784659751055" duration="57547000" />
       <workItem from="1784943504936" duration="1304000" />
       <workItem from="1785480058672" duration="3238000" />
+      <workItem from="1785541709911" duration="39000" />
+      <workItem from="1785541814212" duration="9000" />
+      <workItem from="1785577897480" duration="10000" />
+      <workItem from="1785782675648" duration="3000" />
+      <workItem from="1785931878812" duration="8129000" />
+      <workItem from="1786317593053" duration="3947000" />
     </task>
     <servers />
   </component>

@@ -3,6 +3,7 @@
 #include "rt/core/vector3.h"
 #include "rt/core/normal3.h"
 #include "rt/core/ray.h"
+#include "rt/core/bounds3.h"
 #include <cmath>
 #include <cstring>
 
@@ -107,6 +108,19 @@ namespace rt {
             Point3f newO = (*this)(r.o);
             Vector3f newD = (*this)(r.d);
             return Ray(newO, newD, r.tMax, r.time);
+        }
+
+        Bounds3f operator()(const Bounds3f& b) const {
+            Bounds3f out;
+            out = Union(out, (*this)(Point3f(b.minPt.x, b.minPt.y, b.minPt.z)));
+            out = Union(out, (*this)(Point3f(b.maxPt.x, b.minPt.y, b.minPt.z)));
+            out = Union(out, (*this)(Point3f(b.minPt.x, b.maxPt.y, b.minPt.z)));
+            out = Union(out, (*this)(Point3f(b.maxPt.x, b.maxPt.y, b.minPt.z)));
+            out = Union(out, (*this)(Point3f(b.minPt.x, b.minPt.y, b.maxPt.z)));
+            out = Union(out, (*this)(Point3f(b.maxPt.x, b.minPt.y, b.maxPt.z)));
+            out = Union(out, (*this)(Point3f(b.minPt.x, b.maxPt.y, b.maxPt.z)));
+            out = Union(out, (*this)(Point3f(b.maxPt.x, b.maxPt.y, b.maxPt.z)));
+            return out;
         }
 
         Transform operator*(const Transform& other) const {
