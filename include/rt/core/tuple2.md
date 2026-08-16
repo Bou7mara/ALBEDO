@@ -56,3 +56,20 @@ constexpr T& operator[](int i) { ... }
 
 Const and non-const overloads for array-style access, both bounds-checked via `assert`. In a release build, an out-of-range index silently falls through to returning `y`, since the ternary only branches on `i == 0`. Worth remembering if odd behavior shows up on bad indices in optimized builds.
 
+### 1.3 Arithmetic
+
+```cpp
+constexpr Derived operator-() const { return Derived(-x, -y); }
+constexpr Derived operator+(const Derived& other) const { return Derived(x + other.x, y + other.y); }
+constexpr Derived operator-(const Derived& other) const { return Derived(x - other.x, y - other.y); }
+constexpr Derived operator*(T scalar) const { return Derived(x * scalar, y * scalar); }
+constexpr Derived operator/(T scalar) const {
+    assert(scalar != 0);
+    if constexpr (std::is_floating_point_v<T>) {
+        T inv = static_cast<T>(1) / scalar;
+        return Derived(x * inv, y * inv);
+    } else {
+        return Derived(x / scalar, y / scalar);
+    }
+}
+```
