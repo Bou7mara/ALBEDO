@@ -48,3 +48,16 @@ Anonymous namespace → internal linkage, these constants are private to this tr
 | `kRRProbabilityMinimumThreshold` |    Floor on survival probability $q$: badly-attenuated paths survive with at least 50% chance.     |
 | `kRRProbabilityMaximumThreshold` | Ceiling on $q$: bright paths are capped at 95% to prevent silent RR pass-through on firefly paths. |
 
+### `0.3` `MaxChannel`
+
+```cpp
+[[nodiscard]] constexpr float MaxChannel(const Vector3f& v) {
+	return std::max(v.x, std::max(v.y, v.z));
+	}
+```
+
+$$
+\text{MaxChannel}(\mathbf{v}) = \max(v_x, v_y, v_z)
+$$
+I use this to turn the path's RGB throughput into a single number for the Russian Roulette coin-flip in §1.3. I chose to use the *maximum* channel rather than something like "perceptual luminance" (or an average of the three) cause it means a path that's built up a lot of energy in even one channel (say, deep red after bouncing off a red wall several times) still gets treated as "high throughput" and is therefore kept alive, rather than being unfairly killed off because it looks dim on average. That matters for avoiding subtle color shifts that a luminance-weighted heuristic could otherwise introduce.
+
