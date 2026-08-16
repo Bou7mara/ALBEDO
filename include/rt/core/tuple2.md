@@ -73,3 +73,9 @@ constexpr Derived operator/(T scalar) const {
     }
 }
 ```
+
+Negation, addition, subtraction are all plain component-wise ops that return a `Derived`, this is the CRTP payoff, `a + b` on two `Point2f` gives back a `Point2f` with no casting.
+
+Division asserts against a zero divisor even for floating-point `T`, where IEEE 754 would happily produce `inf` or `NaN`. That's stricter-than-necessary but its my policy throughout... consistent with catching catching bad values at the source instead of letting them propagate.
+
+The `if constexpr` branch computes a reciprocal once and multiplies for floating-point `T` (cheaper than repeated division), and falls back to plain division for integers, where a reciprocal doesn't make sense. Since it's `if constexpr`, only one branch is ever compiled per instantiation, no runtime cost either way.
