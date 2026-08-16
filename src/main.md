@@ -91,6 +91,21 @@ You'll see this function called from two places, playing opposite roles each tim
 Note that `PowerHeustic` isn't marked `[[nodiscard]]`, `MaxChannel` on the other hand is. Weird... cause throwing away either one would be equally catastrophic. I should probably change that.
 Anyways. between them, they form the two halves of an MIS estimator.
 
+---
+
+## `1.` The Main Integrator
+
+```cpp
+Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxdepth) {
+	Vector3f L(0.0f, 0.0f, 0.0f);
+	Vector3f throughput(1.0f, 1.0f, 1.0f);
+	bool specularBounce = true;
+	float prevBsdfPdf = 0.0f;
+	
+	for (int depth = 0; depth < maxDepth; ++depth) {
+		...
+	}
+	return L;
+}
 ```
 
-```
