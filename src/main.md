@@ -42,3 +42,9 @@ namespace {
 
 Anonymous namespace → internal linkage, these constants are private to this translation unit. They're the three knobs I used parameterize my Russian Roulette technique (§1.3 below):
 
+|             Constant             |                                              Meaning                                               |
+| :------------------------------: | :------------------------------------------------------------------------------------------------: |
+|         `kRRStartDepth`          | Bounce index at which RR starts being *considered*. Depths `0,1,2` are always fully computed for.  |
+| `kRRProbabilityMinimumThreshold` |    Floor on survival probability $q$: badly-attenuated paths survive with at least 50% chance.     |
+| `kRRProbabilityMaximumThreshold` | Ceiling on $q$: bright paths are capped at 95% to prevent silent RR pass-through on firefly paths. |
+
