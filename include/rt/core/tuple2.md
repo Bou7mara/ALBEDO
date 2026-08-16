@@ -46,3 +46,13 @@ constexpr Tuple2(T x, T y) : x(x), y(y) {
 Default constructor zero-inits, no check needed since zero can't be NaN. The two-argument constructor asserts no NaN snuck in, catching a common renderer bug (a stray NaN from a bad division propagating silently downstream) right at its source. This only runs in debug builds; `assert` disappears under `NDEBUG`.
 
 Both are `constexpr`, so a `Tuple2` can be built at compile time when its inputs are constants.
+
+### 1.2 Indexing
+
+```cpp
+constexpr T operator[](int i) const { ... }
+constexpr T& operator[](int i) { ... }
+```
+
+Const and non-const overloads for array-style access, both bounds-checked via `assert`. In a release build, an out-of-range index silently falls through to returning `y`, since the ternary only branches on `i == 0`. Worth remembering if odd behavior shows up on bad indices in optimized builds.
+
