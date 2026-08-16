@@ -30,3 +30,15 @@ Notable absence: no `<atomic>` include despite `std::atomic<int>` being used fur
 
 In Progress: Compilation times are annoyingly slow right now, and so I'm working on getting modules to work: planning to use them both as `import std;` and to export all header files as modules.
 
+### `0.2` Constants
+
+```cpp
+namespace {
+	constexpr int kRRStartDepth = 3;
+	constexpr float kRRProbabilityMinimumThreshold = 0.5f;
+	constexpr float kRRProbabilityMaximumThreshold = 0.95f;
+	}
+```
+
+Anonymous namespace → internal linkage, these constants are private to this translation unit. They're the three knobs I used parameterize my Russian Roulette technique (§1.3 below):
+
