@@ -326,8 +326,8 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
     auto rimLightMat   = std::make_shared<Emissive>(Vector3f(7.0f, 7.0f, 7.0f));
     auto topSoftboxMat = std::make_shared<Emissive>(Vector3f(4.2f, 4.2f, 4.5f));
 
-    //AddQuadLight(scene, Point3f(-4.5f, 4.2f, 2.0f), 0.6f, 0.6f, keyLightMat);
-    //AddQuadLight(scene, Point3f(4.5f, 3.5f, 2.5f), 0.7f, 0.7f, fillLightMat);
+    AddQuadLight(scene, Point3f(-4.5f, 4.2f, 2.0f), 0.6f, 0.6f, keyLightMat);
+    AddQuadLight(scene, Point3f(4.5f, 3.5f, 2.5f), 0.7f, 0.7f, fillLightMat);
     AddQuadLight(scene, Point3f(0.0f, 3.8f, -4.5f), 0.5f, 0.5f, rimLightMat);
     AddQuadLight(scene, Point3f(0.0f, 5.5f, -1.2f), 1.5f, 0.9f, topSoftboxMat);
 

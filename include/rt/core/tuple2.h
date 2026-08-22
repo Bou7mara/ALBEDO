@@ -26,11 +26,7 @@ namespace rt {
 
         constexpr __host__ __device__ Tuple2() : x(0), y(0) {}
 
-        constexpr __host__ __device__ Tuple2(T x, T y) : x(x), y(y) {
-#ifndef NDEBUG
-            assert(!HasNaN());
-#endif
-        }
+        constexpr __host__ __device__ Tuple2(T x, T y) : x(x), y(y) {}
 
         constexpr __host__ __device__ T operator[](int i) const {
 #ifndef NDEBUG
@@ -63,9 +59,6 @@ namespace rt {
         }
 
         constexpr __host__ __device__ Derived operator/(T scalar) const {
-#ifndef NDEBUG
-            assert(scalar != 0);
-#endif
             if constexpr (std::is_floating_point_v<T>) {
                 T inv = static_cast<T>(1) / scalar;
                 return Derived(x * inv, y * inv);

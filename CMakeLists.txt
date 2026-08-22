@@ -33,7 +33,7 @@ add_library(rt_core STATIC
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)
-    target_compile_options(rt_core PUBLIC /W4 /WX /arch:AVX2)
+    target_compile_options(rt_core PUBLIC /W4 /WX /EHsc /arch:AVX2)
 else()
     target_compile_options(rt_core PUBLIC -Wall -Wextra -Wpedantic -Werror -march=native)
 endif()

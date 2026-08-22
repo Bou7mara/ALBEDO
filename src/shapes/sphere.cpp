@@ -2,6 +2,7 @@
 #include "rt/core/quadratic.h"
 #include "rt/core/onb.h"
 #include "rt/core/sampling.h"
+#include <numbers>
 
 namespace rt {
 

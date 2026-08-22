@@ -25,10 +25,10 @@ namespace rt {
         float time;
 
         constexpr __host__ __device__ Ray()
-            : o(), d(), tMax(1e30f), time(0.0f) {}
+            : o(), d(), tMax(std::numeric_limits<float>::infinity()), time(0.0f) {}
 
         constexpr __host__ __device__ Ray(const Point3f& origin, const Vector3f& direction,
-                                          float tMax_ = 1e30f,
+                                          float tMax_ = std::numeric_limits<float>::infinity(),
                                           float time_ = 0.0f)
             : o(origin), d(direction), tMax(tMax_), time(time_) {}
 

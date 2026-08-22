@@ -8,8 +8,6 @@
 using namespace rt;
 using Catch::Approx;
 
-constexpr float kPi = std::numbers::pi_v<float>;
-
 TEST_CASE("GgxD reduces to 1/Pi at normal incidence when fully rough", "[microfacet]") {
     REQUIRE(GgxD(1.0f, 1.0f) == Approx(1.0f / kPi).margin(1e-4));
 }

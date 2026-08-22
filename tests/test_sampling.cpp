@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "rt/core/sampling.h"
+#include <numbers>
 
 using namespace rt;
 using Catch::Approx;
