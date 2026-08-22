@@ -33,7 +33,7 @@ namespace rtx {
     struct DeviceMaterial {
         MaterialKind kind = MaterialKind::Lambertian;
         union {
-            struct { rt::Vector3f albedo; } lambertian;
+            struct { rt::Vector3f albedo; float roughness; } lambertian;
             struct { rt::Vector3f albedo; } metal;
             struct { float ior; rt::Vector3f tint; float dispersion; } dielectric;
             struct { float alpha; float ior; } microfacetDielectric;
@@ -42,12 +42,13 @@ namespace rtx {
         };
 
         __host__ __device__ constexpr DeviceMaterial()
-            : kind(MaterialKind::Lambertian), lambertian{rt::Vector3f(0.0f, 0.0f, 0.0f)} {}
+            : kind(MaterialKind::Lambertian), lambertian{rt::Vector3f(0.0f, 0.0f, 0.0f), 0.0f} {}
 
-        __host__ __device__ static DeviceMaterial MakeLambertian(const rt::Vector3f& albedo) {
+        __host__ __device__ static DeviceMaterial MakeLambertian(const rt::Vector3f& albedo, float roughness = 0.0f) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Lambertian;
             m.lambertian.albedo = albedo;
+            m.lambertian.roughness = roughness;
             return m;
         }
 
@@ -99,10 +100,39 @@ namespace rtx {
                                                          const rt::Vector3f& n) {
         switch (mat.kind) {
             case MaterialKind::Lambertian: {
-                if (Dot(wi, n) > 0.0f && Dot(wo, n) > 0.0f) {
+                if (Dot(wi, n) <= 0.0f || Dot(wo, n) <= 0.0f) {
+                    return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                }
+                if (mat.lambertian.roughness <= 1e-4f) {
                     return mat.lambertian.albedo * rt::kInvPi;
                 }
-                return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                float cosThetaO = rt::AbsDot(wo, n);
+                float cosThetaI = rt::AbsDot(wi, n);
+                float sinThetaO = std::sqrt(fmaxf(0.0f, 1.0f - cosThetaO * cosThetaO));
+                float sinThetaI = std::sqrt(fmaxf(0.0f, 1.0f - cosThetaI * cosThetaI));
+
+                float sinAlpha, tanBeta;
+                if (cosThetaI < cosThetaO) {
+                    sinAlpha = sinThetaI;
+                    tanBeta = (cosThetaO > 1e-6f) ? (sinThetaO / cosThetaO) : 0.0f;
+                } else {
+                    sinAlpha = sinThetaO;
+                    tanBeta = (cosThetaI > 1e-6f) ? (sinThetaI / cosThetaI) : 0.0f;
+                }
+
+                float cosPhiDiff = 0.0f;
+                if (sinThetaI > 1e-6f && sinThetaO > 1e-6f) {
+                    rt::Vector3f vO = Normalize(wo - cosThetaO * n);
+                    rt::Vector3f vI = Normalize(wi - cosThetaI * n);
+                    cosPhiDiff = Dot(vO, vI);
+                }
+
+                float sigma2 = mat.lambertian.roughness * mat.lambertian.roughness;
+                float A = 1.0f - (sigma2 / (2.0f * (sigma2 + 0.33f)));
+                float B = 0.45f * sigma2 / (sigma2 + 0.09f);
+
+                float orenNayar = A + B * fmaxf(0.0f, cosPhiDiff) * sinAlpha * tanBeta;
+                return mat.lambertian.albedo * (rt::kInvPi * orenNayar);
             }
             case MaterialKind::Metal:
             case MaterialKind::Dielectric:

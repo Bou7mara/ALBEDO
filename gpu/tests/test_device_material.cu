@@ -109,6 +109,45 @@ TEST_CASE("Lambertian host/device parity with CPU BSDF", "[gpu][material][lamber
     cudaFree(d_out);
 }
 
+TEST_CASE("Oren-Nayar host/device parity with CPU BSDF", "[gpu][material][orennayar]") {
+    rt::Vector3f albedo(0.7f, 0.3f, 0.2f);
+    float roughness = 0.4f;
+    rt::Lambertian cpuMat(albedo, roughness);
+    rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeLambertian(albedo, roughness);
+
+    rt::Vector3f wo = Normalize(rt::Vector3f(0.8f, 0.2f, 0.5f));
+    rt::Vector3f n(0.0f, 0.0f, 1.0f);
+    rt::Vector3f wiEval = Normalize(rt::Vector3f(0.7f, 0.3f, 0.6f));
+
+    rt::Vector3f cpuF = cpuMat.f(wo, wiEval, n);
+    rt::Vector3f hostF = rtx::EvaluateBsdf(devMat, wo, wiEval, n);
+
+    REQUIRE_THAT(hostF.x, WithinAbs(cpuF.x, 1e-5f));
+    REQUIRE_THAT(hostF.y, WithinAbs(cpuF.y, 1e-5f));
+    REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-5f));
+
+    rt::Point2f u(0.35f, 0.65f);
+    MaterialTestInput input{ devMat, wo, n, u, wiEval };
+    MaterialTestInput* d_in = nullptr;
+    MaterialTestOutput* d_out = nullptr;
+    cudaMalloc(&d_in, sizeof(MaterialTestInput));
+    cudaMalloc(&d_out, sizeof(MaterialTestOutput));
+    cudaMemcpy(d_in, &input, sizeof(MaterialTestInput), cudaMemcpyHostToDevice);
+
+    RunMaterialDeviceTests<<<1, 1>>>(d_in, d_out, 1);
+    cudaDeviceSynchronize();
+
+    MaterialTestOutput devOut{};
+    cudaMemcpy(&devOut, d_out, sizeof(MaterialTestOutput), cudaMemcpyDeviceToHost);
+
+    REQUIRE_THAT(devOut.f.x, WithinAbs(cpuF.x, 1e-5f));
+    REQUIRE_THAT(devOut.f.y, WithinAbs(cpuF.y, 1e-5f));
+    REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-5f));
+
+    cudaFree(d_in);
+    cudaFree(d_out);
+}
+
 TEST_CASE("Dielectric TIR and dispersion parity", "[gpu][material][dielectric]") {
     rt::Vector3f tint(0.9f, 0.95f, 1.0f);
     float ior = 1.5f;

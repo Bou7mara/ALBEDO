@@ -26,7 +26,7 @@ namespace rtx {
             return DeviceMaterial::MakeLambertian(rt::Vector3f(0.5f, 0.5f, 0.5f));
         }
         if (auto l = dynamic_cast<const rt::Lambertian*>(bsdf)) {
-            return DeviceMaterial::MakeLambertian(l->Albedo());
+            return DeviceMaterial::MakeLambertian(l->Albedo(), l->Roughness());
         }
         if (auto m = dynamic_cast<const rt::Metal*>(bsdf)) {
             return DeviceMaterial::MakeMetal(m->Albedo());

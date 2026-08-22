@@ -1,20 +1,57 @@
 #include "rt/materials/lambertian.h"
 #include "rt/core/onb.h"
 #include "rt/core/sampling.h"
+#include <cmath>
 #include <numbers>
+#include <algorithm>
 
 namespace rt {
 
-Vector3f Lambertian::f(const Vector3f&, const Vector3f&, const Vector3f&) const {
-    return albedo_ * std::numbers::inv_pi_v<float>;
+Vector3f Lambertian::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
+    if (Dot(wo, n) * Dot(wi, n) < 0.0f) {
+        return Vector3f(0.0f, 0.0f, 0.0f);
+    }
+
+    if (roughness_ <= 1e-4f) {
+        return albedo_ * std::numbers::inv_pi_v<float>;
+    }
+
+    float cosThetaO = std::clamp(Dot(wo, n), 0.0f, 1.0f);
+    float cosThetaI = std::clamp(Dot(wi, n), 0.0f, 1.0f);
+    float sinThetaO = std::sqrt(std::max(0.0f, 1.0f - cosThetaO * cosThetaO));
+    float sinThetaI = std::sqrt(std::max(0.0f, 1.0f - cosThetaI * cosThetaI));
+
+    float sinAlpha, tanBeta;
+    if (cosThetaI < cosThetaO) {
+        sinAlpha = sinThetaI;
+        tanBeta = (cosThetaO > 1e-6f) ? (sinThetaO / cosThetaO) : 0.0f;
+    } else {
+        sinAlpha = sinThetaO;
+        tanBeta = (cosThetaI > 1e-6f) ? (sinThetaI / cosThetaI) : 0.0f;
+    }
+
+    // Azimuthal difference: cos(phi_i - phi_o)
+    float cosPhiDiff = 0.0f;
+    if (sinThetaI > 1e-6f && sinThetaO > 1e-6f) {
+        Vector3f vO = Normalize(wo - cosThetaO * n);
+        Vector3f vI = Normalize(wi - cosThetaI * n);
+        cosPhiDiff = Dot(vO, vI);
+    }
+
+    float sigma2 = roughness_ * roughness_;
+    float A = 1.0f - (sigma2 / (2.0f * (sigma2 + 0.33f)));
+    float B = 0.45f * sigma2 / (sigma2 + 0.09f);
+
+    float orenNayar = A + B * std::max(0.0f, cosPhiDiff) * sinAlpha * tanBeta;
+    return albedo_ * (std::numbers::inv_pi_v<float> * orenNayar);
 }
 
-Vector3f Lambertian::Sample_f(const Vector3f&, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf) const {
+Vector3f Lambertian::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf) const {
     ONB onb(n);
     Vector3f localDir = CosineSampleHemisphere(u);
     *wi = Normalize(onb.ToWorld(localDir));
     *pdf = CosineHemispherePdf(localDir.z);
-    return f(Vector3f(), *wi, n);
+    return f(wo, *wi, n);
 }
 
 float Lambertian::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {

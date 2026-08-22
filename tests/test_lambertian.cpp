@@ -46,3 +46,19 @@ TEST_CASE("f * cosTheta / pdf collapses exactly to albedo (cosine-sampling cance
     REQUIRE(throughput.y == Approx(albedo.y).margin(1e-4));
     REQUIRE(throughput.z == Approx(albedo.z).margin(1e-4));
 }
+
+TEST_CASE("Oren-Nayar roughness sigma > 0 enhances grazing reflectance compared to Lambertian", "[lambertian][orennayar]") {
+    Vector3f albedo(0.8f, 0.8f, 0.8f);
+    Lambertian smooth(albedo, 0.0f);
+    Lambertian rough(albedo, 0.5f);
+
+    Vector3f n(0.0f, 1.0f, 0.0f);
+    Vector3f wo = Normalize(Vector3f(0.8f, 0.6f, 0.0f));
+    Vector3f wi = Normalize(Vector3f(0.8f, 0.6f, 0.0f)); // retro-reflection geometry
+
+    Vector3f fSmooth = smooth.f(wo, wi, n);
+    Vector3f fRough = rough.f(wo, wi, n);
+
+    REQUIRE(fRough.x > fSmooth.x);
+    REQUIRE(rough.Roughness() == 0.5f);
+}
