@@ -4,6 +4,15 @@
 #include <algorithm>
 #include <type_traits>
 
+#if !defined(__CUDACC__) && !defined(__CUDA_ARCH__)
+#ifndef __host__
+#define __host__
+#endif
+#ifndef __device__
+#define __device__
+#endif
+#endif
+
 namespace rt {
 
     template <typename T>
@@ -17,34 +26,35 @@ namespace rt {
     using Vector2i = Vector2<int>;
 
     template <typename T>
-    constexpr T LengthSquared(const Vector2<T>& v) {
+    constexpr __host__ __device__ T LengthSquared(const Vector2<T>& v) {
         return v.x * v.x + v.y * v.y;
     }
 
     template <typename T>
-    T Length(const Vector2<T>& v) {
+    __host__ __device__ T Length(const Vector2<T>& v) {
         static_assert(std::is_floating_point_v<T>, "Length() requires a floating-point type");
         return std::sqrt(LengthSquared(v));
     }
 
     template <typename T>
-    Vector2<T> Normalize(const Vector2<T>& v) {
+    __host__ __device__ Vector2<T> Normalize(const Vector2<T>& v) {
         static_assert(std::is_floating_point_v<T>, "Normalize() requires a floating-point type");
         return v / Length(v);
     }
 
     template <typename T>
-    constexpr T Dot(const Vector2<T>& v1, const Vector2<T>& v2) {
+    constexpr __host__ __device__ T Dot(const Vector2<T>& v1, const Vector2<T>& v2) {
         return v1.x * v2.x + v1.y * v2.y;
     }
 
     template <typename T>
-    constexpr T AbsDot(const Vector2<T>& v1, const Vector2<T>& v2) {
+    constexpr __host__ __device__ T AbsDot(const Vector2<T>& v1, const Vector2<T>& v2) {
         return std::abs(Dot(v1, v2));
     }
 
     template <typename T>
-    constexpr Vector2<T> Abs(const Vector2<T>& v) {
+    constexpr __host__ __device__ Vector2<T> Abs(const Vector2<T>& v) {
         return Vector2<T>(std::abs(v.x), std::abs(v.y));
     }
-}
+
+} // namespace rt
