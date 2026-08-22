@@ -172,7 +172,8 @@ extern "C" __global__ void __raygen__albedo() {
             }
 
             rt::Vector3f wo = Normalize(-r.d);
-            rt::Vector3f n = static_cast<rt::Vector3f>(isect.n);
+            rt::Vector3f ng = static_cast<rt::Vector3f>(isect.n);
+            rt::Vector3f n  = static_cast<rt::Vector3f>(isect.ns);
 
             if (depth == 0 && params.normalBuffer && params.albedoBuffer) {
                 params.normalBuffer[pixel] = n;
@@ -210,7 +211,7 @@ extern "C" __global__ void __raygen__albedo() {
                     rtx::DeviceLiSample lightSample = rtx::SampleLightLi(*light, isect.p, rng.Uniform2D());
                     if (lightSample.pdf > 0.0f) {
                         constexpr float kEpsilon = 1e-4f;
-                        rt::Vector3f offsetNormal = (Dot(lightSample.wi, isect.n) > 0.0f) ? n : -n;
+                        rt::Vector3f offsetNormal = (Dot(lightSample.wi, ng) > 0.0f) ? ng : -ng;
                         rt::Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
 
                         bool occluded = TraceShadowRay(params.iasHandle, offsetOrigin, lightSample.wi, kEpsilon, lightSample.dist - 2.0f * kEpsilon);
@@ -221,7 +222,7 @@ extern "C" __global__ void __raygen__albedo() {
                                 if (bsdfPdf > 0.0f) {
                                     float lPdf = lightSample.pdf * pmf;
                                     float weight = rt::PowerHeuristic(1, lPdf, 1, bsdfPdf);
-                                    float cosTheta = AbsDot(lightSample.wi, isect.n);
+                                    float cosTheta = AbsDot(lightSample.wi, n);
                                     L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
                                 }
                             }
@@ -237,7 +238,7 @@ extern "C" __global__ void __raygen__albedo() {
 
             if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
 
-            float cosTheta = AbsDot(wi, isect.n);
+            float cosTheta = AbsDot(wi, n);
             throughput = throughput * f * cosTheta / pdf;
 
             prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n);
@@ -251,7 +252,7 @@ extern "C" __global__ void __raygen__albedo() {
             }
 
             constexpr float kEpsilon = 1e-4f;
-            rt::Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? n : -n;
+            rt::Vector3f offsetNormal = (Dot(wi, ng) > 0.0f) ? ng : -ng;
             rt::Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
 
             r = rt::Ray(offsetOrigin, wi);
