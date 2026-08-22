@@ -14,6 +14,8 @@ namespace rt {
 
         Vector3f Le(const Vector3f& wo, const Vector3f& n) const override;
 
+        const Vector3f& Radiance() const { return radiance_; }
+
     private:
         Vector3f radiance_;
     };

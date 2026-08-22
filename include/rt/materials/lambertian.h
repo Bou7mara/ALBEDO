@@ -12,6 +12,8 @@ namespace rt {
 
         float Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const override;
 
+        const Vector3f& Albedo() const { return albedo_; }
+
     private:
         Vector3f albedo_;
     };

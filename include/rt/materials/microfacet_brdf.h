@@ -18,6 +18,13 @@ namespace rt {
 
         float Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const override;
 
+        float Alpha() const { return alpha_; }
+        bool IsDielectric() const { return kind_ == FresnelKind::Dielectric; }
+        float Ior() const { return ior_; }
+        const Vector3f& Eta() const { return eta_; }
+        const Vector3f& K() const { return k_; }
+        const Vector3f& Tint() const { return tint_; }
+
     private:
         enum class FresnelKind { Dielectric, Conductor };
         
