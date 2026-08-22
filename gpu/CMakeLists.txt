@@ -246,6 +246,7 @@ add_executable(gpu_math_tests
     tests/test_math_parity.cu
     tests/test_device_material.cu
     tests/test_device_light.cu
+    tests/test_device_texture.cu
 )
 
 target_include_directories(gpu_math_tests PRIVATE

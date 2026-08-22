@@ -49,25 +49,35 @@ namespace rt {
         }
 
         __host__ __device__ static Transform Translate(const Vector3f& delta) {
-            Transform t;
-            t.m[0][3] = delta.x;
-            t.m[1][3] = delta.y;
-            t.m[2][3] = delta.z;
-            t.mInv[0][3] = -delta.x;
-            t.mInv[1][3] = -delta.y;
-            t.mInv[2][3] = -delta.z;
-            return t;
+            float mat[4][4] = {
+                {1.0f, 0.0f, 0.0f, delta.x},
+                {0.0f, 1.0f, 0.0f, delta.y},
+                {0.0f, 0.0f, 1.0f, delta.z},
+                {0.0f, 0.0f, 0.0f, 1.0f}
+            };
+            float inv[4][4] = {
+                {1.0f, 0.0f, 0.0f, -delta.x},
+                {0.0f, 1.0f, 0.0f, -delta.y},
+                {0.0f, 0.0f, 1.0f, -delta.z},
+                {0.0f, 0.0f, 0.0f, 1.0f}
+            };
+            return Transform(mat, inv);
         }
 
         __host__ __device__ static Transform Scale(float sx, float sy, float sz) {
-            Transform t;
-            t.m[0][0] = sx;
-            t.m[1][1] = sy;
-            t.m[2][2] = sz;
-            t.mInv[0][0] = 1.0f / sx;
-            t.mInv[1][1] = 1.0f / sy;
-            t.mInv[2][2] = 1.0f / sz;
-            return t;
+            float mat[4][4] = {
+                {sx, 0.0f, 0.0f, 0.0f},
+                {0.0f, sy, 0.0f, 0.0f},
+                {0.0f, 0.0f, sz, 0.0f},
+                {0.0f, 0.0f, 0.0f, 1.0f}
+            };
+            float inv[4][4] = {
+                {1.0f / sx, 0.0f, 0.0f, 0.0f},
+                {0.0f, 1.0f / sy, 0.0f, 0.0f},
+                {0.0f, 0.0f, 1.0f / sz, 0.0f},
+                {0.0f, 0.0f, 0.0f, 1.0f}
+            };
+            return Transform(mat, inv);
         }
 
         static Transform RotateX(float thetaDeg);
@@ -146,10 +156,10 @@ namespace rt {
         }
 
         __host__ __device__ Transform operator*(const Transform& other) const {
-            Transform res;
-            Multiply4x4(m, other.m, res.m);
-            Multiply4x4(other.mInv, mInv, res.mInv);
-            return res;
+            float newM[4][4], newMInv[4][4];
+            Multiply4x4(m, other.m, newM);
+            Multiply4x4(other.mInv, mInv, newMInv);
+            return Transform(newM, newMInv);
         }
 
     private:
