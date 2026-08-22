@@ -46,6 +46,7 @@ namespace rt {
         }
 
         const BSDF* GetBSDF() const { return bsdf_.get(); }
+        std::shared_ptr<BSDF> GetBSDFShared() const { return bsdf_; }
 
     protected:
         std::shared_ptr<BSDF> bsdf_;

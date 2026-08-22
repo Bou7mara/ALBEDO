@@ -59,6 +59,10 @@ namespace rt {
             return bvh_ && bvh_->IntersectP(ray);
         }
 
+        const std::vector<std::shared_ptr<Shape>>& Shapes() const {
+            return shapes_;
+        }
+
         const std::vector<std::shared_ptr<Light>>& Lights() const {
             return lights_;
         }

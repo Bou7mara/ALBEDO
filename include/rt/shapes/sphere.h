@@ -19,6 +19,9 @@ namespace rt {
         float Pdf(const Point3f& ref, const Vector3f& wi) const override;
         float Area() const override;
 
+        const Transform& ObjectToWorld() const { return objectToWorld_; }
+        float Radius() const { return radius_; }
+
     private:
         Transform objectToWorld_;
         Transform worldToObject_;

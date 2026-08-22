@@ -32,6 +32,9 @@ namespace rt {
         float Pdf(const Point3f& ref, const Vector3f& wi) const override;
         float Area() const override;
 
+        const std::shared_ptr<TriangleMesh>& GetMesh() const { return mesh_; }
+        int GetTriangleIndex() const { return TriangleIndex_; }
+
     private:
         [[nodiscard]] const Point3f& V0() const { return mesh_->positions[mesh_->indices[TriangleIndex_ * 3 + 0]]; }
         [[nodiscard]] const Point3f& V1() const { return mesh_->positions[mesh_->indices[TriangleIndex_ * 3 + 1]]; }
