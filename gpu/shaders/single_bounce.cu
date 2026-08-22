@@ -109,14 +109,14 @@ extern "C" __global__ void __raygen__single_bounce() {
     }
 
     rt::Vector3f wo = Normalize(-ray.d);
-    rt::Vector3f L = rtx::EvaluateEmission(hit0.material, wo, hit0.n);
+    rt::Vector3f L = rtx::EvaluateEmission(hit0.material, wo, static_cast<rt::Vector3f>(hit0.n));
 
     // Single BSDF bounce
     rt::Vector3f wi(0.0f, 0.0f, 0.0f);
     float pdf = 0.0f;
-    rt::Vector3f f = rtx::SampleBsdf(hit0.material, wo, hit0.n, rng.Uniform2D(), &wi, &pdf);
+    rt::Vector3f f = rtx::SampleBsdf(hit0.material, wo, static_cast<rt::Vector3f>(hit0.n), rng.Uniform2D(), &wi, &pdf);
 
-    if (pdf > 0.0f && !IsBlack(f)) {
+    if (pdf > 0.0f && (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f)) {
         float cosTheta = AbsDot(wi, hit0.n);
         rt::Vector3f throughput = f * cosTheta / pdf;
 
@@ -127,7 +127,7 @@ extern "C" __global__ void __raygen__single_bounce() {
         HitPayload hit1 = TraceRay(params.iasHandle, bounceOrigin, wi);
         if (hit1.hit) {
             rt::Vector3f wo1 = Normalize(-wi);
-            L += throughput * rtx::EvaluateEmission(hit1.material, wo1, hit1.n);
+            L += throughput * rtx::EvaluateEmission(hit1.material, wo1, static_cast<rt::Vector3f>(hit1.n));
         } else {
             L += throughput * SkyGradient(wi);
         }

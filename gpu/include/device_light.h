@@ -29,10 +29,10 @@ namespace rtx {
     };
 
     struct DeviceLightList {
-        DeviceLight* lights = nullptr;
-        float* cdf = nullptr;
-        unsigned int count = 0;
-        float totalPower = 0.0f;
+        DeviceLight* lights;
+        float* cdf;
+        unsigned int count;
+        float totalPower;
     };
 
     struct DeviceLiSample {
@@ -109,7 +109,7 @@ namespace rtx {
         float b1 = u.y * sqrtU;
         float b2 = 1.0f - b0 - b1;
 
-        sample.p = b0 * v0 + b1 * v1 + b2 * v2;
+        sample.p = v0 + b1 * (v1 - v0) + b2 * (v2 - v0);
         rt::Vector3f geomN = Normalize(Cross(v1 - v0, v2 - v0));
         sample.n = rt::Normal3f(geomN);
 

@@ -41,6 +41,9 @@ namespace rtx {
             struct { rt::Vector3f radiance; } emissive;
         };
 
+        __host__ __device__ constexpr DeviceMaterial()
+            : kind(MaterialKind::Lambertian), lambertian{rt::Vector3f(0.0f, 0.0f, 0.0f)} {}
+
         __host__ __device__ static DeviceMaterial MakeLambertian(const rt::Vector3f& albedo) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Lambertian;

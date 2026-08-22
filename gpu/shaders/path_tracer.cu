@@ -122,7 +122,7 @@ static __forceinline__ __device__ bool TraceShadowRay(OptixTraversableHandle han
                                                       const rt::Vector3f& direction,
                                                       float tMin = 1e-4f,
                                                       float tMax = 1e20f) {
-    unsigned int p0 = 0;
+    unsigned int p0 = 1, p1 = 0;
     optixTrace(
         handle,
         make_float3(origin.x, origin.y, origin.z),
@@ -134,8 +134,8 @@ static __forceinline__ __device__ bool TraceShadowRay(OptixTraversableHandle han
         OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
         0,
         1,
-        0,
-        p0
+        1,
+        p0, p1
     );
     return (p0 != 0);
 }
@@ -318,4 +318,8 @@ extern "C" __global__ void __miss__albedo() {
     unsigned int p1 = optixGetPayload_1();
     PathHitPayload* payload = reinterpret_cast<PathHitPayload*>(UnpackPointer(p0, p1));
     payload->hit = 0;
+}
+
+extern "C" __global__ void __miss__shadow() {
+    optixSetPayload_0(0);
 }
