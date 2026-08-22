@@ -1,4 +1,15 @@
 cmake_minimum_required(VERSION 3.20)
+
+if(WIN32)
+    if(NOT DEFINED CMAKE_CXX_COMPILER OR NOT EXISTS "${CMAKE_CXX_COMPILER}")
+        file(GLOB MSVC_CL_PATHS "C:/Program Files/Microsoft Visual Studio/*/*/VC/Tools/MSVC/*/bin/Hostx64/x64/cl.exe")
+        if(MSVC_CL_PATHS)
+            list(GET MSVC_CL_PATHS -1 VALID_CL)
+            set(CMAKE_CXX_COMPILER "${VALID_CL}" CACHE FILEPATH "C++ compiler" FORCE)
+        endif()
+    endif()
+endif()
+
 project(raytracer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
