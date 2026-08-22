@@ -17,6 +17,7 @@ add_custom_command(
             -arch=compute_89
             -code=sm_89
             --std=c++17
+            --expt-relaxed-constexpr
             --generate-line-info
             -I "${OptiX_INCLUDE_DIR}"
             -I "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -41,6 +42,7 @@ add_custom_command(
             -arch=compute_89
             -code=sm_89
             --std=c++17
+            --expt-relaxed-constexpr
             --generate-line-info
             -I "${OptiX_INCLUDE_DIR}"
             -I "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -67,6 +69,7 @@ add_custom_command(
             -arch=compute_89
             -code=sm_89
             --std=c++17
+            --expt-relaxed-constexpr
             --generate-line-info
             -I "${OptiX_INCLUDE_DIR}"
             -I "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -95,6 +98,7 @@ add_custom_command(
             -arch=compute_89
             -code=sm_89
             --std=c++17
+            --expt-relaxed-constexpr
             --generate-line-info
             -I "${OptiX_INCLUDE_DIR}"
             -I "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -125,6 +129,7 @@ add_custom_command(
             -arch=compute_89
             -code=sm_89
             --std=c++17
+            --expt-relaxed-constexpr
             --generate-line-info
             -I "${OptiX_INCLUDE_DIR}"
             -I "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -154,9 +159,8 @@ add_custom_target(optixir_shaders ALL DEPENDS
     "${PATH_TRACER_OPTIXIR}"
 )
 
-# 6. Main gpu_smoke_test executable
-add_executable(gpu_smoke_test
-    src/main.cpp
+# 6. rt_gpu Library
+add_library(rt_gpu STATIC
     src/optix_context.cpp
     src/optix_context.h
     src/device_scene.cpp
@@ -170,24 +174,36 @@ add_executable(gpu_smoke_test
     include/launch_params.h
 )
 
-target_include_directories(gpu_smoke_test PRIVATE
+target_include_directories(rt_gpu PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/include"
 )
 
-target_compile_definitions(gpu_smoke_test PRIVATE
+target_compile_definitions(rt_gpu PUBLIC
     OPTIXIR_DIR="${OPTIXIR_OUTPUT_DIR}"
 )
 
-target_link_libraries(gpu_smoke_test PRIVATE
+set_source_files_properties(src/gpu_renderer.cpp PROPERTIES LANGUAGE CUDA)
+target_compile_options(rt_gpu PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
+
+target_link_libraries(rt_gpu PUBLIC
     rt_core
     OptiX::OptiX
     CUDA::cudart
     CUDA::cuda_driver
 )
 
-add_dependencies(gpu_smoke_test optixir_shaders)
+add_dependencies(rt_gpu optixir_shaders)
+
+# Main gpu_smoke_test executable
+add_executable(gpu_smoke_test
+    src/main.cpp
+)
+
+target_link_libraries(gpu_smoke_test PRIVATE
+    rt_gpu
+)
 
 # 7. GPU unit tests
 add_executable(gpu_tests
@@ -253,6 +269,8 @@ target_link_libraries(gpu_math_tests PRIVATE
 )
 
 include(CTest)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
 catch_discover_tests(gpu_tests PROPERTIES LABELS "gpu")
 catch_discover_tests(gpu_math_tests PROPERTIES LABELS "gpu;math;materials;lights")
+

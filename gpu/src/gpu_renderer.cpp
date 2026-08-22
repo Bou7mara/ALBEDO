@@ -8,16 +8,76 @@
 #include "rt/scene/scene_node.h"
 #include "rt/scene/scene.h"
 #include "rt/shapes/triangle.h"
+#include "rt/shapes/sphere.h"
+#include "rt/shapes/quad.h"
 #include "rt/core/progress.h"
 
 #include <optix_stubs.h>
+#include <optix_stack_size.h>
 #include <fstream>
 #include <vector>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_map>
+#include <cmath>
 
 namespace {
+
+    std::shared_ptr<rt::TriangleMesh> TessellateSphere(float radius, const rt::Transform& transform, int latBands = 64, int lonBands = 64) {
+        auto mesh = std::make_shared<rt::TriangleMesh>();
+        mesh->positions.reserve((latBands + 1) * (lonBands + 1));
+        mesh->normals.reserve((latBands + 1) * (lonBands + 1));
+
+        for (int lat = 0; lat <= latBands; ++lat) {
+            float theta = static_cast<float>(lat) * 3.14159265358979323846f / static_cast<float>(latBands);
+            float sinTheta = std::sin(theta);
+            float cosTheta = std::cos(theta);
+
+            for (int lon = 0; lon <= lonBands; ++lon) {
+                float phi = static_cast<float>(lon) * 2.0f * 3.14159265358979323846f / static_cast<float>(lonBands);
+                float sinPhi = std::sin(phi);
+                float cosPhi = std::cos(phi);
+
+                rt::Vector3f n(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi);
+                rt::Point3f objP(radius * n.x, radius * n.y, radius * n.z);
+                rt::Point3f worldP = transform(objP);
+                rt::Normal3f worldN = Normalize(transform(rt::Normal3f(n)));
+
+                mesh->positions.push_back(worldP);
+                mesh->normals.push_back(worldN);
+            }
+        }
+
+        for (int lat = 0; lat < latBands; ++lat) {
+            for (int lon = 0; lon < lonBands; ++lon) {
+                int first = lat * (lonBands + 1) + lon;
+                int second = first + lonBands + 1;
+
+                mesh->indices.push_back(first);
+                mesh->indices.push_back(first + 1);
+                mesh->indices.push_back(second);
+
+                mesh->indices.push_back(second);
+                mesh->indices.push_back(first + 1);
+                mesh->indices.push_back(second + 1);
+            }
+        }
+        return mesh;
+    }
+
+    std::shared_ptr<rt::TriangleMesh> TessellateQuad(const rt::Point3f& p0, const rt::Vector3f& e1, const rt::Vector3f& e2, const rt::Normal3f& n) {
+        auto mesh = std::make_shared<rt::TriangleMesh>();
+        mesh->positions = {
+            p0,
+            p0 + e1,
+            p0 + e1 + e2,
+            p0 + e2
+        };
+        mesh->normals = { n, n, n, n };
+        mesh->indices = { 0, 1, 2,  0, 2, 3 };
+        return mesh;
+    }
 
     struct PathTracerParams {
         OptixTraversableHandle iasHandle;
@@ -110,11 +170,27 @@ namespace rtx {
 
         // 2. Build GPU Scene from setup.scene
         auto root = std::make_shared<rt::SceneNode>();
+        std::unordered_map<const rt::TriangleMesh*, std::shared_ptr<rt::SceneNode>> meshNodeMap;
+
         for (const auto& shape : setup.scene.Shapes()) {
-            auto node = std::make_shared<rt::SceneNode>();
-            node->mesh = std::dynamic_pointer_cast<rt::TriangleMesh>(shape);
-            node->bsdf = std::shared_ptr<rt::BSDF>(const_cast<rt::BSDF*>(shape->GetBSDF()), [](rt::BSDF*){});
-            if (node->mesh) {
+            if (auto tri = std::dynamic_pointer_cast<rt::Triangle>(shape)) {
+                const auto& meshPtr = tri->GetMesh();
+                if (meshPtr && meshNodeMap.find(meshPtr.get()) == meshNodeMap.end()) {
+                    auto node = std::make_shared<rt::SceneNode>();
+                    node->mesh = meshPtr;
+                    node->bsdf = shape->GetBSDFShared();
+                    meshNodeMap[meshPtr.get()] = node;
+                    root->children.push_back(node);
+                }
+            } else if (auto sphere = std::dynamic_pointer_cast<rt::Sphere>(shape)) {
+                auto node = std::make_shared<rt::SceneNode>();
+                node->mesh = TessellateSphere(sphere->Radius(), sphere->ObjectToWorld(), 64, 64);
+                node->bsdf = shape->GetBSDFShared();
+                root->children.push_back(node);
+            } else if (auto quad = std::dynamic_pointer_cast<rt::Quad>(shape)) {
+                auto node = std::make_shared<rt::SceneNode>();
+                node->mesh = TessellateQuad(quad->P0(), quad->E1(), quad->E2(), quad->Normal());
+                node->bsdf = shape->GetBSDFShared();
                 root->children.push_back(node);
             }
         }
@@ -172,6 +248,16 @@ namespace rtx {
         res = optixProgramGroupCreate(optixContext, &missPGDesc, 1, &pgOptions, logBuffer, &logSize, &missPG);
         if (res != OPTIX_SUCCESS) throw std::runtime_error("Failed to create miss program group");
 
+        OptixProgramGroupDesc missShadowPGDesc{};
+        missShadowPGDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+        missShadowPGDesc.miss.module = module;
+        missShadowPGDesc.miss.entryFunctionName = "__miss__shadow";
+
+        OptixProgramGroup missShadowPG = nullptr;
+        logSize = sizeof(logBuffer);
+        res = optixProgramGroupCreate(optixContext, &missShadowPGDesc, 1, &pgOptions, logBuffer, &logSize, &missShadowPG);
+        if (res != OPTIX_SUCCESS) throw std::runtime_error("Failed to create shadow miss program group");
+
         OptixProgramGroupDesc hitPGDesc{};
         hitPGDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
         hitPGDesc.hitgroup.moduleCH = module;
@@ -182,9 +268,9 @@ namespace rtx {
         res = optixProgramGroupCreate(optixContext, &hitPGDesc, 1, &pgOptions, logBuffer, &logSize, &hitPG);
         if (res != OPTIX_SUCCESS) throw std::runtime_error("Failed to create hitgroup program group");
 
-        OptixProgramGroup programGroups[] = { raygenPG, missPG, hitPG };
+        OptixProgramGroup programGroups[] = { raygenPG, missPG, missShadowPG, hitPG };
         OptixPipelineLinkOptions linkOptions{};
-        linkOptions.maxTraceDepth = maxDepth;
+        linkOptions.maxTraceDepth = 2;
 
         OptixPipeline pipeline = nullptr;
         logSize = sizeof(logBuffer);
@@ -193,12 +279,42 @@ namespace rtx {
             &pipelineCompileOptions,
             &linkOptions,
             programGroups,
-            3,
+            4,
             logBuffer,
             &logSize,
             &pipeline
         );
-        if (res != OPTIX_SUCCESS) throw std::runtime_error("Failed to create OptiX pipeline");
+        if (res != OPTIX_SUCCESS) {
+            std::cerr << "OptiX pipeline creation failed: " << optixGetErrorName(res) << " (" << optixGetErrorString(res) << ")\n"
+                      << "Log: " << logBuffer << "\n";
+            throw std::runtime_error("Failed to create OptiX pipeline");
+        }
+
+        OptixStackSizes stackSizes = {};
+        optixUtilAccumulateStackSizes(raygenPG, &stackSizes, pipeline);
+        optixUtilAccumulateStackSizes(missPG, &stackSizes, pipeline);
+        optixUtilAccumulateStackSizes(missShadowPG, &stackSizes, pipeline);
+        optixUtilAccumulateStackSizes(hitPG, &stackSizes, pipeline);
+
+        uint32_t directCallableStackSizeFromTraversal = 0;
+        uint32_t directCallableStackSizeFromState = 0;
+        uint32_t continuationStackSize = 0;
+        optixUtilComputeStackSizes(
+            &stackSizes,
+            2,
+            0,
+            0,
+            &directCallableStackSizeFromTraversal,
+            &directCallableStackSizeFromState,
+            &continuationStackSize
+        );
+        optixPipelineSetStackSize(
+            pipeline,
+            directCallableStackSizeFromTraversal,
+            directCallableStackSizeFromState,
+            continuationStackSize,
+            2
+        );
 
         // 4. Setup SBT
         RaygenRecord raygenRecord{};
@@ -207,11 +323,12 @@ namespace rtx {
         cudaMalloc(reinterpret_cast<void**>(&d_raygenRecord), sizeof(RaygenRecord));
         cudaMemcpy(reinterpret_cast<void*>(d_raygenRecord), &raygenRecord, sizeof(RaygenRecord), cudaMemcpyHostToDevice);
 
-        MissRecord missRecord{};
-        optixSbtRecordPackHeader(missPG, &missRecord);
+        MissRecord missRecords[2]{};
+        optixSbtRecordPackHeader(missPG, &missRecords[0]);
+        optixSbtRecordPackHeader(missShadowPG, &missRecords[1]);
         CUdeviceptr d_missRecord = 0;
-        cudaMalloc(reinterpret_cast<void**>(&d_missRecord), sizeof(MissRecord));
-        cudaMemcpy(reinterpret_cast<void*>(d_missRecord), &missRecord, sizeof(MissRecord), cudaMemcpyHostToDevice);
+        cudaMalloc(reinterpret_cast<void**>(&d_missRecord), sizeof(missRecords));
+        cudaMemcpy(reinterpret_cast<void*>(d_missRecord), missRecords, sizeof(missRecords), cudaMemcpyHostToDevice);
 
         std::vector<HitgroupRecord> hitRecords(devScene.instances.size());
         for (size_t i = 0; i < devScene.instances.size(); ++i) {
@@ -233,7 +350,7 @@ namespace rtx {
         sbt.raygenRecord = d_raygenRecord;
         sbt.missRecordBase = d_missRecord;
         sbt.missRecordStrideInBytes = sizeof(MissRecord);
-        sbt.missRecordCount = 1;
+        sbt.missRecordCount = 2;
         sbt.hitgroupRecordBase = d_hitRecord;
         sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
         sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());

@@ -1,4 +1,9 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "device_scene.h"
+#include <cuda_runtime.h>
 
 #include "rt/materials/lambertian.h"
 #include "rt/materials/metal.h"
@@ -263,8 +268,7 @@ namespace rtx {
         std::vector<OptixInstance> optixInstances;
         std::vector<DeviceLight> hostLights;
 
-        std::function<void(const std::shared_ptr<rt::SceneNode>&, const rt::Transform&)> flatten =
-            [&](const std::shared_ptr<rt::SceneNode>& node, const rt::Transform& parentToWorld) {
+        auto flatten = [&](auto& self, const std::shared_ptr<rt::SceneNode>& node, const rt::Transform& parentToWorld) -> void {
                 if (!node) return;
                 rt::Transform nodeToWorld = parentToWorld * node->localTransform;
 
@@ -288,7 +292,7 @@ namespace rtx {
                     std::array<float, 12> xform = nodeToWorld.ToOptixRowMajor3x4();
                     std::memcpy(instance.transform, xform.data(), sizeof(float) * 12);
                     instance.instanceId = static_cast<unsigned int>(instanceIdx);
-                    instance.rayMask = 255;
+                    instance.visibilityMask = 255;
                     instance.sbtOffset = static_cast<unsigned int>(instanceIdx);
                     instance.flags = OPTIX_INSTANCE_FLAG_NONE;
                     instance.traversableHandle = scene.meshes[meshIndex].gasHandle;
@@ -319,11 +323,11 @@ namespace rtx {
                 }
 
                 for (const auto& child : node->children) {
-                    flatten(child, nodeToWorld);
+                    self(self, child, nodeToWorld);
                 }
             };
 
-        flatten(root, rt::Transform::Identity());
+        flatten(flatten, root, rt::Transform::Identity());
 
         if (optixInstances.empty()) {
             return scene;
