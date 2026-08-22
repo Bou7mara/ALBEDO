@@ -214,16 +214,6 @@ add_executable(gpu_tests
     tests/test_cornell_box_render.cpp
     tests/test_gpu_vs_cpu_full_render.cpp
     tests/test_denoiser.cpp
-    src/optix_context.cpp
-    src/optix_context.h
-    src/device_scene.cpp
-    src/gpu_renderer.cpp
-    src/denoiser.cpp
-    src/denoiser.h
-    include/device_scene.h
-    include/device_material.h
-    include/device_light.h
-    include/gpu_renderer.h
 )
 
 target_include_directories(gpu_tests PRIVATE
@@ -236,7 +226,12 @@ target_compile_definitions(gpu_tests PRIVATE
     OPTIXIR_DIR="${OPTIXIR_OUTPUT_DIR}"
 )
 
+target_compile_options(gpu_tests PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+)
+
 target_link_libraries(gpu_tests PRIVATE
+    rt_gpu
     rt_core
     OptiX::OptiX
     CUDA::cudart
@@ -259,7 +254,7 @@ target_include_directories(gpu_math_tests PRIVATE
 )
 
 target_compile_options(gpu_math_tests PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>
+    $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda --expt-relaxed-constexpr>
 )
 
 target_link_libraries(gpu_math_tests PRIVATE

@@ -26,7 +26,7 @@ namespace rt {
 
         constexpr __host__ __device__ Tuple2() : x(0), y(0) {}
 
-        constexpr __host__ __device__ Tuple2(T x, T y) : x(x), y(y) {}
+        constexpr __host__ __device__ Tuple2(T x_, T y_) : x(x_), y(y_) {}
 
         constexpr __host__ __device__ T operator[](int i) const {
 #ifndef NDEBUG

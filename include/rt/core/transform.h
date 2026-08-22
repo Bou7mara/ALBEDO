@@ -24,7 +24,14 @@ namespace rt {
         float m[4][4];
         float mInv[4][4];
 
-        Transform() = default;
+        __host__ __device__ Transform() : m{}, mInv{} {
+            for (int i = 0; i < 4; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    m[i][j] = (i == j) ? 1.0f : 0.0f;
+                    mInv[i][j] = (i == j) ? 1.0f : 0.0f;
+                }
+            }
+        }
 
         // Host-only: inverts mat via Inverse4x4
         explicit Transform(const float mat[4][4]);
@@ -50,29 +57,25 @@ namespace rt {
         }
 
         __host__ __device__ static Transform Translate(const Vector3f& delta) {
-            float mat[4][4] = {
-                {1, 0, 0, delta.x},
-                {0, 1, 0, delta.y},
-                {0, 0, 1, delta.z},
-                {0, 0, 0, 1}
-            };
-            float inv[4][4] = {
-                {1, 0, 0, -delta.x},
-                {0, 1, 0, -delta.y},
-                {0, 0, 1, -delta.z},
-                {0, 0, 0, 1}
-            };
-            return Transform(mat, inv);
+            Transform t;
+            t.m[0][3] = delta.x;
+            t.m[1][3] = delta.y;
+            t.m[2][3] = delta.z;
+            t.mInv[0][3] = -delta.x;
+            t.mInv[1][3] = -delta.y;
+            t.mInv[2][3] = -delta.z;
+            return t;
         }
 
         __host__ __device__ static Transform Scale(float sx, float sy, float sz) {
-            float mat[4][4] = {
-                {sx, 0, 0, 0}, {0, sy, 0, 0}, {0, 0, sz, 0}, {0, 0, 0, 1}
-            };
-            float inv[4][4] = {
-                {1.0f / sx, 0, 0, 0}, {0, 1.0f / sy, 0, 0}, {0, 0, 1.0f / sz, 0}, {0, 0, 0, 1}
-            };
-            return Transform(mat, inv);
+            Transform t;
+            t.m[0][0] = sx;
+            t.m[1][1] = sy;
+            t.m[2][2] = sz;
+            t.mInv[0][0] = 1.0f / sx;
+            t.mInv[1][1] = 1.0f / sy;
+            t.mInv[2][2] = 1.0f / sz;
+            return t;
         }
 
         static Transform RotateX(float thetaDeg);
@@ -125,11 +128,10 @@ namespace rt {
 
         __host__ __device__ Normal3f operator()(const Normal3f& n) const {
             float x = n.x, y = n.y, z = n.z;
-            return Normal3f(
-                mInv[0][0] * x + mInv[1][0] * y + mInv[2][0] * z,
-                mInv[0][1] * x + mInv[1][0] * y + mInv[2][1] * z,
-                mInv[0][2] * x + mInv[1][2] * y + mInv[2][2] * z
-            );
+            float rx = mInv[0][0] * x + mInv[1][0] * y + mInv[2][0] * z;
+            float ry = mInv[0][1] * x + mInv[1][1] * y + mInv[2][1] * z;
+            float rz = mInv[0][2] * x + mInv[1][2] * y + mInv[2][2] * z;
+            return Normal3f(rx, ry, rz);
         }
 
         __host__ __device__ Ray operator()(const Ray& r) const {
@@ -152,10 +154,10 @@ namespace rt {
         }
 
         __host__ __device__ Transform operator*(const Transform& other) const {
-            float newM[4][4], newMInv[4][4];
-            Multiply4x4(m, other.m, newM);
-            Multiply4x4(other.mInv, mInv, newMInv);
-            return Transform(newM, newMInv);
+            Transform res;
+            Multiply4x4(m, other.m, res.m);
+            Multiply4x4(other.mInv, mInv, res.mInv);
+            return res;
         }
 
     private:

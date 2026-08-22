@@ -18,7 +18,8 @@ namespace rt {
     template <typename T>
     class Normal3 : public Tuple3<Normal3<T>, T> {
     public:
-        using Tuple3<Normal3<T>, T>::Tuple3;
+        constexpr __host__ __device__ Normal3() : Tuple3<Normal3<T>, T>(0, 0, 0) {}
+        constexpr __host__ __device__ Normal3(T x_, T y_, T z_) : Tuple3<Normal3<T>, T>(x_, y_, z_) {}
 
         explicit constexpr __host__ __device__ Normal3(const Vector3<T>& v) : Tuple3<Normal3<T>, T>(v.x, v.y, v.z) {}
 

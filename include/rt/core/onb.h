@@ -21,7 +21,7 @@ namespace rt {
         explicit __host__ __device__ ONB(const Vector3f& n) {
             w = n;
 
-            float sign = std::copysign(1.0f, w.z);
+            float sign = (w.z >= 0.0f) ? 1.0f : -1.0f;
 
             float a = -1.0f / (sign + w.z);
             float b = w.x * w.y * a;

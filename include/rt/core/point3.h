@@ -19,7 +19,8 @@ namespace rt {
     template <typename T>
     class Point3 : public Tuple3<Point3<T>, T> {
     public:
-        using Tuple3<Point3<T>, T>::Tuple3;
+        constexpr __host__ __device__ Point3() : Tuple3<Point3<T>, T>(0, 0, 0) {}
+        constexpr __host__ __device__ Point3(T x_, T y_, T z_) : Tuple3<Point3<T>, T>(x_, y_, z_) {}
 
         explicit constexpr __host__ __device__ Point3(const Vector3<T>& v) : Tuple3<Point3<T>, T>(v.x, v.y, v.z) {}
 

@@ -26,7 +26,7 @@ namespace rt {
 
         constexpr __host__ __device__ Tuple3() : x(0), y(0), z(0) {}
 
-        constexpr __host__ __device__ Tuple3(T x, T y, T z) : x(x), y(y), z(z) {}
+        constexpr __host__ __device__ Tuple3(T x_, T y_, T z_) : x(x_), y(y_), z(z_) {}
 
         constexpr __host__ __device__ T operator[](int i) const {
 #ifndef NDEBUG

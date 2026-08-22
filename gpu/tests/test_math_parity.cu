@@ -23,7 +23,8 @@ namespace {
     constexpr float kEpsilon = 1e-5f;
 
     __host__ __device__ inline bool ApproxEqual(float a, float b, float eps = kEpsilon) {
-        return std::abs(a - b) <= eps;
+        float diff = a - b;
+        return (diff < 0.0f ? -diff : diff) <= eps;
     }
 
     __host__ __device__ inline bool ApproxEqual(const Vector3f& a, const Vector3f& b, float eps = kEpsilon) {
@@ -210,9 +211,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 8. Transform Tests
-    // ==========================================
     __host__ __device__ bool TestTransformMath() {
         Transform t = Transform::Translate(Vector3f(2.0f, 3.0f, 4.0f));
         Point3f p(1.0f, 1.0f, 1.0f);
@@ -229,11 +227,11 @@ namespace {
 
         Normal3f n(0.0f, 1.0f, 0.0f);
         Normal3f nScaled = s(n);
-        if (!ApproxEqual(nScaled.y, 1.0f / 3.0f)) return false;
+        if (!ApproxEqual(nScaled.x, 0.0f) || !ApproxEqual(nScaled.y, 1.0f / 3.0f) || !ApproxEqual(nScaled.z, 0.0f)) return false;
 
         Transform combined = t * s;
         Point3f pCombined = combined(p);
-        if (!ApproxEqual(pCombined, Point3f(4.0f, 6.0f, 8.0f))) return false;
+        if (!ApproxEqual(pCombined.x, 4.0f) || !ApproxEqual(pCombined.y, 6.0f) || !ApproxEqual(pCombined.z, 8.0f)) return false;
 
         return true;
     }
@@ -294,8 +292,32 @@ TEST_CASE("Quadratic solver (host)", "[math][parity]") {
     REQUIRE(TestQuadraticMath());
 }
 
-TEST_CASE("Transform affine operations (host)", "[math][parity]") {
-    REQUIRE(TestTransformMath());
+TEST_CASE("Transform affine operations (host)", "[math][parity][transform]") {
+    Transform t = Transform::Translate(Vector3f(2.0f, 3.0f, 4.0f));
+    Point3f p(1.0f, 1.0f, 1.0f);
+    Point3f pTransformed = t(p);
+    REQUIRE(ApproxEqual(pTransformed, Point3f(3.0f, 4.0f, 5.0f)));
+
+    Vector3f v(1.0f, 2.0f, 3.0f);
+    Vector3f vTransformed = t(v);
+    REQUIRE(ApproxEqual(vTransformed, v));
+
+    Transform s = Transform::Scale(2.0f, 3.0f, 4.0f);
+    Point3f pScaled = s(p);
+    REQUIRE(ApproxEqual(pScaled, Point3f(2.0f, 3.0f, 4.0f)));
+
+    Normal3f n(0.0f, 1.0f, 0.0f);
+    Normal3f nScaled = s(n);
+    INFO("n.x=" << n.x << " n.y=" << n.y << " n.z=" << n.z);
+    INFO("s.mInv[1][1]=" << s.mInv[1][1]);
+    INFO("nScaled.x=" << nScaled.x << " nScaled.y=" << nScaled.y << " nScaled.z=" << nScaled.z);
+    REQUIRE(ApproxEqual(nScaled.y, 1.0f / 3.0f));
+
+    Transform combined = t * s;
+    Point3f pCombined = combined(p);
+    REQUIRE(ApproxEqual(pCombined.x, 4.0f));
+    REQUIRE(ApproxEqual(pCombined.y, 6.0f));
+    REQUIRE(ApproxEqual(pCombined.z, 8.0f));
 }
 
 TEST_CASE("RNG determinism (host)", "[math][parity]") {

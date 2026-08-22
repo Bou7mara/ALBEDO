@@ -18,7 +18,8 @@ namespace rt {
     template <typename T>
     class Vector3 : public Tuple3<Vector3<T>, T> {
     public:
-        using Tuple3<Vector3<T>, T>::Tuple3;
+        constexpr __host__ __device__ Vector3() : Tuple3<Vector3<T>, T>(0, 0, 0) {}
+        constexpr __host__ __device__ Vector3(T x_, T y_, T z_) : Tuple3<Vector3<T>, T>(x_, y_, z_) {}
     };
 
     using Vector3f = Vector3<float>;
