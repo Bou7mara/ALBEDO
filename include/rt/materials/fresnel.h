@@ -4,19 +4,28 @@
 #include <algorithm>
 #include <utility>
 
+#if !defined(__CUDACC__) && !defined(__CUDA_ARCH__)
+#ifndef __host__
+#define __host__
+#endif
+#ifndef __device__
+#define __device__
+#endif
+#endif
+
 namespace rt {
     constexpr float kRefWavelengthUm = 0.589f; // Sodium D-line, reference wavelength for IOR
 
-    [[nodiscard]] inline float CauchyIOR(float iorAtRef, float dispersionB, float lambdaUm) {
+    [[nodiscard]] __host__ __device__ inline float CauchyIOR(float iorAtRef, float dispersionB, float lambdaUm) {
         float A = iorAtRef - dispersionB / (kRefWavelengthUm * kRefWavelengthUm);
         return A + dispersionB / (lambdaUm * lambdaUm);
     }
 
-    inline Vector3f Reflect(const Vector3f& wo, const Vector3f& n) {
+    __host__ __device__ inline Vector3f Reflect(const Vector3f& wo, const Vector3f& n) {
         return Normalize(2.0f * Dot(wo, n) * n - wo);
     }
 
-    inline bool Refract(const Vector3f& wi, const Vector3f& n, float eta, Vector3f* wt) {
+    __host__ __device__ inline bool Refract(const Vector3f& wi, const Vector3f& n, float eta, Vector3f* wt) {
         float cosThetaI = Dot(n, wi);
         float sin2ThetaI = std::max(0.0f, 1.0f - (cosThetaI * cosThetaI));
         float sin2ThetaT = (eta * eta) * sin2ThetaI;
@@ -28,10 +37,12 @@ namespace rt {
         return true;
     }
 
-    inline float FrDielectric(float cosThetaI, float etaI, float etaT) {
+    __host__ __device__ inline float FrDielectric(float cosThetaI, float etaI, float etaT) {
         cosThetaI = std::clamp(cosThetaI, -1.0f, 1.0f);
         if (cosThetaI < 0.0f) {
-            std::swap(etaI, etaT);
+            float tmp = etaI;
+            etaI = etaT;
+            etaT = tmp;
             cosThetaI = -cosThetaI;
         }
         float sinThetaI = std::sqrt(std::max(0.0f, 1.0f - cosThetaI * cosThetaI));
@@ -45,7 +56,7 @@ namespace rt {
         return (Rparl * Rparl + Rperp * Rperp) / 2.0f;
     }
 
-    inline float FrConductor(float cosThetaI, float eta, float k) {
+    __host__ __device__ inline float FrConductor(float cosThetaI, float eta, float k) {
         float cosThetaI2 = cosThetaI * cosThetaI;
         float sinThetaI2 = std::max(0.0f, 1.0f - cosThetaI2);
         float eta2 = eta * eta;
