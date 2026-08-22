@@ -176,9 +176,13 @@ void RenderCpu(const ShowcaseSetup& setup, std::vector<Vector3f>& framebuffer) {
 int main(int argc, char* argv[]) {
     int width = 2560;
     int height = 1600;
-    int spp = 50;
+    int spp = 500;
     std::string sceneChoice = "gem";
+#ifdef ALBEDO_ENABLE_GPU
+    std::string backend = "gpu";
+#else
     std::string backend = "cpu";
+#endif
     bool denoise = false;
 
     if (argc > 1) width = std::atoi(argv[1]);
@@ -205,7 +209,12 @@ int main(int argc, char* argv[]) {
 
     if (backend == "gpu") {
 #ifdef ALBEDO_ENABLE_GPU
-        rtx::RenderGpu(setup, framebuffer, denoise);
+        try {
+            rtx::RenderGpu(setup, framebuffer, denoise);
+        } catch (const std::exception& e) {
+            std::cerr << "GPU Render Error: " << e.what() << "\n";
+            return 1;
+        }
 #else
         std::cerr << "Error: --backend=gpu requested but project built without ALBEDO_ENABLE_GPU.\n";
         return 1;
