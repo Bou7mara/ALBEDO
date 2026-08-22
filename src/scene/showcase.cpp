@@ -281,7 +281,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
 
     auto matLambertian   = std::make_shared<Lambertian>(Vector3f(0.6f, 0.35f, 0.3f));
     auto matGlass        = std::make_shared<Dielectric>(1.5f);
-    auto matDiamond      = std::make_shared<Dielectric>(2.42f, Vector3f(1.0f, 1.0f, 1.0f), 0.0131f);
+    auto matDiamond      = std::make_shared<Dielectric>(2.42f, Vector3f(1.0f, 1.0f, 1.0f), 0.005f);
     auto matRuby         = std::make_shared<Dielectric>(1.76f, Vector3f(0.85f, 0.05f, 0.12f));
     auto matSapphire     = std::make_shared<Dielectric>(2.75f, Vector3f(0.12f, 0.38f, 0.88f));
     auto matFrostedGlass = std::make_shared<Microfacet>(Microfacet::MakeDielectricMicrofacet(0.15f, 1.5f));
@@ -326,8 +326,8 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
     auto rimLightMat   = std::make_shared<Emissive>(Vector3f(7.0f, 7.0f, 7.0f));
     auto topSoftboxMat = std::make_shared<Emissive>(Vector3f(4.2f, 4.2f, 4.5f));
 
-    AddQuadLight(scene, Point3f(-4.5f, 4.2f, 2.0f), 0.6f, 0.6f, keyLightMat);
-    AddQuadLight(scene, Point3f(4.5f, 3.5f, 2.5f), 0.7f, 0.7f, fillLightMat);
+    //AddQuadLight(scene, Point3f(-4.5f, 4.2f, 2.0f), 0.6f, 0.6f, keyLightMat);
+    //AddQuadLight(scene, Point3f(4.5f, 3.5f, 2.5f), 0.7f, 0.7f, fillLightMat);
     AddQuadLight(scene, Point3f(0.0f, 3.8f, -4.5f), 0.5f, 0.5f, rimLightMat);
     AddQuadLight(scene, Point3f(0.0f, 5.5f, -1.2f), 1.5f, 0.9f, topSoftboxMat);
 

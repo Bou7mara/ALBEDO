@@ -1,5 +1,10 @@
 #include <fstream>
 #include <thread>
+#include <vector>
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include <atomic>
 
 #include "rt/core/point2.h"
 #include "rt/core/rng.h"
@@ -10,30 +15,16 @@
 #include "rt/materials/emissive.h"
 #include "rt/scene/scene.h"
 #include "rt/scene/showcase.h"
+#include "rt/integrator_constants.h"
 #include "rt/io/ppm_writer.h"
 #include "rt/io/png_writer.h"
 #include "rt/core/progress.h"
 
-
-
+#ifdef ALBEDO_ENABLE_GPU
+#include "gpu_renderer.h"
+#endif
 
 using namespace rt;
-
-namespace {
-	constexpr int kRRStartDepth = 3;
-	constexpr float kRRProbabilityMinThreshold = 0.5f;
-    constexpr float kRRProbabilityMaximumThreshold = 0.95f;
-}
-
-[[nodiscard]] constexpr float MaxChannel(const Vector3f& v) {
-	return std::max(v.x, std::max(v.y, v.z));
-}
-
-inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf) {
-    float f = nf * fPdf;
-    float g = ng * gPdf;
-    return (f * f) / (f * f + g * g);
-}
 
 Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     Vector3f L(0.0f, 0.0f, 0.0f);
@@ -112,7 +103,7 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         specularBounce = (prevBsdfPdf == 0.0f);
 
 		if (depth >= kRRStartDepth) {
-			const float q = std::clamp(MaxChannel(throughput), kRRProbabilityMinThreshold, kRRProbabilityMaximumThreshold);
+			const float q = std::clamp(MaxChannel(throughput), kRRProbabilityMinimumThreshold, kRRProbabilityMaximumThreshold);
 			if (rng.Uniform1D() > q) break;
 			throughput = throughput / q;
 		}
@@ -126,33 +117,18 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     return L;
 }
 
-int main(int argc, char* argv[]) {
-    int width = 2560;
-    int height = 1600;
-    int spp = 5000;
-    std::string sceneChoice = "gem";
-
-    if (argc > 1) width = std::atoi(argv[1]);
-    if (argc > 2) height = std::atoi(argv[2]);
-    if (argc > 3) spp = std::atoi(argv[3]);
-    if (argc > 4) sceneChoice = argv[4];
-
-    ShowcaseSetup setup = (sceneChoice == "sphere") ? CreateSphereShowcaseScene(width, height, spp) :
-                          (sceneChoice == "gem")    ? CreateGemRoomShowcaseScene(width, height, spp) :
-                                                      CreateCornellBoxShowcaseScene(width, height, spp);
-
+void RenderCpu(const ShowcaseSetup& setup, std::vector<Vector3f>& framebuffer) {
     unsigned int numThreads = std::thread::hardware_concurrency();
     if (numThreads == 0) numThreads = 4;
 
-    std::cout << "Rendering Scene (" << sceneChoice << "): " << setup.imageWidth << "x" << setup.imageHeight
-              << " image at " << setup.samplesPerPixel << " spp using " << numThreads << " threads...\n";
+    std::cout << "Rendering on CPU using " << numThreads << " threads...\n";
 
     constexpr int kTileSize = 16;
     int numTilesX = (setup.imageWidth + kTileSize - 1) / kTileSize;
     int numTilesY = (setup.imageHeight + kTileSize - 1) / kTileSize;
     int totalTiles = numTilesX * numTilesY;
 
-    std::vector<Vector3f> framebuffer(setup.imageWidth * setup.imageHeight);
+    framebuffer.resize(setup.imageWidth * setup.imageHeight);
     std::atomic<int> nextTile{0};
     ProgressReporter progress(totalTiles);
 
@@ -195,6 +171,52 @@ int main(int argc, char* argv[]) {
     }
 
     progress.Finish();
+}
+
+int main(int argc, char* argv[]) {
+    int width = 2560;
+    int height = 1600;
+    int spp = 50;
+    std::string sceneChoice = "gem";
+    std::string backend = "cpu";
+    bool denoise = false;
+
+    if (argc > 1) width = std::atoi(argv[1]);
+    if (argc > 2) height = std::atoi(argv[2]);
+    if (argc > 3) spp = std::atoi(argv[3]);
+    if (argc > 4) sceneChoice = argv[4];
+
+    for (int i = 5; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--backend=gpu" || arg == "gpu") backend = "gpu";
+        else if (arg == "--backend=cpu" || arg == "cpu") backend = "cpu";
+        else if (arg == "--denoise" || arg == "denoise") denoise = true;
+    }
+
+    ShowcaseSetup setup = (sceneChoice == "sphere") ? CreateSphereShowcaseScene(width, height, spp) :
+                          (sceneChoice == "gem")    ? CreateGemRoomShowcaseScene(width, height, spp) :
+                                                      CreateCornellBoxShowcaseScene(width, height, spp);
+
+    std::cout << "Rendering Scene (" << sceneChoice << "): " << setup.imageWidth << "x" << setup.imageHeight
+              << " image at " << setup.samplesPerPixel << " spp [Backend: " << backend
+              << (denoise ? ", Denoise: ON" : "") << "]...\n";
+
+    std::vector<Vector3f> framebuffer;
+
+    if (backend == "gpu") {
+#ifdef ALBEDO_ENABLE_GPU
+        rtx::RenderGpu(setup, framebuffer, denoise);
+#else
+        std::cerr << "Error: --backend=gpu requested but project built without ALBEDO_ENABLE_GPU.\n";
+        return 1;
+#endif
+    } else {
+        if (denoise) {
+            std::cerr << "Error: --denoise is only supported with GPU backend (ALBEDO_ENABLE_GPU).\n";
+            return 1;
+        }
+        RenderCpu(setup, framebuffer);
+    }
 
     std::string ppmPath = NextImagePath("images", ".ppm");
     std::ofstream out(ppmPath);

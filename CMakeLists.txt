@@ -47,3 +47,15 @@ target_link_libraries(benchmark_bvh PRIVATE rt_core)
 
 enable_testing()
 add_subdirectory(tests)
+
+option(ALBEDO_ENABLE_GPU "Build the OptiX/CUDA renderer" OFF)
+
+if(ALBEDO_ENABLE_GPU)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    set(CMAKE_CUDA_ARCHITECTURES 89)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    include(FindOptiX)
+    add_subdirectory(gpu)
+endif()
