@@ -223,7 +223,13 @@ extern "C" __global__ void __raygen__albedo() {
                                     float lPdf = lightSample.pdf * pmf;
                                     float weight = rt::PowerHeuristic(1, lPdf, 1, bsdfPdf);
                                     float cosTheta = AbsDot(lightSample.wi, n);
-                                    L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                                    constexpr float kMaxSampleContribution = 10.0f;
+                                    rt::Vector3f neeContribution = throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                                    float neeMax = rt::MaxChannel(neeContribution);
+                                    if (neeMax > kMaxSampleContribution) {
+                                        neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                    }
+                                    L += neeContribution;
                                 }
                             }
                         }
@@ -240,6 +246,11 @@ extern "C" __global__ void __raygen__albedo() {
 
             float cosTheta = AbsDot(wi, n);
             throughput = throughput * f * cosTheta / pdf;
+            constexpr float kMaxSampleContribution = 10.0f;
+            float maxComponent = rt::MaxChannel(throughput);
+            if (maxComponent > kMaxSampleContribution) {
+                throughput = throughput * (kMaxSampleContribution / maxComponent);
+            }
 
             prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n);
             specularBounce = (prevBsdfPdf == 0.0f);

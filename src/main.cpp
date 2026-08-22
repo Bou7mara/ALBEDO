@@ -82,7 +82,13 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                                 float lPdf = lightSample.pdf * pmf;
                                 float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
                                 float cosTheta = AbsDot(lightSample.wi, isect.n);
-                                L += throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                                constexpr float kMaxSampleContribution = 10.0f;
+                                Vector3f neeContribution = throughput * f * lightSample.Li * cosTheta * weight / lPdf;
+                                float neeMax = MaxChannel(neeContribution);
+                                if (neeMax > kMaxSampleContribution) {
+                                    neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                }
+                                L += neeContribution;
                             }
                         }
                     }
@@ -98,6 +104,11 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
 
         float cosTheta = AbsDot(wi, isect.n);
         throughput = throughput * f * cosTheta / pdf;
+        constexpr float kMaxSampleContribution = 10.0f;
+        float maxComponent = MaxChannel(throughput);
+        if (maxComponent > kMaxSampleContribution) {
+            throughput = throughput * (kMaxSampleContribution / maxComponent);
+        }
         
         prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n));
         specularBounce = (prevBsdfPdf == 0.0f);
