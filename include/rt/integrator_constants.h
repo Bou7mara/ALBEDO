@@ -12,9 +12,15 @@
 #endif
 
 namespace rt {
-    inline constexpr int kRRStartDepth = 3;
-    inline constexpr float kRRProbabilityMinimumThreshold = 0.5f;
-    inline constexpr float kRRProbabilityMaximumThreshold = 0.95f;
+#if defined(__CUDACC__) || defined(__CUDA_ARCH__)
+    __device__ constexpr int kRRStartDepth = 3;
+    __device__ constexpr float kRRProbabilityMinimumThreshold = 0.5f;
+    __device__ constexpr float kRRProbabilityMaximumThreshold = 0.95f;
+#else
+    constexpr int kRRStartDepth = 3;
+    constexpr float kRRProbabilityMinimumThreshold = 0.5f;
+    constexpr float kRRProbabilityMaximumThreshold = 0.95f;
+#endif
 
     [[nodiscard]] __host__ __device__ inline constexpr float MaxChannel(const Vector3f& v) {
         return (v.x > v.y) ? ((v.x > v.z) ? v.x : v.z) : ((v.y > v.z) ? v.y : v.z);

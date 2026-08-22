@@ -15,14 +15,14 @@
 
 namespace rt {
 
-class PerspectiveCamera : public Camera {
+class PerspectiveCamera {
 public:
-    constexpr __host__ __device__ PerspectiveCamera() = default;
+    PerspectiveCamera() = default;
 
     PerspectiveCamera(const Point3f& eye, const Point3f& lookAt, const Vector3f& up,
                       float fovYDegrees, int imageWidth, int imageHeight);
 
-    __host__ __device__ Ray GenerateRay(const CameraSample& sample) const override {
+    __host__ __device__ Ray GenerateRay(const CameraSample& sample) const {
         float ndcX = sample.pFilm.x / static_cast<float>(imageWidth_);
         float ndcY = sample.pFilm.y / static_cast<float>(imageHeight_);
 
@@ -43,10 +43,10 @@ public:
 
 private:
     Transform cameraToWorld_;
-    int imageWidth_ = 0;
-    int imageHeight_ = 0;
-    float halfHeight_ = 0.0f;
-    float halfWidth_ = 0.0f;
+    int imageWidth_;
+    int imageHeight_;
+    float halfHeight_;
+    float halfWidth_;
 };
 
 } // namespace rt
