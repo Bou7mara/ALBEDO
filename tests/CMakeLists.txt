@@ -1,13 +1,4 @@
-include(FetchContent)
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v3.7.1
-)
-FetchContent_MakeAvailable(Catch2)
 
-# Enable Catch2's CMake helper scripts (e.g. catch_discover_tests)
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 
 add_executable(rt_tests
     test_tuple3.cpp

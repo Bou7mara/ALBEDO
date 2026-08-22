@@ -1,15 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-
-if(WIN32)
-    if(NOT DEFINED CMAKE_CXX_COMPILER OR NOT EXISTS "${CMAKE_CXX_COMPILER}")
-        file(GLOB MSVC_CL_PATHS "C:/Program Files/Microsoft Visual Studio/*/*/VC/Tools/MSVC/*/bin/Hostx64/x64/cl.exe")
-        if(MSVC_CL_PATHS)
-            list(GET MSVC_CL_PATHS -1 VALID_CL)
-            set(CMAKE_CXX_COMPILER "${VALID_CL}" CACHE FILEPATH "C++ compiler" FORCE)
-        endif()
-    endif()
-endif()
-
 project(raytracer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -44,9 +33,9 @@ add_library(rt_core STATIC
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)
-    target_compile_options(rt_core PUBLIC /W4 /WX /EHsc /arch:AVX2)
+    target_compile_options(rt_core PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /EHsc /arch:AVX2>)
 else()
-    target_compile_options(rt_core PUBLIC -Wall -Wextra -Wpedantic -Werror -march=native)
+    target_compile_options(rt_core PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Wpedantic -Werror -march=native>)
 endif()
 
 add_executable(raytracer src/main.cpp)
@@ -57,16 +46,28 @@ add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp
 target_link_libraries(benchmark_bvh PRIVATE rt_core)
 
 enable_testing()
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.7.1
+)
+FetchContent_MakeAvailable(Catch2)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+
 add_subdirectory(tests)
 
-option(ALBEDO_ENABLE_GPU "Build the OptiX/CUDA renderer" OFF)
+option(ALBEDO_ENABLE_GPU "Build the OptiX/CUDA renderer" ON)
 
 if(ALBEDO_ENABLE_GPU)
     enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     set(CMAKE_CUDA_ARCHITECTURES 89)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
     include(FindOptiX)
     add_subdirectory(gpu)
+    target_link_libraries(raytracer PRIVATE rt_gpu)
+    target_compile_definitions(raytracer PRIVATE ALBEDO_ENABLE_GPU)
 endif()
