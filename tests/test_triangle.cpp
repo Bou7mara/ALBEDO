@@ -127,18 +127,23 @@ TEST_CASE("Triangle: WorldBound contains all three vertices", "[triangle]") {
     REQUIRE(b.minPt.z <= 0.0f); REQUIRE(b.maxPt.z >= 0.0f);
 }
 
-TEST_CASE("Triangle: Sample() always returns a point inside the triangle plane with positive pdf", "[triangle]") {
+TEST_CASE("Triangle: Sample() and Pdf() agree on solid-angle measure", "[triangle]") {
     auto mesh = MakeUnitTriangle();
     Triangle tri(mesh, 0);
+    Point3f ref(0.2f, 0.2f, -2.0f);
 
     for (float ux = 0.05f; ux < 1.0f; ux += 0.2f) {
         for (float uy = 0.05f; uy < 1.0f; uy += 0.2f) {
-            ShapeSample s = tri.Sample(Point3f(0,0,-1), Point2f(ux, uy));
-            REQUIRE(s.pdf == Catch::Approx(1.0f / tri.Area()));
-            REQUIRE(s.p.z == Catch::Approx(0.0f)); // stays in the z=0 plane
+            ShapeSample s = tri.Sample(ref, Point2f(ux, uy));
+            REQUIRE(s.p.z == Catch::Approx(0.0f));
             REQUIRE(s.p.x >= -1e-4f);
             REQUIRE(s.p.y >= -1e-4f);
-            REQUIRE(s.p.x + s.p.y <= 1.0f + 1e-4f); // inside the triangle's hypotenuse
+            REQUIRE(s.p.x + s.p.y <= 1.0f + 1e-4f);
+
+            Vector3f wi = Normalize(s.p - ref);
+            float pdf = tri.Pdf(ref, wi);
+            REQUIRE(s.pdf == Catch::Approx(pdf));
+            REQUIRE(s.pdf > 0.0f);
         }
     }
 }

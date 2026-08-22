@@ -87,7 +87,7 @@ namespace rt {
         return 0.5f * Length(Cross(V1() - V0(), V2() - V0()));
     }
 
-    ShapeSample Triangle::Sample(const Point3f& /*ref*/, const Point2f& u) const {
+    ShapeSample Triangle::Sample(const Point3f& ref, const Point2f& u) const {
         float b0 = u.x;
         float b1 = u.y;
         if (b0 + b1 > 1.0f) {
@@ -104,14 +104,33 @@ namespace rt {
         const Normal3f n = Normal3f(Normalize(Cross(V1() - V0(), V2() - V0())));
 
         const float area = Area();
-        const float pdf = (area > 0.0f) ? (1.0f / area) : 0.0f;
+        if (area <= 0.0f) return ShapeSample{p, n, 0.0f};
 
+        Vector3f wi = p - ref;
+        float distSq = LengthSquared(wi);
+        if (distSq == 0.0f) return ShapeSample{p, n, 0.0f};
+        Vector3f wiNorm = wi / std::sqrt(distSq);
+
+        float cosTheta = AbsDot(n, -wiNorm);
+        if (cosTheta < 1e-6f) return ShapeSample{p, n, 0.0f};
+
+        float pdf = distSq / (cosTheta * area);
         return ShapeSample{p, n, pdf};
     }
 
-    float Triangle::Pdf(const Point3f& /*ref*/, const Vector3f& /*wi*/) const {
+    float Triangle::Pdf(const Point3f& ref, const Vector3f& wi) const {
+        Ray ray(ref, wi);
+        SurfaceInteraction isect;
+        if (!Intersect(ray, &isect)) return 0.0f;
+
         const float area = Area();
-        return (area > 0.0f) ? (1.0f / area) : 0.0f;
+        if (area <= 0.0f) return 0.0f;
+
+        float distSq = isect.t * isect.t * LengthSquared(wi);
+        float cosTheta = AbsDot(isect.n, -wi);
+        if (cosTheta < 1e-6f) return 0.0f;
+
+        return distSq / (cosTheta * area);
     }
 
     std::vector<std::shared_ptr<Shape>> MakeTriangleMesh(
