@@ -10,6 +10,7 @@
 #include "rt/materials/dielectric.h"
 #include "rt/materials/microfacet_brdf.h"
 #include "rt/materials/emissive.h"
+#include "rt/materials/disney_principled.h"
 
 #include <optix_stubs.h>
 #include <iostream>
@@ -43,6 +44,13 @@ namespace rtx {
             } else {
                 return DeviceMaterial::MakeMicrofacetConductor(std::sqrt(mf->Alpha()), mf->Eta(), mf->K(), mf->Tint());
             }
+        }
+        if (auto dp = dynamic_cast<const rt::DisneyPrincipled*>(bsdf)) {
+            const auto& p = dp->Params();
+            return DeviceMaterial::MakeDisney(
+                p.baseColor, p.metallic, p.subsurface, p.specular, p.roughness,
+                p.specularTint, p.anisotropic, p.sheen, p.sheenTint, p.clearcoat, p.clearcoatGloss
+            );
         }
         return DeviceMaterial::MakeLambertian(rt::Vector3f(0.5f, 0.5f, 0.5f));
     }

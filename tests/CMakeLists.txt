@@ -39,6 +39,7 @@ add_executable(rt_tests
     test_mesh_instance.cpp
     test_scene_node.cpp
     test_quad.cpp
+    test_disney_principled.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

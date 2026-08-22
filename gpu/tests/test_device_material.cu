@@ -7,6 +7,7 @@
 #include "rt/materials/dielectric.h"
 #include "rt/materials/microfacet_brdf.h"
 #include "rt/materials/emissive.h"
+#include "rt/materials/disney_principled.h"
 
 #include <cuda_runtime.h>
 #include <vector>
@@ -201,4 +202,59 @@ TEST_CASE("Microfacet conductor and dielectric parity", "[gpu][material][microfa
     REQUIRE_THAT(hostWi.x, WithinAbs(cpuWi.x, 1e-4f));
     REQUIRE_THAT(hostWi.y, WithinAbs(cpuWi.y, 1e-4f));
     REQUIRE_THAT(hostWi.z, WithinAbs(cpuWi.z, 1e-4f));
+}
+
+TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material][disney]") {
+    rt::DisneyParams params{};
+    params.baseColor = rt::Vector3f(0.8f, 0.5f, 0.2f);
+    params.metallic = 0.3f;
+    params.subsurface = 0.2f;
+    params.specular = 0.6f;
+    params.roughness = 0.4f;
+    params.sheen = 0.5f;
+    params.clearcoat = 0.8f;
+    params.clearcoatGloss = 0.9f;
+
+    rt::DisneyPrincipled cpuMat(params);
+    rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeDisney(
+        params.baseColor, params.metallic, params.subsurface, params.specular, params.roughness,
+        params.specularTint, params.anisotropic, params.sheen, params.sheenTint, params.clearcoat, params.clearcoatGloss
+    );
+
+    rt::Vector3f wo = Normalize(rt::Vector3f(0.3f, 0.4f, 0.8f));
+    rt::Vector3f n(0.0f, 0.0f, 1.0f);
+    rt::Vector3f wiEval = Normalize(rt::Vector3f(0.2f, -0.3f, 0.9f));
+
+    rt::Vector3f cpuF = cpuMat.f(wo, wiEval, n);
+    float cpuEvalPdf = cpuMat.Pdf(wo, wiEval, n);
+
+    rt::Vector3f hostF = rtx::EvaluateBsdf(devMat, wo, wiEval, n);
+    float hostEvalPdf = rtx::PdfBsdf(devMat, wo, wiEval, n);
+
+    REQUIRE_THAT(hostF.x, WithinAbs(cpuF.x, 1e-4f));
+    REQUIRE_THAT(hostF.y, WithinAbs(cpuF.y, 1e-4f));
+    REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-4f));
+    REQUIRE_THAT(hostEvalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
+
+    rt::Point2f u(0.35f, 0.65f);
+    MaterialTestInput input{ devMat, wo, n, u, wiEval };
+    MaterialTestInput* d_in = nullptr;
+    MaterialTestOutput* d_out = nullptr;
+    cudaMalloc(&d_in, sizeof(MaterialTestInput));
+    cudaMalloc(&d_out, sizeof(MaterialTestOutput));
+    cudaMemcpy(d_in, &input, sizeof(MaterialTestInput), cudaMemcpyHostToDevice);
+
+    RunMaterialDeviceTests<<<1, 1>>>(d_in, d_out, 1);
+    cudaDeviceSynchronize();
+
+    MaterialTestOutput devOut{};
+    cudaMemcpy(&devOut, d_out, sizeof(MaterialTestOutput), cudaMemcpyDeviceToHost);
+
+    REQUIRE_THAT(devOut.f.x, WithinAbs(cpuF.x, 1e-4f));
+    REQUIRE_THAT(devOut.f.y, WithinAbs(cpuF.y, 1e-4f));
+    REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-4f));
+    REQUIRE_THAT(devOut.evalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
+
+    cudaFree(d_in);
+    cudaFree(d_out);
 }

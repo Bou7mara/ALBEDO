@@ -71,4 +71,11 @@ namespace rt {
         
         return (G1 * D) / (4.0f * NdotV);
     }
+
+    __host__ __device__ inline Vector3f SampleGgx(const Point2f& u, float alpha) {
+        float phi = 2.0f * 3.14159265358979323846f * u.y;
+        float cosTheta = std::sqrt(std::max(0.0f, (1.0f - u.x) / (1.0f + (alpha * alpha - 1.0f) * u.x)));
+        float sinTheta = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
+        return Vector3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+    }
 }

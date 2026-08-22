@@ -24,14 +24,7 @@ namespace rt {
         float m[4][4];
         float mInv[4][4];
 
-        __host__ __device__ Transform() : m{}, mInv{} {
-            for (int i = 0; i < 4; ++i) {
-                for (int j = 0; j < 4; ++j) {
-                    m[i][j] = (i == j) ? 1.0f : 0.0f;
-                    mInv[i][j] = (i == j) ? 1.0f : 0.0f;
-                }
-            }
-        }
+        Transform() = default;
 
         // Host-only: inverts mat via Inverse4x4
         explicit Transform(const float mat[4][4]);
@@ -46,14 +39,13 @@ namespace rt {
         }
 
         __host__ __device__ static Transform Identity() {
-            Transform t;
-            for (int i = 0; i < 4; ++i) {
-                for (int j = 0; j < 4; ++j) {
-                    t.m[i][j] = (i == j) ? 1.0f : 0.0f;
-                    t.mInv[i][j] = (i == j) ? 1.0f : 0.0f;
-                }
-            }
-            return t;
+            float mat[4][4] = {
+                {1.0f, 0.0f, 0.0f, 0.0f},
+                {0.0f, 1.0f, 0.0f, 0.0f},
+                {0.0f, 0.0f, 1.0f, 0.0f},
+                {0.0f, 0.0f, 0.0f, 1.0f}
+            };
+            return Transform(mat, mat);
         }
 
         __host__ __device__ static Transform Translate(const Vector3f& delta) {

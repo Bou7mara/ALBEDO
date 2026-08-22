@@ -27,7 +27,8 @@ namespace rtx {
         Dielectric = 2,
         MicrofacetDielectric = 3,
         MicrofacetConductor = 4,
-        Emissive = 5
+        Emissive = 5,
+        Disney = 6
     };
 
     struct DeviceMaterial {
@@ -39,6 +40,19 @@ namespace rtx {
             struct { float alpha; float ior; } microfacetDielectric;
             struct { float alpha; rt::Vector3f eta; rt::Vector3f k; rt::Vector3f tint; } microfacetConductor;
             struct { rt::Vector3f radiance; } emissive;
+            struct {
+                rt::Vector3f baseColor;
+                float metallic;
+                float subsurface;
+                float specular;
+                float roughness;
+                float specularTint;
+                float anisotropic;
+                float sheen;
+                float sheenTint;
+                float clearcoat;
+                float clearcoatGloss;
+            } disney;
         };
 
         __host__ __device__ constexpr DeviceMaterial()
@@ -92,7 +106,80 @@ namespace rtx {
             m.emissive.radiance = radiance;
             return m;
         }
+
+        __host__ __device__ static DeviceMaterial MakeDisney(const rt::Vector3f& baseColor,
+                                                             float metallic = 0.0f,
+                                                             float subsurface = 0.0f,
+                                                             float specular = 0.5f,
+                                                             float roughness = 0.5f,
+                                                             float specularTint = 0.0f,
+                                                             float anisotropic = 0.0f,
+                                                             float sheen = 0.0f,
+                                                             float sheenTint = 0.5f,
+                                                             float clearcoat = 0.0f,
+                                                             float clearcoatGloss = 1.0f) {
+            DeviceMaterial m{};
+            m.kind = MaterialKind::Disney;
+            m.disney.baseColor = baseColor;
+            m.disney.metallic = metallic;
+            m.disney.subsurface = subsurface;
+            m.disney.specular = specular;
+            m.disney.roughness = roughness;
+            m.disney.specularTint = specularTint;
+            m.disney.anisotropic = anisotropic;
+            m.disney.sheen = sheen;
+            m.disney.sheenTint = sheenTint;
+            m.disney.clearcoat = clearcoat;
+            m.disney.clearcoatGloss = clearcoatGloss;
+            return m;
+        }
     };
+
+    __host__ __device__ inline float DisneySchlickWeight(float cosTheta) {
+        float m = fmaxf(0.0f, fminf(1.0f, 1.0f - cosTheta));
+        float m2 = m * m;
+        return m2 * m2 * m;
+    }
+
+    __host__ __device__ inline float DisneyLuminance(const rt::Vector3f& c) {
+        return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;
+    }
+
+    __host__ __device__ inline float DisneyGtr1D(float NdotH, float a) {
+        if (a >= 1.0f) return rt::kInvPi;
+        float a2 = a * a;
+        float t = 1.0f + (a2 - 1.0f) * NdotH * NdotH;
+        return (a2 - 1.0f) / (rt::kPi * logf(a2) * t);
+    }
+
+    __host__ __device__ inline float DisneyGtr1SmithG(float NdotV, float NdotL) {
+        return rt::SmithG(NdotV, NdotL, 0.25f);
+    }
+
+    __host__ __device__ inline rt::Vector3f DisneySampleGtr1(const rt::Point2f& u, float alpha) {
+        float alpha2 = alpha * alpha;
+        float cosTheta2 = (alpha2 < 1.0f) ? ((1.0f - powf(alpha2, 1.0f - u.x)) / (1.0f - alpha2)) : (1.0f - u.x);
+        cosTheta2 = fmaxf(0.0f, fminf(1.0f, cosTheta2));
+        float cosTheta = sqrtf(cosTheta2);
+        float sinTheta = sqrtf(fmaxf(0.0f, 1.0f - cosTheta2));
+        float phi = 2.0f * rt::kPi * u.y;
+        return rt::Vector3f(sinTheta * cosf(phi), sinTheta * sinf(phi), cosTheta);
+    }
+
+    struct DisneyLobeWeights {
+        float wDiff;
+        float wSpec;
+        float wClear;
+    };
+
+    __host__ __device__ inline DisneyLobeWeights ComputeDisneyLobeWeights(const DeviceMaterial& mat) {
+        float diffWeight = (1.0f - mat.disney.metallic) * (1.0f - mat.disney.subsurface * 0.5f);
+        float specWeight = fmaxf(0.05f, mat.disney.specular + mat.disney.metallic);
+        float clearWeight = 0.25f * mat.disney.clearcoat;
+        float total = diffWeight + specWeight + clearWeight;
+        if (total <= 0.0f) return {1.0f, 0.0f, 0.0f};
+        return {diffWeight / total, specWeight / total, clearWeight / total};
+    }
 
     __host__ __device__ inline rt::Vector3f EvaluateBsdf(const DeviceMaterial& mat,
                                                          const rt::Vector3f& wo,
@@ -176,9 +263,79 @@ namespace rtx {
                 rt::Vector3f F = mat.microfacetConductor.tint * rt::Vector3f(fr, fg, fb);
                 return D * Gterm * F;
             }
+
+            case MaterialKind::Disney: {
+                float NdotO = Dot(wo, n);
+                float NdotI = Dot(wi, n);
+                if (NdotO <= 0.0f || NdotI <= 0.0f) {
+                    return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                }
+
+                rt::Vector3f wh = wo + wi;
+                if (LengthSquared(wh) == 0.0f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                wh = Normalize(wh);
+
+                float NdotH = Dot(wh, n);
+                float VdotH = Dot(wo, wh);
+
+                float lum = DisneyLuminance(mat.disney.baseColor);
+                rt::Vector3f cTint = (lum > 0.0f) ? (mat.disney.baseColor / lum) : rt::Vector3f(1.0f, 1.0f, 1.0f);
+
+                // 1. Diffuse & Subsurface
+                rt::Vector3f fDiffuse(0.0f, 0.0f, 0.0f);
+                if (mat.disney.metallic < 1.0f) {
+                    float Fo = DisneySchlickWeight(NdotO);
+                    float Fi = DisneySchlickWeight(NdotI);
+                    float Fd90 = 0.5f + 2.0f * mat.disney.roughness * VdotH * VdotH;
+                    float Fd = (1.0f + (Fd90 - 1.0f) * Fo) * (1.0f + (Fd90 - 1.0f) * Fi);
+
+                    float Fss90 = mat.disney.roughness * VdotH * VdotH;
+                    float Fss = (1.0f + (Fss90 - 1.0f) * Fo) * (1.0f + (Fss90 - 1.0f) * Fi);
+                    float ss = 1.25f * (Fss * (1.0f / (NdotO + NdotI) - 0.5f) + 0.5f);
+
+                    float diffuseFactor = (1.0f - mat.disney.subsurface) * Fd + mat.disney.subsurface * ss;
+                    fDiffuse = mat.disney.baseColor * (rt::kInvPi * diffuseFactor * (1.0f - mat.disney.metallic));
+
+                    if (mat.disney.sheen > 0.0f) {
+                        float Fh = DisneySchlickWeight(VdotH);
+                        rt::Vector3f cSheen = (1.0f - mat.disney.sheenTint) * rt::Vector3f(1.0f, 1.0f, 1.0f) + mat.disney.sheenTint * cTint;
+                        rt::Vector3f fSheen = mat.disney.sheen * cSheen * Fh * (1.0f - mat.disney.metallic);
+                        fDiffuse += fSheen;
+                    }
+                }
+
+                // 2. Specular (GGX)
+                float alpha = fmaxf(0.001f, mat.disney.roughness * mat.disney.roughness);
+                float D = rt::GgxD(NdotH, alpha);
+                float G = rt::SmithG(NdotO, NdotI, alpha);
+
+                rt::Vector3f cSpec0 = 0.08f * mat.disney.specular * ((1.0f - mat.disney.specularTint) * rt::Vector3f(1.0f, 1.0f, 1.0f) + mat.disney.specularTint * cTint);
+                rt::Vector3f F0 = (1.0f - mat.disney.metallic) * cSpec0 + mat.disney.metallic * mat.disney.baseColor;
+                rt::Vector3f F = F0 + (rt::Vector3f(1.0f, 1.0f, 1.0f) - F0) * DisneySchlickWeight(VdotH);
+
+                rt::Vector3f fSpec = (D * G * F) / (4.0f * NdotO * NdotI);
+
+                // 3. Clearcoat (GTR1)
+                rt::Vector3f fClearcoat(0.0f, 0.0f, 0.0f);
+                if (mat.disney.clearcoat > 0.0f) {
+                    float alphaG = (1.0f - mat.disney.clearcoatGloss) * 0.1f + mat.disney.clearcoatGloss * 0.001f;
+                    float Dc = DisneyGtr1D(NdotH, alphaG);
+                    float Gc = DisneyGtr1SmithG(NdotO, NdotI);
+                    float Fc = 0.04f + (1.0f - 0.04f) * DisneySchlickWeight(VdotH);
+                    float cVal = 0.25f * mat.disney.clearcoat * (Dc * Gc * Fc) / (4.0f * NdotO * NdotI);
+                    fClearcoat = rt::Vector3f(cVal, cVal, cVal);
+                }
+
+                return fDiffuse + fSpec + fClearcoat;
+            }
         }
         return rt::Vector3f(0.0f, 0.0f, 0.0f);
     }
+
+    __host__ __device__ float PdfBsdf(const DeviceMaterial& mat,
+                                      const rt::Vector3f& wo,
+                                      const rt::Vector3f& wi,
+                                      const rt::Vector3f& n);
 
     __host__ __device__ inline rt::Vector3f SampleBsdf(const DeviceMaterial& mat,
                                                        const rt::Vector3f& wo,
@@ -210,8 +367,7 @@ namespace rtx {
                 bool entering = Dot(wo, n) > 0.0f;
                 float etaI = entering ? 1.0f : mat.dielectric.ior;
                 float etaT = entering ? mat.dielectric.ior : 1.0f;
-                float cosThetaI = AbsDot(wo, n);
-                float R = rt::FrDielectric(cosThetaI, etaI, etaT);
+                float R = rt::FrDielectric(AbsDot(wo, n), etaI, etaT);
 
                 if (u.x < R) {
                     *wi = rt::Reflect(wo, n);
@@ -222,10 +378,17 @@ namespace rtx {
                 }
 
                 *pdf = 1.0f - R;
+
                 if (mat.dielectric.dispersion <= 0.0f) {
-                    rt::Vector3f nf = entering ? n : -n;
                     float eta = etaI / etaT;
-                    rt::Refract(wo, nf, eta, wi);
+                    rt::Vector3f nf = entering ? n : -n;
+                    if (!rt::Refract(wo, nf, eta, wi)) {
+                        *wi = rt::Reflect(wo, n);
+                        float cosThetaWi = AbsDot(*wi, n);
+                        if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                        return mat.dielectric.tint / cosThetaWi;
+                    }
+
                     float cosThetaWi = AbsDot(*wi, n);
                     if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
                     rt::Vector3f T = mat.dielectric.tint * (1.0f - R);
@@ -291,6 +454,50 @@ namespace rtx {
                 return EvaluateBsdf(mat, wo, *wi, n);
             }
 
+            case MaterialKind::Disney: {
+                float NdotO = Dot(wo, n);
+                if (NdotO <= 0.0f) {
+                    *pdf = 0.0f;
+                    return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                }
+
+                DisneyLobeWeights w = ComputeDisneyLobeWeights(mat);
+                rt::ONB onb(n);
+
+                if (u.x < w.wDiff) {
+                    float remappedUx = u.x / w.wDiff;
+                    rt::Point2f uSub(remappedUx, u.y);
+                    rt::Vector3f localDir = rt::CosineSampleHemisphere(uSub);
+                    *wi = Normalize(onb.ToWorld(localDir));
+                } else if (u.x < w.wDiff + w.wSpec) {
+                    float remappedUx = (u.x - w.wDiff) / w.wSpec;
+                    rt::Point2f uSub(remappedUx, u.y);
+                    float alpha = fmaxf(0.001f, mat.disney.roughness * mat.disney.roughness);
+                    rt::Vector3f localWh = rt::SampleGgx(uSub, alpha);
+                    rt::Vector3f wh = Normalize(onb.ToWorld(localWh));
+                    *wi = Normalize(2.0f * Dot(wo, wh) * wh - wo);
+                } else {
+                    float remappedUx = (u.x - (w.wDiff + w.wSpec)) / w.wClear;
+                    rt::Point2f uSub(remappedUx, u.y);
+                    float alphaG = (1.0f - mat.disney.clearcoatGloss) * 0.1f + mat.disney.clearcoatGloss * 0.001f;
+                    rt::Vector3f localWh = DisneySampleGtr1(uSub, alphaG);
+                    rt::Vector3f wh = Normalize(onb.ToWorld(localWh));
+                    *wi = Normalize(2.0f * Dot(wo, wh) * wh - wo);
+                }
+
+                if (Dot(*wi, n) <= 0.0f) {
+                    *pdf = 0.0f;
+                    return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                }
+
+                *pdf = PdfBsdf(mat, wo, *wi, n);
+                if (*pdf <= 0.0f) {
+                    return rt::Vector3f(0.0f, 0.0f, 0.0f);
+                }
+
+                return EvaluateBsdf(mat, wo, *wi, n);
+            }
+
             case MaterialKind::Emissive: {
                 *wi = rt::Vector3f(0.0f, 0.0f, 0.0f);
                 *pdf = 0.0f;
@@ -329,6 +536,34 @@ namespace rtx {
                 if (LengthSquared(wh) == 0.0f) return 0.0f;
                 wh = Normalize(wh);
                 return rt::GgxVndfPdf(AbsDot(wo, n), AbsDot(wh, n), mat.microfacetConductor.alpha);
+            }
+
+            case MaterialKind::Disney: {
+                float NdotO = Dot(wo, n);
+                float NdotI = Dot(wi, n);
+                if (NdotO <= 0.0f || NdotI <= 0.0f) return 0.0f;
+
+                rt::Vector3f wh = wo + wi;
+                if (LengthSquared(wh) == 0.0f) return 0.0f;
+                wh = Normalize(wh);
+
+                float NdotH = Dot(wh, n);
+                float VdotH = Dot(wo, wh);
+                if (VdotH <= 0.0f) return 0.0f;
+
+                DisneyLobeWeights w = ComputeDisneyLobeWeights(mat);
+
+                float pdfDiff = rt::CosineHemispherePdf(NdotI);
+
+                float alpha = fmaxf(0.001f, mat.disney.roughness * mat.disney.roughness);
+                float D = rt::GgxD(NdotH, alpha);
+                float pdfSpec = (D * NdotH) / (4.0f * VdotH);
+
+                float alphaG = (1.0f - mat.disney.clearcoatGloss) * 0.1f + mat.disney.clearcoatGloss * 0.001f;
+                float Dc = DisneyGtr1D(NdotH, alphaG);
+                float pdfClear = (Dc * NdotH) / (4.0f * VdotH);
+
+                return w.wDiff * pdfDiff + w.wSpec * pdfSpec + w.wClear * pdfClear;
             }
         }
         return 0.0f;
