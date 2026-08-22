@@ -6,6 +6,15 @@
 #include <cmath>
 #include <limits>
 
+#if !defined(__CUDACC__) && !defined(__CUDA_ARCH__)
+#ifndef __host__
+#define __host__
+#endif
+#ifndef __device__
+#define __device__
+#endif
+#endif
+
 namespace rt {
 
     template <typename T>
@@ -13,42 +22,46 @@ namespace rt {
     public:
         Point3<T> minPt, maxPt;
 
-        Bounds3() {
+        __host__ __device__ Bounds3() {
             T minNum = std::numeric_limits<T>::lowest();
             T maxNum = std::numeric_limits<T>::max();
             minPt = Point3<T>(maxNum, maxNum, maxNum);
             maxPt = Point3<T>(minNum, minNum, minNum);
         }
 
-        explicit Bounds3(const Point3<T>& p) : minPt(p), maxPt(p) {}
+        explicit constexpr __host__ __device__ Bounds3(const Point3<T>& p) : minPt(p), maxPt(p) {}
 
-        Bounds3(const Point3<T>& p1, const Point3<T>& p2)
+        constexpr __host__ __device__ Bounds3(const Point3<T>& p1, const Point3<T>& p2)
             : minPt(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z)),
               maxPt(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z)) {}
 
-        Vector3<T> Diagonal() const { return maxPt - minPt; }
+        constexpr __host__ __device__ Vector3<T> Diagonal() const { return maxPt - minPt; }
 
-        T SurfaceArea() const {
+        constexpr __host__ __device__ T SurfaceArea() const {
             Vector3<T> d = Diagonal();
             return static_cast<T>(2) * (d.x * d.y + d.y * d.z + d.z * d.x);
         }
 
-        int MaxExtent() const {
+        constexpr __host__ __device__ int MaxExtent() const {
             Vector3<T> d = Diagonal();
             if (d.x > d.y && d.x > d.z) return 0;
             if (d.y > d.z) return 1;
             return 2;
         }
 
-        Point3<T> Centroid() const { return minPt + Diagonal() * static_cast<T>(0.5); }
+        constexpr __host__ __device__ Point3<T> Centroid() const { return minPt + Diagonal() * static_cast<T>(0.5); }
 
-        bool IntersectP(const Ray& ray, float* hitt0 = nullptr, float* hitt1 = nullptr) const {
+        __host__ __device__ bool IntersectP(const Ray& ray, float* hitt0 = nullptr, float* hitt1 = nullptr) const {
             float t0 = 0.0f, t1 = ray.tMax;
             for (int i = 0; i < 3; ++i) {
                 float invRayDir = 1.0f / ray.d[i];
                 float tNear = (minPt[i] - ray.o[i]) * invRayDir;
                 float tFar  = (maxPt[i] - ray.o[i]) * invRayDir;
-                if (tNear > tFar) std::swap(tNear, tFar);
+                if (tNear > tFar) {
+                    float tmp = tNear;
+                    tNear = tFar;
+                    tFar = tmp;
+                }
                 t0 = tNear > t0 ? tNear : t0;
                 t1 = tFar < t1 ? tFar : t1;
                 if (t0 > t1) return false;
@@ -58,7 +71,7 @@ namespace rt {
             return true;
         }
 
-        bool IntersectP(const Ray& ray, const Vector3<T>& invDir, const int dirIsNeg[3]) const {
+        __host__ __device__ bool IntersectP(const Ray& ray, const Vector3<T>& invDir, const int dirIsNeg[3]) const {
             float tMin  = ((dirIsNeg[0] ? maxPt.x : minPt.x) - ray.o.x) * invDir.x;
             float tMax  = ((dirIsNeg[0] ? minPt.x : maxPt.x) - ray.o.x) * invDir.x;
             float tyMin = ((dirIsNeg[1] ? maxPt.y : minPt.y) - ray.o.y) * invDir.y;
@@ -80,16 +93,17 @@ namespace rt {
     using Bounds3f = Bounds3<float>;
 
     template <typename T>
-    Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2) {
+    constexpr __host__ __device__ Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2) {
         return Bounds3<T>(
             Point3<T>(std::min(b1.minPt.x, b2.minPt.x), std::min(b1.minPt.y, b2.minPt.y), std::min(b1.minPt.z, b2.minPt.z)),
             Point3<T>(std::max(b1.maxPt.x, b2.maxPt.x), std::max(b1.maxPt.y, b2.maxPt.y), std::max(b1.maxPt.z, b2.maxPt.z)));
     }
 
     template <typename T>
-    Bounds3<T> Union(const Bounds3<T>& b, const Point3<T>& p) {
+    constexpr __host__ __device__ Bounds3<T> Union(const Bounds3<T>& b, const Point3<T>& p) {
         return Bounds3<T>(
             Point3<T>(std::min(b.minPt.x, p.x), std::min(b.minPt.y, p.y), std::min(b.minPt.z, p.z)),
             Point3<T>(std::max(b.maxPt.x, p.x), std::max(b.maxPt.y, p.y), std::max(b.maxPt.z, p.z)));
     }
-}
+
+} // namespace rt
