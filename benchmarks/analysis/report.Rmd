@@ -1,0 +1,83 @@
+---
+title: "ALBEDO Ray Tracing: Acceleration Structure Comparative Benchmark Report"
+author: "ALBEDO Benchmark & Analysis Suite"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: readable
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(knitr)
+
+source("load_results.R")
+source("plots.R")
+source("significance_tests.R")
+source("sah_correlation.R")
+
+latest_csv <- find_latest_benchmark_csv("../../benchmark_results", type = "reps")
+df <- load_benchmark_results(latest_csv)
+```
+
+# Executive Summary
+
+This report delivers a rigorous empirical and statistical evaluation of the acceleration structures implemented within **ALBEDO**:
+
+- **Binned-SAH (Serial & Parallel)**: Baseline surface area heuristic binary BVH.
+- **Wide BVH4 (4-wide SIMD)**: 4-ary wide BVH evaluated via 128-bit vector SSE instructions.
+- **Wide BVH8 (8-wide AVX2)**: 8-ary wide BVH evaluated via native 256-bit AVX2 instructions.
+- **TLAS (Two-Level AS)**: Top-level acceleration structure for instanced geometries.
+
+---
+
+# Traversal Throughput Evaluation
+
+```{r throughput_plot, fig.width=10, fig.height=6}
+plot_throughput_comparison(df)
+```
+
+---
+
+# Construction Performance (Parallel Scaling)
+
+```{r build_plot, fig.width=9, fig.height=5}
+plot_build_time_comparison(df)
+```
+
+---
+
+# Topology & Compaction
+
+```{r node_plot, fig.width=9, fig.height=5}
+plot_node_count_comparison(df)
+```
+
+---
+
+# Paired Significance Testing (Wilcoxon Signed-Rank)
+
+Statistical hypothesis testing conducted against baseline with Benjamini-Hochberg False Discovery Rate ($\alpha = 0.05$):
+
+```{r significance_table}
+sig_df <- run_significance_tests(df, baseline = "Binned-SAH (Serial)", output_dir = "results")
+if (nrow(sig_df) > 0) {
+  kable(sig_df %>% select(scene, ray_set, candidate, metric, baseline_median, candidate_median, speedup, p_adj_bh, is_significant),
+        digits = 3,
+        caption = "Paired Wilcoxon Signed-Rank Significance Tests vs Baseline")
+}
+```
+
+---
+
+# Statistical Methodology Notes
+
+1. **Repetitions & Pairing**: Each scenario is evaluated over 5 deterministic repetitions with identical random seeds.
+2. **Error Bars**: Represent empirical Interquartile Range ($25^{\text{th}} - 75^{\text{th}}$ percentiles) avoiding unverified normality assumptions.
+3. **Multiple Testing**: Benjamini-Hochberg procedure controls FDR across the family of hypotheses.
