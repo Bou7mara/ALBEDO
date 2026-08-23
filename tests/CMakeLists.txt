@@ -43,6 +43,7 @@ add_executable(rt_tests
     test_image2d.cpp
     test_material_texture.cpp
     test_furnace.cpp
+    test_spectral.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)
