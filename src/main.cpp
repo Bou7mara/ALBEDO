@@ -49,7 +49,13 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                 for (int i = 0; i < 4; ++i) {
                     spectralL[i] = spectralThroughput[i] * RgbToSpectrum(bg, hw.lambda[i]);
                 }
-                L += SpectralToRgb(hw, spectralL);
+                Vector3f contrib = SpectralToRgb(hw, spectralL);
+                constexpr float kMaxSampleContribution = 10.0f;
+                float maxC = MaxChannel(contrib);
+                if (maxC > kMaxSampleContribution) {
+                    contrib *= (kMaxSampleContribution / maxC);
+                }
+                L += contrib;
             } else {
                 L += throughput * bg;
             }
@@ -65,7 +71,13 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                 for (int i = 0; i < 4; ++i) {
                     spectralL[i] = spectralThroughput[i] * RgbToSpectrum(normalCol, hw.lambda[i]);
                 }
-                L += SpectralToRgb(hw, spectralL);
+                Vector3f contrib = SpectralToRgb(hw, spectralL);
+                constexpr float kMaxSampleContribution = 10.0f;
+                float maxC = MaxChannel(contrib);
+                if (maxC > kMaxSampleContribution) {
+                    contrib *= (kMaxSampleContribution / maxC);
+                }
+                L += contrib;
             } else {
                 L += throughput * normalCol;
             }
@@ -86,7 +98,13 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                 for (int i = 0; i < 4; ++i) {
                     spectralL[i] = spectralThroughput[i] * RgbToSpectrum(contrib, hw.lambda[i]);
                 }
-                L += SpectralToRgb(hw, spectralL);
+                Vector3f finalContrib = SpectralToRgb(hw, spectralL);
+                constexpr float kMaxSampleContribution = 10.0f;
+                float maxC = MaxChannel(finalContrib);
+                if (maxC > kMaxSampleContribution) {
+                    finalContrib *= (kMaxSampleContribution / maxC);
+                }
+                L += finalContrib;
             } else {
                 L += throughput * contrib;
             }

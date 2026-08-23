@@ -166,12 +166,12 @@ namespace {
             int g2 = numFacets + ((i == 0) ? numFacets - 1 : i - 1);
 
             mesh->indices.push_back(t1);
-            mesh->indices.push_back(t2);
             mesh->indices.push_back(g1);
+            mesh->indices.push_back(t2);
 
             mesh->indices.push_back(t1);
-            mesh->indices.push_back(g1);
             mesh->indices.push_back(g2);
+            mesh->indices.push_back(g1);
         }
 
         for (int i = 0; i < numFacets; ++i) {
@@ -179,8 +179,8 @@ namespace {
             int g2 = numFacets + (i + 1) % numFacets;
 
             mesh->indices.push_back(g1);
-            mesh->indices.push_back(g2);
             mesh->indices.push_back(culetIdx);
+            mesh->indices.push_back(g2);
         }
 
         float culetOffsetY = -yCulet;
