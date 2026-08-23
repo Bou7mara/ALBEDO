@@ -12,6 +12,8 @@
 #include <cmath>
 
 #include "rt/materials/energy_compensation.h"
+#include "rt/materials/sellmeier.h"
+#include "rt/spectral/spectrum.h"
 
 #if !defined(__CUDACC__) && !defined(__CUDA_ARCH__)
 #ifndef __host__
@@ -50,7 +52,7 @@ namespace rtx {
         union {
             struct { rt::Vector3f albedo; float roughness; uint32_t albedoTexture; uint32_t roughnessTexture; } lambertian;
             struct { rt::Vector3f albedo; uint32_t albedoTexture; } metal;
-            struct { float ior; rt::Vector3f tint; float dispersion; } dielectric;
+            struct { rt::SellmeierCoefficients sellmeier; rt::Vector3f tint; } dielectric;
             struct { float alpha; float ior; uint32_t roughnessTexture; } microfacetDielectric;
             struct { float alpha; rt::Vector3f eta; rt::Vector3f k; rt::Vector3f tint; uint32_t roughnessTexture; uint32_t tintTexture; } microfacetConductor;
             struct { rt::Vector3f radiance; } emissive;
@@ -93,12 +95,23 @@ namespace rtx {
             return m;
         }
 
+        __host__ __device__ static DeviceMaterial MakeDielectric(const rt::SellmeierCoefficients& sellmeier, const rt::Vector3f& tint = rt::Vector3f(1.0f, 1.0f, 1.0f)) {
+            DeviceMaterial m{};
+            m.kind = MaterialKind::Dielectric;
+            m.dielectric.sellmeier = sellmeier;
+            m.dielectric.tint = tint;
+            return m;
+        }
+
         __host__ __device__ static DeviceMaterial MakeDielectric(float ior, const rt::Vector3f& tint = rt::Vector3f(1.0f, 1.0f, 1.0f), float dispersion = 0.0f) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Dielectric;
-            m.dielectric.ior = ior;
+            if (dispersion > 0.0f) {
+                m.dielectric.sellmeier = rt::SellmeierCoefficients::MakeCauchy(ior, dispersion);
+            } else {
+                m.dielectric.sellmeier = rt::SellmeierCoefficients::MakeConstant(ior);
+            }
             m.dielectric.tint = tint;
-            m.dielectric.dispersion = dispersion;
             return m;
         }
 
@@ -471,9 +484,11 @@ namespace rtx {
 
             case MaterialKind::Dielectric: {
                 bool entering = Dot(wo, n) > 0.0f;
-                float etaI = entering ? 1.0f : mat.dielectric.ior;
-                float etaT = entering ? mat.dielectric.ior : 1.0f;
-                float R = rt::FrDielectric(AbsDot(wo, n), etaI, etaT);
+                float iorBase = rt::SellmeierIOR(mat.dielectric.sellmeier, 0.5893f);
+                float etaI = entering ? 1.0f : iorBase;
+                float etaT = entering ? iorBase : 1.0f;
+                float cosThetaI = AbsDot(wo, n);
+                float R = rt::FrDielectric(cosThetaI, etaI, etaT);
 
                 if (u.x < R) {
                     *wi = rt::Reflect(wo, n);
@@ -485,45 +500,20 @@ namespace rtx {
 
                 *pdf = 1.0f - R;
 
-                if (mat.dielectric.dispersion <= 0.0f) {
-                    float eta = etaI / etaT;
-                    rt::Vector3f nf = entering ? n : -n;
-                    if (!rt::Refract(wo, nf, eta, wi)) {
-                        *wi = rt::Reflect(wo, n);
-                        float cosThetaWi = AbsDot(*wi, n);
-                        if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
-                        return mat.dielectric.tint / cosThetaWi;
-                    }
-
-                    float cosThetaWi = AbsDot(*wi, n);
-                    if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
-                    rt::Vector3f T = mat.dielectric.tint * (1.0f - R);
-                    return T / (eta * eta) / cosThetaWi;
-                }
-
-                constexpr float kChannelWavelengthUm[3] = { 0.630f, 0.532f, 0.465f };
-                int channel = std::min(2, static_cast<int>(u.y * 3.0f));
-                float lambdaUm = kChannelWavelengthUm[channel];
-                float iorChannel = rt::CauchyIOR(mat.dielectric.ior, mat.dielectric.dispersion, lambdaUm);
-                float etaI_c = entering ? 1.0f : iorChannel;
-                float etaT_c = entering ? iorChannel : 1.0f;
-                float eta = etaI_c / etaT_c;
+                float eta = etaI / etaT;
                 rt::Vector3f nf = entering ? n : -n;
-
                 if (!rt::Refract(wo, nf, eta, wi)) {
                     *wi = rt::Reflect(wo, n);
+                    *pdf = 1.0f;
                     float cosThetaWi = AbsDot(*wi, n);
                     if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
-                    rt::Vector3f result(0.0f, 0.0f, 0.0f);
-                    result[channel] = 3.0f / cosThetaWi;
-                    return result;
+                    return rt::Vector3f(1.0f, 1.0f, 1.0f) / cosThetaWi;
                 }
 
                 float cosThetaWi = AbsDot(*wi, n);
                 if (cosThetaWi < 1e-6f) return rt::Vector3f(0.0f, 0.0f, 0.0f);
-                rt::Vector3f result(0.0f, 0.0f, 0.0f);
-                result[channel] = mat.dielectric.tint[channel] * (1.0f - R) * 3.0f / (eta * eta) / cosThetaWi;
-                return result;
+                rt::Vector3f T = mat.dielectric.tint * (1.0f - R);
+                return T / (eta * eta) / cosThetaWi;
             }
 
             case MaterialKind::MicrofacetDielectric: {
@@ -613,6 +603,78 @@ namespace rtx {
         *wi = rt::Vector3f(0.0f, 0.0f, 0.0f);
         *pdf = 0.0f;
         return rt::Vector3f(0.0f, 0.0f, 0.0f);
+    }
+
+    __host__ __device__ inline bool SampleDielectricHero(const DeviceMaterial& mat,
+                                                         const rt::Vector3f& wo,
+                                                         const rt::Vector3f& n,
+                                                         const rt::Point2f& u,
+                                                         const rt::HeroWavelengths& hw,
+                                                         rt::Vector3f* wi,
+                                                         float* pdfHero,
+                                                         float throughputWeights[4]) {
+        bool entering = Dot(wo, n) > 0.0f;
+        rt::Vector3f nf = entering ? n : -n;
+        float cosThetaI = AbsDot(wo, n);
+
+        // Hero wavelength IOR (slot 0)
+        float lambda0Um = hw.lambda[0] * 0.001f;
+        float iorHero = rt::SellmeierIOR(mat.dielectric.sellmeier, lambda0Um);
+        float etaI0 = entering ? 1.0f : iorHero;
+        float etaT0 = entering ? iorHero : 1.0f;
+        float eta0 = etaI0 / etaT0;
+
+        float R0 = rt::FrDielectric(cosThetaI, etaI0, etaT0);
+        bool heroReflect = (u.x < R0);
+
+        if (heroReflect) {
+            *wi = rt::Reflect(wo, n);
+            *pdfHero = R0;
+        } else {
+            if (!rt::Refract(wo, nf, eta0, wi)) {
+                // Hero TIR fallback
+                *wi = rt::Reflect(wo, n);
+                heroReflect = true;
+                *pdfHero = 1.0f;
+            } else {
+                *pdfHero = 1.0f - R0;
+            }
+        }
+
+        float cosThetaWi = AbsDot(*wi, n);
+        if (cosThetaWi < 1e-6f) {
+            for (int i = 0; i < 4; ++i) throughputWeights[i] = 0.0f;
+            return false;
+        }
+
+        bool hasDisp = mat.dielectric.sellmeier.hasDispersion;
+        if (heroReflect || !hasDisp) {
+            for (int i = 0; i < 4; ++i) {
+                float lambdaUm = hw.lambda[i] * 0.001f;
+                float ior_i = rt::SellmeierIOR(mat.dielectric.sellmeier, lambdaUm);
+                float etaI_i = entering ? 1.0f : ior_i;
+                float etaT_i = entering ? ior_i : 1.0f;
+                float Ri = rt::FrDielectric(cosThetaI, etaI_i, etaT_i);
+                float tintWeight = rt::RgbToSpectrum(mat.dielectric.tint, hw.lambda[i]);
+                if (heroReflect) {
+                    float weight = (*pdfHero > 1e-6f) ? (Ri / *pdfHero) : 0.0f;
+                    throughputWeights[i] = tintWeight * weight;
+                } else {
+                    float eta_i = etaI_i / etaT_i;
+                    float weight = (*pdfHero > 1e-6f) ? (((1.0f - Ri) / *pdfHero) / (eta_i * eta_i)) : 0.0f;
+                    throughputWeights[i] = tintWeight * weight;
+                }
+            }
+        } else {
+            float tintWeight0 = rt::RgbToSpectrum(mat.dielectric.tint, hw.lambda[0]);
+            float weight0 = (*pdfHero > 1e-6f) ? (((1.0f - R0) / *pdfHero) / (eta0 * eta0)) : 0.0f;
+            throughputWeights[0] = tintWeight0 * weight0;
+            throughputWeights[1] = 0.0f;
+            throughputWeights[2] = 0.0f;
+            throughputWeights[3] = 0.0f;
+        }
+
+        return true;
     }
 
     __host__ __device__ inline float PdfBsdf(const DeviceMaterial& inMat,

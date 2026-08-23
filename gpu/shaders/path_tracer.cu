@@ -162,6 +162,10 @@ extern "C" __global__ void __raygen__albedo() {
 
         rt::Vector3f L(0.0f, 0.0f, 0.0f);
         rt::Vector3f throughput(1.0f, 1.0f, 1.0f);
+        float spectralThroughput[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        rt::HeroWavelengths hw{};
+        bool isSpectral = false;
+        bool spectralCompanionsCollapsed = false;
         bool specularBounce = true;
         float prevBsdfPdf = 0.0f;
 
@@ -172,7 +176,22 @@ extern "C" __global__ void __raygen__albedo() {
                     params.normalBuffer[pixel] = rt::Vector3f(0.0f, 0.0f, 0.0f);
                     params.albedoBuffer[pixel] = rt::Vector3f(0.0f, 0.0f, 0.0f);
                 }
-                L += throughput * SkyGradient(r.d);
+                rt::Vector3f bg = SkyGradient(r.d);
+                if (isSpectral) {
+                    float spectralL[4];
+                    for (int i = 0; i < 4; ++i) {
+                        spectralL[i] = spectralThroughput[i] * rt::RgbToSpectrum(bg, hw.lambda[i]);
+                    }
+                    rt::Vector3f contrib = rt::SpectralToRgb(hw, spectralL);
+                    constexpr float kMaxSampleContribution = 10.0f;
+                    float maxC = rt::MaxChannel(contrib);
+                    if (maxC > kMaxSampleContribution) {
+                        contrib *= (kMaxSampleContribution / maxC);
+                    }
+                    L += contrib;
+                } else {
+                    L += throughput * bg;
+                }
                 break;
             }
 
@@ -188,9 +207,8 @@ extern "C" __global__ void __raygen__albedo() {
             rt::Vector3f emitted = rtx::EvaluateEmission(isect.material, wo, n);
 
             if (emitted.x > 0.0f || emitted.y > 0.0f || emitted.z > 0.0f) {
-                if (specularBounce || params.lights.count == 0) {
-                    L += throughput * emitted;
-                } else {
+                float weight = 1.0f;
+                if (!specularBounce && params.lights.count > 0) {
                     float pmf = rtx::LightPmfForInstance(params.lights, isect.instanceIndex);
                     float cosThetaLight = AbsDot(wo, n);
                     float lightArea = 1.0f;
@@ -201,8 +219,23 @@ extern "C" __global__ void __raygen__albedo() {
                         }
                     }
                     float lightPdf = (isect.t * isect.t) / (lightArea * cosThetaLight) * pmf;
-                    float weight = rt::PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
-                    L += throughput * emitted * weight;
+                    weight = rt::PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
+                }
+                rt::Vector3f contrib = emitted * weight;
+                if (isSpectral) {
+                    float spectralL[4];
+                    for (int i = 0; i < 4; ++i) {
+                        spectralL[i] = spectralThroughput[i] * rt::RgbToSpectrum(contrib, hw.lambda[i]);
+                    }
+                    rt::Vector3f finalContrib = rt::SpectralToRgb(hw, spectralL);
+                    constexpr float kMaxSampleContribution = 10.0f;
+                    float maxC = rt::MaxChannel(finalContrib);
+                    if (maxC > kMaxSampleContribution) {
+                        finalContrib *= (kMaxSampleContribution / maxC);
+                    }
+                    L += finalContrib;
+                } else {
+                    L += throughput * contrib;
                 }
             }
 
@@ -228,13 +261,31 @@ extern "C" __global__ void __raygen__albedo() {
                                     float lPdf = lightSample.pdf * pmf;
                                     float weight = rt::PowerHeuristic(1, lPdf, 1, bsdfPdf);
                                     float cosTheta = AbsDot(lightSample.wi, n);
-                                    constexpr float kMaxSampleContribution = 10.0f;
-                                    rt::Vector3f neeContribution = throughput * f * lightSample.Li * cosTheta * weight / lPdf;
-                                    float neeMax = rt::MaxChannel(neeContribution);
-                                    if (neeMax > kMaxSampleContribution) {
-                                        neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                    float factor = (cosTheta * weight) / lPdf;
+
+                                    if (isSpectral) {
+                                        float spectralNEE[4];
+                                        for (int i = 0; i < 4; ++i) {
+                                            float sF = rt::RgbToSpectrum(f, hw.lambda[i]);
+                                            float sLi = rt::RgbToSpectrum(lightSample.Li, hw.lambda[i]);
+                                            spectralNEE[i] = spectralThroughput[i] * sF * sLi * factor;
+                                        }
+                                        rt::Vector3f neeContrib = rt::SpectralToRgb(hw, spectralNEE);
+                                        constexpr float kMaxSampleContribution = 10.0f;
+                                        float neeMax = rt::MaxChannel(neeContrib);
+                                        if (neeMax > kMaxSampleContribution) {
+                                            neeContrib = neeContrib * (kMaxSampleContribution / neeMax);
+                                        }
+                                        L += neeContrib;
+                                    } else {
+                                        constexpr float kMaxSampleContribution = 10.0f;
+                                        rt::Vector3f neeContribution = throughput * f * lightSample.Li * factor;
+                                        float neeMax = rt::MaxChannel(neeContribution);
+                                        if (neeMax > kMaxSampleContribution) {
+                                            neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                        }
+                                        L += neeContribution;
                                     }
-                                    L += neeContribution;
                                 }
                             }
                         }
@@ -245,26 +296,69 @@ extern "C" __global__ void __raygen__albedo() {
             // Sample BSDF for next bounce
             rt::Vector3f wi(0.0f, 0.0f, 0.0f);
             float pdf = 0.0f;
-            rt::Vector3f f = rtx::SampleBsdf(isect.material, wo, n, rng.Uniform2D(), &wi, &pdf, isect.uv, &params.textures);
 
-            if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+            if (isect.material.kind == rtx::MaterialKind::Dielectric && isect.material.dielectric.sellmeier.hasDispersion) {
+                if (!isSpectral) {
+                    isSpectral = true;
+                    hw = rt::SampleHeroWavelengths(rng.Uniform1D());
+                    for (int i = 0; i < 4; ++i) {
+                        spectralThroughput[i] = rt::RgbToSpectrum(throughput, hw.lambda[i]);
+                    }
+                }
 
-            float cosTheta = AbsDot(wi, n);
-            throughput = throughput * f * cosTheta / pdf;
-            constexpr float kMaxSampleContribution = 10.0f;
-            float maxComponent = rt::MaxChannel(throughput);
-            if (maxComponent > kMaxSampleContribution) {
-                throughput = throughput * (kMaxSampleContribution / maxComponent);
+                float throughputWeights[4];
+                if (!rtx::SampleDielectricHero(isect.material, wo, n, rng.Uniform2D(), hw, &wi, &pdf, throughputWeights)) {
+                    break;
+                }
+
+                bool collapsesThisEvent = (throughputWeights[1] == 0.0f && throughputWeights[2] == 0.0f && throughputWeights[3] == 0.0f);
+                if (collapsesThisEvent && !spectralCompanionsCollapsed) {
+                    throughputWeights[0] *= 4.0f;
+                    spectralCompanionsCollapsed = true;
+                }
+
+                for (int i = 0; i < 4; ++i) {
+                    spectralThroughput[i] *= throughputWeights[i];
+                }
+                prevBsdfPdf = 0.0f;
+                specularBounce = true;
+            } else if (isSpectral) {
+                rt::Vector3f f = rtx::SampleBsdf(isect.material, wo, n, rng.Uniform2D(), &wi, &pdf, isect.uv, &params.textures);
+                if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+
+                float cosTheta = AbsDot(wi, n);
+                float weight = cosTheta / pdf;
+                for (int i = 0; i < 4; ++i) {
+                    spectralThroughput[i] *= rt::RgbToSpectrum(f, hw.lambda[i]) * weight;
+                }
+                prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n, isect.uv, &params.textures);
+                specularBounce = (prevBsdfPdf == 0.0f);
+            } else {
+                rt::Vector3f f = rtx::SampleBsdf(isect.material, wo, n, rng.Uniform2D(), &wi, &pdf, isect.uv, &params.textures);
+                if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+
+                float cosTheta = AbsDot(wi, n);
+                throughput = throughput * f * (cosTheta / pdf);
+                constexpr float kMaxSampleContribution = 10.0f;
+                float maxComponent = rt::MaxChannel(throughput);
+                if (maxComponent > kMaxSampleContribution) {
+                    throughput = throughput * (kMaxSampleContribution / maxComponent);
+                }
+                prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n, isect.uv, &params.textures);
+                specularBounce = (prevBsdfPdf == 0.0f);
             }
-
-            prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n, isect.uv, &params.textures);
-            specularBounce = (prevBsdfPdf == 0.0f);
 
             // Russian Roulette
             if (depth >= rt::kRRStartDepth) {
-                const float q = std::clamp(rt::MaxChannel(throughput), rt::kRRProbabilityMinimumThreshold, rt::kRRProbabilityMaximumThreshold);
+                float maxVal = isSpectral ? fmaxf(fmaxf(spectralThroughput[0], spectralThroughput[1]), fmaxf(spectralThroughput[2], spectralThroughput[3]))
+                                          : rt::MaxChannel(throughput);
+                const float q = std::clamp(maxVal, rt::kRRProbabilityMinimumThreshold, rt::kRRProbabilityMaximumThreshold);
                 if (rng.Uniform1D() > q) break;
-                throughput = throughput / q;
+                if (isSpectral) {
+                    for (int i = 0; i < 4; ++i) spectralThroughput[i] /= q;
+                } else {
+                    throughput = throughput / q;
+                }
             }
 
             constexpr float kEpsilon = 1e-4f;

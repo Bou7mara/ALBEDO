@@ -305,7 +305,7 @@ void RenderCpu(const ShowcaseSetup& setup, std::vector<Vector3f>& framebuffer) {
 int main(int argc, char* argv[]) {
     int width = 2560;
     int height = 1600;
-    int spp = 5000;
+    int spp = 50;
     std::string sceneChoice = "gem";
 #ifdef ALBEDO_ENABLE_GPU
     std::string backend = "gpu";

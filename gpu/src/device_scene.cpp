@@ -58,7 +58,7 @@ namespace rtx {
             return DeviceMaterial::MakeMetal(m->Albedo(), albedoTex);
         }
         if (auto d = dynamic_cast<const rt::Dielectric*>(bsdf)) {
-            return DeviceMaterial::MakeDielectric(d->Ior(), d->Tint(), d->Dispersion());
+            return DeviceMaterial::MakeDielectric(d->Sellmeier(), d->Tint());
         }
         if (auto e = dynamic_cast<const rt::Emissive*>(bsdf)) {
             return DeviceMaterial::MakeEmissive(e->Radiance());
