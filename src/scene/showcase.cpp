@@ -234,9 +234,9 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
 
     auto matLambertian   = std::make_shared<Lambertian>(Vector3f(0.6f, 0.35f, 0.3f));
     auto matGlass        = std::make_shared<Dielectric>(1.5f);
-    auto matDiamond      = std::make_shared<Dielectric>(kSubtleDiamondSellmeier, Vector3f(1.0f, 1.0f, 1.0f));
+    auto matDiamond      = std::make_shared<Dielectric>(2.42f, Vector3f(1.0f, 1.0f, 1.0f));
     auto matRuby         = std::make_shared<Dielectric>(1.76f, Vector3f(0.85f, 0.05f, 0.12f));
-    auto matSapphire     = std::make_shared<Dielectric>(kSapphireSellmeier, Vector3f(0.12f, 0.38f, 0.88f));
+    auto matSapphire     = std::make_shared<Dielectric>(1.77f, Vector3f(0.12f, 0.38f, 0.88f));
     auto matFrostedGlass = std::make_shared<Microfacet>(Microfacet::MakeDielectricMicrofacet(0.15f, 1.5f));
     auto matGold         = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.04f, eta_gold, k_gold));
     auto matCopper       = std::make_shared<Microfacet>(Microfacet::MakeConductorMicrofacet(0.35f, eta_copper, k_copper));
@@ -272,7 +272,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
         }
     }
 
-    AddDiamond(scene, Point3f(0.0f, 0.0f, -1.8f), 0.84f, 0.0f, matDiamond);
+    AddDiamond(scene, Point3f(0.0f, 0.0f, -1.8f), 0.6f, 0.0f, matDiamond);
 
     auto keyLightMat   = std::make_shared<Emissive>(Vector3f(8.5f, 6.0f, 3.8f));
     auto fillLightMat  = std::make_shared<Emissive>(Vector3f(2.8f, 3.8f, 6.2f));
