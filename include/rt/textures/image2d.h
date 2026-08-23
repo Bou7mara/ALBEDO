@@ -25,12 +25,12 @@ namespace rt {
 
     template <typename T>
     struct Image2DView {
-        const T* texels = nullptr;
-        int width = 0;
-        int height = 0;
-        WrapMode wrap = WrapMode::Repeat;
+        const T* texels;
+        int width;
+        int height;
+        WrapMode wrap;
 
-        constexpr Image2DView() = default;
+        Image2DView() = default;
 
         __host__ __device__ constexpr Image2DView(const T* data, int w, int h, WrapMode wMode = WrapMode::Repeat)
             : texels(data), width(w), height(h), wrap(wMode) {}

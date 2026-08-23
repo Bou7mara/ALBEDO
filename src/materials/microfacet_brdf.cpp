@@ -1,6 +1,7 @@
 #include "rt/materials/microfacet_brdf.h"
 #include "rt/materials/microfacet.h"
 #include "rt/materials/fresnel.h"
+#include "rt/materials/energy_compensation.h"
 #include "rt/core/onb.h"
 
 namespace rt {
@@ -65,7 +66,26 @@ namespace rt {
             F = tintTexture_->Sample(uv.x, uv.y) * F;
         }
 
-        return D * Gterm * F;
+        Vector3f f_ss = D * Gterm * F;
+
+        if (kind_ == FresnelKind::Conductor) {
+            const auto& lut = GetDirectionalAlbedoLUT();
+            float Eo = lut.SampleE(NdotV, effAlpha);
+            float Ei = lut.SampleE(NdotL, effAlpha);
+            float Eavg = lut.SampleEAvg(effAlpha);
+
+            float denom = 3.14159265358979323846f * (1.0f - Eavg);
+            if (denom > 1e-5f) {
+                Vector3f Favg = tint_ * AverageFresnelConductor(eta_, k_);
+                if (tintTexture_) {
+                    Favg = tintTexture_->Sample(uv.x, uv.y) * Favg;
+                }
+                Vector3f f_ms = Favg * ((1.0f - Eo) * (1.0f - Ei) / denom);
+                return f_ss + f_ms;
+            }
+        }
+
+        return f_ss;
     }
 
     Vector3f Microfacet::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf, const Point2f& uv) const {

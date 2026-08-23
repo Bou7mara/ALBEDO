@@ -29,6 +29,7 @@ add_library(rt_core STATIC
     src/scene/scene_node.cpp
     src/shapes/quad.cpp
     src/materials/disney_principled.cpp
+    src/materials/energy_compensation.cpp
 )
 
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

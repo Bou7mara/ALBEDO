@@ -502,6 +502,22 @@ namespace rtx {
             scene.textureList.count1f = static_cast<unsigned int>(hostViews1f.size());
         }
 
+        // Upload Directional Albedo Energy Compensation LUTs
+        const auto& lut = rt::GetDirectionalAlbedoLUT();
+        size_t lutBytes = lut.eTable.texels.size() * sizeof(float);
+        CUdeviceptr d_energyLut = 0;
+        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_energyLut), lutBytes));
+        CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(d_energyLut), lut.eTable.texels.data(), lutBytes, cudaMemcpyHostToDevice, stream));
+        scene.allocatedBuffers.push_back(d_energyLut);
+        scene.textureList.energyLut = rt::Image2DView<float>(reinterpret_cast<const float*>(d_energyLut), lut.eTable.width, lut.eTable.height, lut.eTable.wrap);
+
+        size_t avgLutBytes = lut.eAvgTable.texels.size() * sizeof(float);
+        CUdeviceptr d_energyAvgLut = 0;
+        CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_energyAvgLut), avgLutBytes));
+        CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(d_energyAvgLut), lut.eAvgTable.texels.data(), avgLutBytes, cudaMemcpyHostToDevice, stream));
+        scene.allocatedBuffers.push_back(d_energyAvgLut);
+        scene.textureList.energyAvgLut = rt::Image2DView<float>(reinterpret_cast<const float*>(d_energyAvgLut), lut.eAvgTable.width, lut.eAvgTable.height, lut.eAvgTable.wrap);
+
         CUDA_CHECK(cudaStreamSynchronize(stream));
         return scene;
     }

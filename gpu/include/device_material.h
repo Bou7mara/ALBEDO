@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "rt/materials/energy_compensation.h"
+
 #if !defined(__CUDACC__) && !defined(__CUDA_ARCH__)
 #ifndef __host__
 #define __host__
@@ -29,6 +31,8 @@ namespace rtx {
         unsigned int count3f;
         const rt::Image2DView<float>* textures1f;
         unsigned int count1f;
+        rt::Image2DView<float> energyLut;
+        rt::Image2DView<float> energyAvgLut;
     };
 
     enum class MaterialKind : uint32_t {
@@ -343,7 +347,22 @@ namespace rtx {
                 float fg = rt::FrConductor(VdotH, mat.microfacetConductor.eta.y, mat.microfacetConductor.k.y);
                 float fb = rt::FrConductor(VdotH, mat.microfacetConductor.eta.z, mat.microfacetConductor.k.z);
                 rt::Vector3f F = mat.microfacetConductor.tint * rt::Vector3f(fr, fg, fb);
-                return D * Gterm * F;
+                rt::Vector3f f_ss = D * Gterm * F;
+
+                if (textures && textures->energyLut.texels != nullptr && textures->energyAvgLut.texels != nullptr) {
+                    float Eo = textures->energyLut.Sample(NdotV, mat.microfacetConductor.alpha);
+                    float Ei = textures->energyLut.Sample(NdotL, mat.microfacetConductor.alpha);
+                    float Eavg = textures->energyAvgLut.Sample(mat.microfacetConductor.alpha, 0.5f);
+
+                    float denom = rt::kPi * (1.0f - Eavg);
+                    if (denom > 1e-5f) {
+                        rt::Vector3f Favg = mat.microfacetConductor.tint * rt::AverageFresnelConductor(mat.microfacetConductor.eta, mat.microfacetConductor.k);
+                        rt::Vector3f f_ms = Favg * ((1.0f - Eo) * (1.0f - Ei) / denom);
+                        return f_ss + f_ms;
+                    }
+                }
+
+                return f_ss;
             }
 
             case MaterialKind::Disney: {
