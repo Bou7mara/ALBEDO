@@ -44,6 +44,10 @@ namespace rt {
         true
     };
 
+    // Subtle Diamond dispersion (1/3 dispersion strength for refined, balanced fire)
+    inline constexpr SellmeierCoefficients kSubtleDiamondSellmeier = SellmeierCoefficients::MakeCauchy(2.4173f, 0.0145f);
+
+
     // Published Schott BK7 Optical Glass Sellmeier coefficients
     // Yields n ~ 1.5168 at 589.3 nm.
     inline constexpr SellmeierCoefficients kBK7Sellmeier{
