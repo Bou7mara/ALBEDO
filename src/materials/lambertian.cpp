@@ -7,13 +7,15 @@
 
 namespace rt {
 
-Vector3f Lambertian::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
+Vector3f Lambertian::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n, const Point2f& uv) const {
     if (Dot(wo, n) * Dot(wi, n) < 0.0f) {
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
 
+    Vector3f effectiveAlbedo = albedoTexture_ ? albedoTexture_->Sample(uv.x, uv.y) : albedo_;
+
     if (roughness_ <= 1e-4f) {
-        return albedo_ * std::numbers::inv_pi_v<float>;
+        return effectiveAlbedo * std::numbers::inv_pi_v<float>;
     }
 
     float cosThetaO = std::clamp(Dot(wo, n), 0.0f, 1.0f);
@@ -43,19 +45,19 @@ Vector3f Lambertian::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n
     float B = 0.45f * sigma2 / (sigma2 + 0.09f);
 
     float orenNayar = A + B * std::max(0.0f, cosPhiDiff) * sinAlpha * tanBeta;
-    return albedo_ * (std::numbers::inv_pi_v<float> * orenNayar);
+    return effectiveAlbedo * (std::numbers::inv_pi_v<float> * orenNayar);
 }
 
-Vector3f Lambertian::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf) const {
+Vector3f Lambertian::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf, const Point2f& uv) const {
     ONB onb(n);
     Vector3f localDir = CosineSampleHemisphere(u);
     *wi = Normalize(onb.ToWorld(localDir));
     *pdf = CosineHemispherePdf(localDir.z);
-    return f(wo, *wi, n);
+    return f(wo, *wi, n, uv);
 }
 
-float Lambertian::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
-    if (Dot(wo, n) * Dot(wi, n) <= 0.0f) {
+float Lambertian::Pdf(const Vector3f&, const Vector3f& wi, const Vector3f& n, const Point2f&) const {
+    if (Dot(wi, n) <= 0.0f) {
         return 0.0f;
     }
     return CosineHemispherePdf(AbsDot(wi, n));

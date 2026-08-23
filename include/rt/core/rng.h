@@ -38,7 +38,9 @@ namespace rt {
         }
 
         __host__ __device__ Point2f Uniform2D() {
-            return Point2f(Uniform1D(), Uniform1D());
+            float u1 = Uniform1D();
+            float u2 = Uniform1D();
+            return Point2f(u1, u2);
         }
 
     private:

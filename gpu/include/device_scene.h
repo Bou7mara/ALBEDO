@@ -55,6 +55,10 @@ namespace rtx {
         CUdeviceptr d_lights = 0;
         CUdeviceptr d_lightCdf = 0;
 
+        DeviceTextureList textureList{};
+        CUdeviceptr d_textures3fViews = 0;
+        CUdeviceptr d_textures1fViews = 0;
+
         DeviceScene() = default;
         ~DeviceScene();
 
@@ -70,6 +74,7 @@ namespace rtx {
                                  CUstream stream = nullptr);
     };
 
-    DeviceMaterial ConvertBsdfToDeviceMaterial(const rt::BSDF* bsdf);
+    struct TextureRegistry;
+    DeviceMaterial ConvertBsdfToDeviceMaterial(const rt::BSDF* bsdf, TextureRegistry* registry = nullptr);
 
 } // namespace rtx

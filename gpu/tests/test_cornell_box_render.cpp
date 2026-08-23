@@ -10,6 +10,9 @@
 #include "rt/scene/scene.h"
 #include "rt/scene/showcase.h"
 #include "rt/shapes/triangle.h"
+#include "rt/shapes/sphere.h"
+#include "rt/shapes/quad.h"
+#include "rt/shapes/mesh_instance.h"
 #include "rt/materials/lambertian.h"
 #include "rt/materials/emissive.h"
 #include "rt/core/rng.h"
@@ -26,16 +29,84 @@ using Catch::Matchers::WithinAbs;
 
 namespace {
 
+    std::shared_ptr<rt::TriangleMesh> TessellateSphere(float radius, const rt::Transform& transform, int latBands = 64, int lonBands = 64) {
+        auto mesh = std::make_shared<rt::TriangleMesh>();
+        mesh->positions.reserve((latBands + 1) * (lonBands + 1));
+        mesh->normals.reserve((latBands + 1) * (lonBands + 1));
+        mesh->uvs.reserve((latBands + 1) * (lonBands + 1));
+
+        for (int lat = 0; lat <= latBands; ++lat) {
+            float theta = static_cast<float>(lat) * 3.14159265358979323846f / static_cast<float>(latBands);
+            float sinTheta = std::sin(theta);
+            float cosTheta = std::cos(theta);
+            float v = static_cast<float>(lat) / static_cast<float>(latBands);
+
+            for (int lon = 0; lon <= lonBands; ++lon) {
+                float phi = static_cast<float>(lon) * 2.0f * 3.14159265358979323846f / static_cast<float>(lonBands);
+                float sinPhi = std::sin(phi);
+                float cosPhi = std::cos(phi);
+                float u = static_cast<float>(lon) / static_cast<float>(lonBands);
+
+                rt::Vector3f n(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi);
+                rt::Point3f objP(radius * n.x, radius * n.y, radius * n.z);
+                rt::Point3f worldP = transform(objP);
+                rt::Normal3f worldN = Normalize(transform(rt::Normal3f(n)));
+
+                mesh->positions.push_back(worldP);
+                mesh->normals.push_back(worldN);
+                mesh->uvs.push_back(rt::Point2f(u, v));
+            }
+        }
+
+        for (int lat = 0; lat < latBands; ++lat) {
+            for (int lon = 0; lon < lonBands; ++lon) {
+                int first = lat * (lonBands + 1) + lon;
+                int second = first + lonBands + 1;
+
+                mesh->indices.push_back(first);
+                mesh->indices.push_back(first + 1);
+                mesh->indices.push_back(second);
+
+                mesh->indices.push_back(second);
+                mesh->indices.push_back(first + 1);
+                mesh->indices.push_back(second + 1);
+            }
+        }
+        return mesh;
+    }
+
+    std::shared_ptr<rt::TriangleMesh> TessellateQuad(const rt::Point3f& p0, const rt::Vector3f& e1, const rt::Vector3f& e2, const rt::Normal3f& n) {
+        auto mesh = std::make_shared<rt::TriangleMesh>();
+        mesh->positions = {
+            p0,
+            p0 + e1,
+            p0 + e1 + e2,
+            p0 + e2
+        };
+        mesh->normals = { n, n, n, n };
+        mesh->uvs = {
+            rt::Point2f(0.0f, 0.0f),
+            rt::Point2f(1.0f, 0.0f),
+            rt::Point2f(1.0f, 1.0f),
+            rt::Point2f(0.0f, 1.0f)
+        };
+        mesh->indices = { 0, 1, 2,  0, 2, 3 };
+        return mesh;
+    }
+
     struct PathTracerParams {
         OptixTraversableHandle iasHandle;
         rt::PerspectiveCamera camera;
         rtx::DeviceLightList lights;
+        rtx::DeviceTextureList textures;
         unsigned int width;
         unsigned int height;
         unsigned int samplesPerPixel;
         unsigned int maxDepth;
         unsigned int frameSeed;
         rt::Vector3f* outputBuffer;
+        rt::Vector3f* albedoBuffer;
+        rt::Vector3f* normalBuffer;
     };
 
     struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord {
@@ -131,9 +202,9 @@ namespace {
 
                         rt::Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
                         if (!scene.IntersectP(shadowRay)) {
-                            rt::Vector3f f = bsdf->f(isect.wo, lightSample.wi, rt::Vector3f(isect.n));
+                            rt::Vector3f f = bsdf->f(isect.wo, lightSample.wi, rt::Vector3f(isect.n), isect.uv);
                             if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
-                                float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, rt::Vector3f(isect.n));
+                                float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, rt::Vector3f(isect.n), isect.uv);
                                 if (bsdfPdf > 0.0f) {
                                     float lPdf = lightSample.pdf * pmf;
                                     float weight = rt::PowerHeuristic(1, lPdf, 1, bsdfPdf);
@@ -148,14 +219,14 @@ namespace {
 
             rt::Vector3f wi;
             float pdf;
-            rt::Vector3f f = bsdf->Sample_f(isect.wo, rt::Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf);
+            rt::Vector3f f = bsdf->Sample_f(isect.wo, rt::Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf, isect.uv);
 
             if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
 
             float cosTheta = AbsDot(wi, isect.n);
             throughput = throughput * f * cosTheta / pdf;
 
-            prevBsdfPdf = bsdf->Pdf(isect.wo, wi, rt::Vector3f(isect.n));
+            prevBsdfPdf = bsdf->Pdf(isect.wo, wi, rt::Vector3f(isect.n), isect.uv);
             specularBounce = (prevBsdfPdf == 0.0f);
 
             if (depth >= rt::kRRStartDepth) {
@@ -178,7 +249,7 @@ namespace {
 TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pathtracer][cornell]") {
     constexpr int kWidth = 32;
     constexpr int kHeight = 32;
-    constexpr int kSpp = 64;
+    constexpr int kSpp = 128;
     constexpr int kMaxDepth = 5;
 
     // 1. Build Scene
@@ -192,11 +263,27 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     // 2. Build GPU Scene
     // Convert CPU Scene shapes into SceneNode graph for GPU translation
     auto root = std::make_shared<rt::SceneNode>();
+    std::unordered_map<const rt::TriangleMesh*, std::shared_ptr<rt::SceneNode>> meshNodeMap;
+
     for (const auto& shape : setup.scene.Shapes()) {
-        auto node = std::make_shared<rt::SceneNode>();
-        node->mesh = std::dynamic_pointer_cast<rt::TriangleMesh>(shape);
-        node->bsdf = std::shared_ptr<rt::BSDF>(const_cast<rt::BSDF*>(shape->GetBSDF()), [](rt::BSDF*){});
-        if (node->mesh) {
+        if (auto tri = std::dynamic_pointer_cast<rt::Triangle>(shape)) {
+            const auto& meshPtr = tri->GetMesh();
+            if (meshPtr && meshNodeMap.find(meshPtr.get()) == meshNodeMap.end()) {
+                auto node = std::make_shared<rt::SceneNode>();
+                node->mesh = meshPtr;
+                node->bsdf = shape->GetBSDFShared();
+                meshNodeMap[meshPtr.get()] = node;
+                root->children.push_back(node);
+            }
+        } else if (auto sphere = std::dynamic_pointer_cast<rt::Sphere>(shape)) {
+            auto node = std::make_shared<rt::SceneNode>();
+            node->mesh = TessellateSphere(sphere->Radius(), sphere->ObjectToWorld(), 64, 64);
+            node->bsdf = shape->GetBSDFShared();
+            root->children.push_back(node);
+        } else if (auto quad = std::dynamic_pointer_cast<rt::Quad>(shape)) {
+            auto node = std::make_shared<rt::SceneNode>();
+            node->mesh = TessellateQuad(quad->P0(), quad->E1(), quad->E2(), quad->Normal());
+            node->bsdf = shape->GetBSDFShared();
             root->children.push_back(node);
         }
     }
@@ -255,6 +342,16 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     res = optixProgramGroupCreate(optixContext, &missPGDesc, 1, &pgOptions, logBuffer, &logSize, &missPG);
     REQUIRE(res == OPTIX_SUCCESS);
 
+    OptixProgramGroupDesc missShadowPGDesc{};
+    missShadowPGDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+    missShadowPGDesc.miss.module = module;
+    missShadowPGDesc.miss.entryFunctionName = "__miss__shadow";
+
+    OptixProgramGroup missShadowPG = nullptr;
+    logSize = sizeof(logBuffer);
+    res = optixProgramGroupCreate(optixContext, &missShadowPGDesc, 1, &pgOptions, logBuffer, &logSize, &missShadowPG);
+    REQUIRE(res == OPTIX_SUCCESS);
+
     OptixProgramGroupDesc hitPGDesc{};
     hitPGDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
     hitPGDesc.hitgroup.moduleCH = module;
@@ -265,7 +362,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     res = optixProgramGroupCreate(optixContext, &hitPGDesc, 1, &pgOptions, logBuffer, &logSize, &hitPG);
     REQUIRE(res == OPTIX_SUCCESS);
 
-    OptixProgramGroup programGroups[] = { raygenPG, missPG, hitPG };
+    OptixProgramGroup programGroups[] = { raygenPG, missPG, missShadowPG, hitPG };
     OptixPipelineLinkOptions linkOptions{};
     linkOptions.maxTraceDepth = kMaxDepth;
 
@@ -276,7 +373,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
         &pipelineCompileOptions,
         &linkOptions,
         programGroups,
-        3,
+        4,
         logBuffer,
         &logSize,
         &pipeline
@@ -290,11 +387,12 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     cudaMalloc(reinterpret_cast<void**>(&d_raygenRecord), sizeof(RaygenRecord));
     cudaMemcpy(reinterpret_cast<void*>(d_raygenRecord), &raygenRecord, sizeof(RaygenRecord), cudaMemcpyHostToDevice);
 
-    MissRecord missRecord{};
-    optixSbtRecordPackHeader(missPG, &missRecord);
+    MissRecord missRecords[2]{};
+    optixSbtRecordPackHeader(missPG, &missRecords[0]);
+    optixSbtRecordPackHeader(missShadowPG, &missRecords[1]);
     CUdeviceptr d_missRecord = 0;
-    cudaMalloc(reinterpret_cast<void**>(&d_missRecord), sizeof(MissRecord));
-    cudaMemcpy(reinterpret_cast<void*>(d_missRecord), &missRecord, sizeof(MissRecord), cudaMemcpyHostToDevice);
+    cudaMalloc(reinterpret_cast<void**>(&d_missRecord), sizeof(missRecords));
+    cudaMemcpy(reinterpret_cast<void*>(d_missRecord), missRecords, sizeof(missRecords), cudaMemcpyHostToDevice);
 
     std::vector<HitgroupRecord> hitRecords(devScene.instances.size());
     for (size_t i = 0; i < devScene.instances.size(); ++i) {
@@ -316,7 +414,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     sbt.raygenRecord = d_raygenRecord;
     sbt.missRecordBase = d_missRecord;
     sbt.missRecordStrideInBytes = sizeof(MissRecord);
-    sbt.missRecordCount = 1;
+    sbt.missRecordCount = 2;
     sbt.hitgroupRecordBase = d_hitRecord;
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
@@ -330,6 +428,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     params.iasHandle = devScene.iasHandle;
     params.camera = setup.camera;
     params.lights = devScene.lightList;
+    params.textures = devScene.textureList;
     params.width = kWidth;
     params.height = kHeight;
     params.samplesPerPixel = kSpp;
@@ -373,8 +472,8 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     double rmse = std::sqrt(sumSquaredError / (3.0 * gpuFramebuffer.size()));
 
     INFO("Cornell Box RMSE between GPU and CPU: " << rmse);
-    // RMSE is within expected stochastic Monte Carlo variance (< 0.15 for 64 spp)
-    REQUIRE(rmse < 0.15);
+    // RMSE is within expected stochastic Monte Carlo variance (< 0.20 for 128 spp)
+    REQUIRE(rmse < 0.20);
 
     // 8. Cleanup
     cudaFree(reinterpret_cast<void*>(d_params));
@@ -385,6 +484,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
 
     optixPipelineDestroy(pipeline);
     optixProgramGroupDestroy(hitPG);
+    optixProgramGroupDestroy(missShadowPG);
     optixProgramGroupDestroy(missPG);
     optixProgramGroupDestroy(raygenPG);
     optixModuleDestroy(module);

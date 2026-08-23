@@ -30,7 +30,7 @@ namespace rt {
         int height = 0;
         WrapMode wrap = WrapMode::Repeat;
 
-        __host__ __device__ constexpr Image2DView() = default;
+        constexpr Image2DView() = default;
 
         __host__ __device__ constexpr Image2DView(const T* data, int w, int h, WrapMode wMode = WrapMode::Repeat)
             : texels(data), width(w), height(h), wrap(wMode) {}

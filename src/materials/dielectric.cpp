@@ -8,12 +8,12 @@ namespace rt {
         constexpr float kChannelWavelengthUm[3] = { 0.630f, 0.532f, 0.465f }; // R, G, B
     }
 
-    Vector3f Dielectric::f(const Vector3f&, const Vector3f&, const Vector3f&) const {
+    Vector3f Dielectric::f(const Vector3f&, const Vector3f&, const Vector3f&, const Point2f&) const {
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
 
     Vector3f Dielectric::Sample_f(const Vector3f& wo, const Vector3f& n,
-                                  const Point2f& u, Vector3f* wi, float* pdf) const {
+                                  const Point2f& u, Vector3f* wi, float* pdf, const Point2f&) const {
 
         bool entering = Dot(wo, n) > 0.0f;
         float etaI = entering ? 1.0f : ior_;
@@ -85,7 +85,7 @@ namespace rt {
         return result;
     }
 
-    float Dielectric::Pdf(const Vector3f&, const Vector3f&, const Vector3f&) const {
+    float Dielectric::Pdf(const Vector3f&, const Vector3f&, const Vector3f&, const Point2f&) const {
         return 0.0f;
     }
 

@@ -75,9 +75,9 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                     
                     Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
                     if (!scene.IntersectP(shadowRay)) {
-                        Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n));
+                        Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n), isect.uv);
                         if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
-                            float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, Vector3f(isect.n));
+                            float bsdfPdf = bsdf->Pdf(isect.wo, lightSample.wi, Vector3f(isect.n), isect.uv);
                             if (bsdfPdf > 0.0f) {
                                 float lPdf = lightSample.pdf * pmf;
                                 float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
@@ -98,7 +98,7 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
 
         Vector3f wi;
         float pdf;
-        Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf);
+        Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf, isect.uv);
         
         if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
 
@@ -110,7 +110,7 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
             throughput = throughput * (kMaxSampleContribution / maxComponent);
         }
         
-        prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n));
+        prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n), isect.uv);
         specularBounce = (prevBsdfPdf == 0.0f);
 
 		if (depth >= kRRStartDepth) {

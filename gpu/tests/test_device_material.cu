@@ -22,6 +22,8 @@ namespace {
         rt::Vector3f n;
         rt::Point2f u;
         rt::Vector3f wiEval;
+        rt::Point2f uv;
+        rtx::DeviceTextureList textures;
     };
 
     struct MaterialTestOutput {
@@ -42,9 +44,9 @@ namespace {
         const auto& in = inputs[idx];
         auto& out = outputs[idx];
 
-        out.f = rtx::EvaluateBsdf(in.mat, in.wo, in.wiEval, in.n);
-        out.sampleF = rtx::SampleBsdf(in.mat, in.wo, in.n, in.u, &out.sampledWi, &out.samplePdf);
-        out.evalPdf = rtx::PdfBsdf(in.mat, in.wo, in.wiEval, in.n);
+        out.f = rtx::EvaluateBsdf(in.mat, in.wo, in.wiEval, in.n, in.uv, &in.textures);
+        out.sampleF = rtx::SampleBsdf(in.mat, in.wo, in.n, in.u, &out.sampledWi, &out.samplePdf, in.uv, &in.textures);
+        out.evalPdf = rtx::PdfBsdf(in.mat, in.wo, in.wiEval, in.n, in.uv, &in.textures);
         out.emission = rtx::EvaluateEmission(in.mat, in.wo, in.n);
     }
 
@@ -78,13 +80,16 @@ TEST_CASE("Lambertian host/device parity with CPU BSDF", "[gpu][material][lamber
     REQUIRE_THAT(hostF.y, WithinAbs(cpuF.y, 1e-5f));
     REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-5f));
     REQUIRE_THAT(hostEvalPdf, WithinAbs(cpuEvalPdf, 1e-5f));
+    REQUIRE_THAT(hostSampleF.x, WithinAbs(cpuSampleF.x, 1e-5f));
+    REQUIRE_THAT(hostSampleF.y, WithinAbs(cpuSampleF.y, 1e-5f));
+    REQUIRE_THAT(hostSampleF.z, WithinAbs(cpuSampleF.z, 1e-5f));
     REQUIRE_THAT(hostSamplePdf, WithinAbs(cpuSamplePdf, 1e-5f));
     REQUIRE_THAT(hostSampledWi.x, WithinAbs(cpuSampledWi.x, 1e-5f));
     REQUIRE_THAT(hostSampledWi.y, WithinAbs(cpuSampledWi.y, 1e-5f));
     REQUIRE_THAT(hostSampledWi.z, WithinAbs(cpuSampledWi.z, 1e-5f));
 
-    // Device Kernel Evaluation
-    MaterialTestInput input{ devMat, wo, n, u, wiEval };
+    // Device Evaluation
+    MaterialTestInput input{ devMat, wo, n, u, wiEval, rt::Point2f(0.0f, 0.0f), rtx::DeviceTextureList{} };
     MaterialTestInput* d_in = nullptr;
     MaterialTestOutput* d_out = nullptr;
     cudaMalloc(&d_in, sizeof(MaterialTestInput));
@@ -101,6 +106,9 @@ TEST_CASE("Lambertian host/device parity with CPU BSDF", "[gpu][material][lamber
     REQUIRE_THAT(devOut.f.y, WithinAbs(cpuF.y, 1e-5f));
     REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-5f));
     REQUIRE_THAT(devOut.evalPdf, WithinAbs(cpuEvalPdf, 1e-5f));
+    REQUIRE_THAT(devOut.sampleF.x, WithinAbs(cpuSampleF.x, 1e-5f));
+    REQUIRE_THAT(devOut.sampleF.y, WithinAbs(cpuSampleF.y, 1e-5f));
+    REQUIRE_THAT(devOut.sampleF.z, WithinAbs(cpuSampleF.z, 1e-5f));
     REQUIRE_THAT(devOut.samplePdf, WithinAbs(cpuSamplePdf, 1e-5f));
     REQUIRE_THAT(devOut.sampledWi.x, WithinAbs(cpuSampledWi.x, 1e-5f));
     REQUIRE_THAT(devOut.sampledWi.y, WithinAbs(cpuSampledWi.y, 1e-5f));
@@ -128,7 +136,7 @@ TEST_CASE("Oren-Nayar host/device parity with CPU BSDF", "[gpu][material][orenna
     REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-5f));
 
     rt::Point2f u(0.35f, 0.65f);
-    MaterialTestInput input{ devMat, wo, n, u, wiEval };
+    MaterialTestInput input{ devMat, wo, n, u, wiEval, rt::Point2f(0.0f, 0.0f), rtx::DeviceTextureList{} };
     MaterialTestInput* d_in = nullptr;
     MaterialTestOutput* d_out = nullptr;
     cudaMalloc(&d_in, sizeof(MaterialTestInput));
@@ -174,34 +182,102 @@ TEST_CASE("Dielectric TIR and dispersion parity", "[gpu][material][dielectric]")
     REQUIRE_THAT(hostWi.z, WithinAbs(cpuWi.z, 1e-4f));
 }
 
-TEST_CASE("Microfacet conductor and dielectric parity", "[gpu][material][microfacet]") {
-    float roughness = 0.25f;
-    rt::Vector3f eta(0.2f, 0.9f, 1.1f);
-    rt::Vector3f k(3.5f, 2.4f, 1.8f);
-    rt::Vector3f tint(1.0f, 0.9f, 0.8f);
+TEST_CASE("Metal host/device parity with CPU BSDF", "[gpu][material][metal]") {
+    rt::Vector3f albedo(0.9f, 0.85f, 0.75f);
+    rt::Metal cpuMat(albedo);
+    rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeMetal(albedo);
 
-    auto cpuMat = rt::Microfacet::MakeConductorMicrofacet(roughness, eta, k, tint);
-    auto devMat = rtx::DeviceMaterial::MakeMicrofacetConductor(roughness, eta, k, tint);
-
-    rt::Vector3f wo = Normalize(rt::Vector3f(0.2f, 0.3f, 0.9f));
+    rt::Vector3f wo = Normalize(rt::Vector3f(0.3f, 0.4f, 0.8f));
     rt::Vector3f n(0.0f, 0.0f, 1.0f);
-    rt::Point2f u(0.4f, 0.6f);
+    rt::Point2f u(0.35f, 0.65f);
+    rt::Vector3f wiEval = Normalize(rt::Vector3f(0.2f, -0.3f, 0.9f));
 
-    rt::Vector3f cpuWi;
-    float cpuPdf = 0.0f;
-    rt::Vector3f cpuSampleF = cpuMat.Sample_f(wo, n, u, &cpuWi, &cpuPdf);
+    rt::Vector3f cpuSampledWi;
+    float cpuSamplePdf = 0.0f;
+    rt::Vector3f cpuSampleF = cpuMat.Sample_f(wo, n, u, &cpuSampledWi, &cpuSamplePdf);
 
-    rt::Vector3f hostWi;
-    float hostPdf = 0.0f;
-    rt::Vector3f hostSampleF = rtx::SampleBsdf(devMat, wo, n, u, &hostWi, &hostPdf);
+    rt::Vector3f hostSampledWi;
+    float hostSamplePdf = 0.0f;
+    rt::Vector3f hostSampleF = rtx::SampleBsdf(devMat, wo, n, u, &hostSampledWi, &hostSamplePdf);
 
-    REQUIRE_THAT(hostSampleF.x, WithinAbs(cpuSampleF.x, 1e-4f));
-    REQUIRE_THAT(hostSampleF.y, WithinAbs(cpuSampleF.y, 1e-4f));
-    REQUIRE_THAT(hostSampleF.z, WithinAbs(cpuSampleF.z, 1e-4f));
-    REQUIRE_THAT(hostPdf, WithinAbs(cpuPdf, 1e-4f));
-    REQUIRE_THAT(hostWi.x, WithinAbs(cpuWi.x, 1e-4f));
-    REQUIRE_THAT(hostWi.y, WithinAbs(cpuWi.y, 1e-4f));
-    REQUIRE_THAT(hostWi.z, WithinAbs(cpuWi.z, 1e-4f));
+    REQUIRE_THAT(hostSampleF.x, WithinAbs(cpuSampleF.x, 1e-5f));
+    REQUIRE_THAT(hostSampleF.y, WithinAbs(cpuSampleF.y, 1e-5f));
+    REQUIRE_THAT(hostSampleF.z, WithinAbs(cpuSampleF.z, 1e-5f));
+    REQUIRE_THAT(hostSamplePdf, WithinAbs(cpuSamplePdf, 1e-5f));
+    REQUIRE_THAT(hostSampledWi.x, WithinAbs(cpuSampledWi.x, 1e-5f));
+    REQUIRE_THAT(hostSampledWi.y, WithinAbs(cpuSampledWi.y, 1e-5f));
+    REQUIRE_THAT(hostSampledWi.z, WithinAbs(cpuSampledWi.z, 1e-5f));
+
+    MaterialTestInput input{ devMat, wo, n, u, wiEval, rt::Point2f(0.0f, 0.0f), rtx::DeviceTextureList{} };
+    MaterialTestInput* d_in = nullptr;
+    MaterialTestOutput* d_out = nullptr;
+    cudaMalloc(&d_in, sizeof(MaterialTestInput));
+    cudaMalloc(&d_out, sizeof(MaterialTestOutput));
+    cudaMemcpy(d_in, &input, sizeof(MaterialTestInput), cudaMemcpyHostToDevice);
+
+    RunMaterialDeviceTests<<<1, 1>>>(d_in, d_out, 1);
+    cudaDeviceSynchronize();
+
+    MaterialTestOutput devOut{};
+    cudaMemcpy(&devOut, d_out, sizeof(MaterialTestOutput), cudaMemcpyDeviceToHost);
+
+    REQUIRE_THAT(devOut.sampleF.x, WithinAbs(cpuSampleF.x, 1e-5f));
+    REQUIRE_THAT(devOut.sampleF.y, WithinAbs(cpuSampleF.y, 1e-5f));
+    REQUIRE_THAT(devOut.sampleF.z, WithinAbs(cpuSampleF.z, 1e-5f));
+    REQUIRE_THAT(devOut.samplePdf, WithinAbs(cpuSamplePdf, 1e-5f));
+    REQUIRE_THAT(devOut.sampledWi.x, WithinAbs(cpuSampledWi.x, 1e-5f));
+    REQUIRE_THAT(devOut.sampledWi.y, WithinAbs(cpuSampledWi.y, 1e-5f));
+    REQUIRE_THAT(devOut.sampledWi.z, WithinAbs(cpuSampledWi.z, 1e-5f));
+
+    cudaFree(d_in);
+    cudaFree(d_out);
+}
+
+TEST_CASE("Microfacet Conductor host/device parity with CPU BSDF", "[gpu][material][microfacet]") {
+    float roughness = 0.3f;
+    rt::Vector3f eta(0.2f, 0.9f, 1.1f);
+    rt::Vector3f k(3.5f, 2.5f, 1.8f);
+    rt::Vector3f tint(0.95f, 0.65f, 0.4f);
+
+    rt::Microfacet cpuMat = rt::Microfacet::MakeConductorMicrofacet(roughness, eta, k, tint);
+    rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeMicrofacetConductor(roughness, eta, k, tint);
+
+    rt::Vector3f wo = Normalize(rt::Vector3f(0.3f, 0.4f, 0.8f));
+    rt::Vector3f n(0.0f, 0.0f, 1.0f);
+    rt::Vector3f wiEval = Normalize(rt::Vector3f(0.2f, -0.3f, 0.9f));
+
+    rt::Vector3f cpuF = cpuMat.f(wo, wiEval, n);
+    float cpuEvalPdf = cpuMat.Pdf(wo, wiEval, n);
+
+    rt::Vector3f hostF = rtx::EvaluateBsdf(devMat, wo, wiEval, n);
+    float hostEvalPdf = rtx::PdfBsdf(devMat, wo, wiEval, n);
+
+    REQUIRE_THAT(hostF.x, WithinAbs(cpuF.x, 1e-4f));
+    REQUIRE_THAT(hostF.y, WithinAbs(cpuF.y, 1e-4f));
+    REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-4f));
+    REQUIRE_THAT(hostEvalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
+
+    rt::Point2f u(0.35f, 0.65f);
+    MaterialTestInput input{ devMat, wo, n, u, wiEval, rt::Point2f(0.0f, 0.0f), rtx::DeviceTextureList{} };
+    MaterialTestInput* d_in = nullptr;
+    MaterialTestOutput* d_out = nullptr;
+    cudaMalloc(&d_in, sizeof(MaterialTestInput));
+    cudaMalloc(&d_out, sizeof(MaterialTestOutput));
+    cudaMemcpy(d_in, &input, sizeof(MaterialTestInput), cudaMemcpyHostToDevice);
+
+    RunMaterialDeviceTests<<<1, 1>>>(d_in, d_out, 1);
+    cudaDeviceSynchronize();
+
+    MaterialTestOutput devOut{};
+    cudaMemcpy(&devOut, d_out, sizeof(MaterialTestOutput), cudaMemcpyDeviceToHost);
+
+    REQUIRE_THAT(devOut.f.x, WithinAbs(cpuF.x, 1e-4f));
+    REQUIRE_THAT(devOut.f.y, WithinAbs(cpuF.y, 1e-4f));
+    REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-4f));
+    REQUIRE_THAT(devOut.evalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
+
+    cudaFree(d_in);
+    cudaFree(d_out);
 }
 
 TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material][disney]") {
@@ -237,7 +313,7 @@ TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material]
     REQUIRE_THAT(hostEvalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
 
     rt::Point2f u(0.35f, 0.65f);
-    MaterialTestInput input{ devMat, wo, n, u, wiEval };
+    MaterialTestInput input{ devMat, wo, n, u, wiEval, rt::Point2f(0.0f, 0.0f), rtx::DeviceTextureList{} };
     MaterialTestInput* d_in = nullptr;
     MaterialTestOutput* d_out = nullptr;
     cudaMalloc(&d_in, sizeof(MaterialTestInput));
@@ -255,6 +331,67 @@ TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material]
     REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-4f));
     REQUIRE_THAT(devOut.evalPdf, WithinAbs(cpuEvalPdf, 1e-4f));
 
+    cudaFree(d_in);
+    cudaFree(d_out);
+}
+
+TEST_CASE("Textured material host/device parity with CPU BSDF", "[gpu][material][texture][parity]") {
+    // 2x2 color texture
+    auto colorTex = std::make_shared<rt::Image2D<rt::Vector3f>>(2, 2, rt::WrapMode::Clamp);
+    colorTex->Set(0, 0, rt::Vector3f(0.9f, 0.1f, 0.1f));
+    colorTex->Set(1, 0, rt::Vector3f(0.1f, 0.9f, 0.1f));
+    colorTex->Set(0, 1, rt::Vector3f(0.1f, 0.1f, 0.9f));
+    colorTex->Set(1, 1, rt::Vector3f(0.8f, 0.8f, 0.2f));
+
+    // Upload texture to GPU
+    rt::Vector3f* d_texData = nullptr;
+    cudaMalloc(&d_texData, colorTex->texels.size() * sizeof(rt::Vector3f));
+    cudaMemcpy(d_texData, colorTex->texels.data(), colorTex->texels.size() * sizeof(rt::Vector3f), cudaMemcpyHostToDevice);
+
+    rt::Image2DView<rt::Vector3f> hostView(colorTex->texels.data(), colorTex->width, colorTex->height, colorTex->wrap);
+    rt::Image2DView<rt::Vector3f> devView(d_texData, colorTex->width, colorTex->height, colorTex->wrap);
+
+    rt::Image2DView<rt::Vector3f>* d_views = nullptr;
+    cudaMalloc(&d_views, sizeof(rt::Image2DView<rt::Vector3f>));
+    cudaMemcpy(d_views, &devView, sizeof(rt::Image2DView<rt::Vector3f>), cudaMemcpyHostToDevice);
+
+    rtx::DeviceTextureList hostTexList{ &hostView, 1, nullptr, 0 };
+    rtx::DeviceTextureList devTexList{ d_views, 1, nullptr, 0 };
+
+    rt::Lambertian cpuMat(colorTex);
+    rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeLambertian(rt::Vector3f(1.0f, 1.0f, 1.0f), 0.0f, 0);
+
+    rt::Vector3f wo(0.0f, 0.0f, 1.0f);
+    rt::Vector3f n(0.0f, 0.0f, 1.0f);
+    rt::Vector3f wiEval(0.0f, 0.0f, 1.0f);
+    rt::Point2f uv(0.25f, 0.75f); // blue tile center
+
+    rt::Vector3f cpuF = cpuMat.f(wo, wiEval, n, uv);
+    rt::Vector3f hostF = rtx::EvaluateBsdf(devMat, wo, wiEval, n, uv, &hostTexList);
+
+    REQUIRE_THAT(hostF.x, WithinAbs(cpuF.x, 1e-5f));
+    REQUIRE_THAT(hostF.y, WithinAbs(cpuF.y, 1e-5f));
+    REQUIRE_THAT(hostF.z, WithinAbs(cpuF.z, 1e-5f));
+
+    MaterialTestInput input{ devMat, wo, n, rt::Point2f(0.5f, 0.5f), wiEval, uv, devTexList };
+    MaterialTestInput* d_in = nullptr;
+    MaterialTestOutput* d_out = nullptr;
+    cudaMalloc(&d_in, sizeof(MaterialTestInput));
+    cudaMalloc(&d_out, sizeof(MaterialTestOutput));
+    cudaMemcpy(d_in, &input, sizeof(MaterialTestInput), cudaMemcpyHostToDevice);
+
+    RunMaterialDeviceTests<<<1, 1>>>(d_in, d_out, 1);
+    cudaDeviceSynchronize();
+
+    MaterialTestOutput devOut{};
+    cudaMemcpy(&devOut, d_out, sizeof(MaterialTestOutput), cudaMemcpyDeviceToHost);
+
+    REQUIRE_THAT(devOut.f.x, WithinAbs(cpuF.x, 1e-5f));
+    REQUIRE_THAT(devOut.f.y, WithinAbs(cpuF.y, 1e-5f));
+    REQUIRE_THAT(devOut.f.z, WithinAbs(cpuF.z, 1e-5f));
+
+    cudaFree(d_texData);
+    cudaFree(d_views);
     cudaFree(d_in);
     cudaFree(d_out);
 }

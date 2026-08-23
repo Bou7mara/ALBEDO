@@ -28,16 +28,19 @@ namespace {
         auto mesh = std::make_shared<rt::TriangleMesh>();
         mesh->positions.reserve((latBands + 1) * (lonBands + 1));
         mesh->normals.reserve((latBands + 1) * (lonBands + 1));
+        mesh->uvs.reserve((latBands + 1) * (lonBands + 1));
 
         for (int lat = 0; lat <= latBands; ++lat) {
             float theta = static_cast<float>(lat) * 3.14159265358979323846f / static_cast<float>(latBands);
             float sinTheta = std::sin(theta);
             float cosTheta = std::cos(theta);
+            float v = static_cast<float>(lat) / static_cast<float>(latBands);
 
             for (int lon = 0; lon <= lonBands; ++lon) {
                 float phi = static_cast<float>(lon) * 2.0f * 3.14159265358979323846f / static_cast<float>(lonBands);
                 float sinPhi = std::sin(phi);
                 float cosPhi = std::cos(phi);
+                float u = static_cast<float>(lon) / static_cast<float>(lonBands);
 
                 rt::Vector3f n(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi);
                 rt::Point3f objP(radius * n.x, radius * n.y, radius * n.z);
@@ -46,6 +49,7 @@ namespace {
 
                 mesh->positions.push_back(worldP);
                 mesh->normals.push_back(worldN);
+                mesh->uvs.push_back(rt::Point2f(u, v));
             }
         }
 
@@ -75,6 +79,12 @@ namespace {
             p0 + e2
         };
         mesh->normals = { n, n, n, n };
+        mesh->uvs = {
+            rt::Point2f(0.0f, 0.0f),
+            rt::Point2f(1.0f, 0.0f),
+            rt::Point2f(1.0f, 1.0f),
+            rt::Point2f(0.0f, 1.0f)
+        };
         mesh->indices = { 0, 1, 2,  0, 2, 3 };
         return mesh;
     }
@@ -83,6 +93,7 @@ namespace {
         OptixTraversableHandle iasHandle;
         rt::PerspectiveCamera camera;
         rtx::DeviceLightList lights;
+        rtx::DeviceTextureList textures;
         unsigned int width;
         unsigned int height;
         unsigned int samplesPerPixel;
@@ -386,6 +397,7 @@ namespace rtx {
             params.iasHandle = devScene.iasHandle;
             params.camera = setup.camera;
             params.lights = devScene.lightList;
+            params.textures = devScene.textureList;
             params.width = width;
             params.height = height;
             params.samplesPerPixel = 1;

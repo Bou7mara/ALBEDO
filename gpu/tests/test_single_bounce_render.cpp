@@ -321,23 +321,25 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
                 cpuL = SkyGradient(cpuRay.d);
             } else {
                 rt::Vector3f wo = Normalize(-cpuRay.d);
-                if (hit0.bsdf) {
-                    cpuL += hit0.bsdf->Le(wo, hit0.n);
+                const rt::BSDF* bsdf0 = hit0.shape ? hit0.shape->GetBSDF() : nullptr;
+                if (bsdf0) {
+                    cpuL = cpuL + bsdf0->Le(wo, static_cast<rt::Vector3f>(hit0.n));
                     rt::Vector3f wi(0.0f, 0.0f, 0.0f);
                     float pdf = 0.0f;
-                    rt::Vector3f f = hit0.bsdf->Sample_f(wo, hit0.n, rng.Uniform2D(), &wi, &pdf);
-                    if (pdf > 0.0f && !IsBlack(f)) {
+                    rt::Vector3f f = bsdf0->Sample_f(wo, static_cast<rt::Vector3f>(hit0.n), rng.Uniform2D(), &wi, &pdf, hit0.uv);
+                    if (pdf > 0.0f && (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f)) {
                         float cosTheta = AbsDot(wi, hit0.n);
-                        rt::Vector3f throughput = f * cosTheta / pdf;
+                        rt::Vector3f throughput = f * (cosTheta / pdf);
                         rt::Vector3f offsetN = (Dot(wi, hit0.n) > 0.0f) ? static_cast<rt::Vector3f>(hit0.n) : -static_cast<rt::Vector3f>(hit0.n);
                         rt::Ray bounceRay(hit0.p + 1e-3f * offsetN, wi);
                         rt::SurfaceInteraction hit1;
                         if (cpuScene.Intersect(bounceRay, &hit1)) {
-                            if (hit1.bsdf) {
-                                cpuL += throughput * hit1.bsdf->Le(Normalize(-wi), hit1.n);
+                            const rt::BSDF* bsdf1 = hit1.shape ? hit1.shape->GetBSDF() : nullptr;
+                            if (bsdf1) {
+                                cpuL = cpuL + throughput * bsdf1->Le(Normalize(-wi), static_cast<rt::Vector3f>(hit1.n));
                             }
                         } else {
-                            cpuL += throughput * SkyGradient(wi);
+                            cpuL = cpuL + throughput * SkyGradient(wi);
                         }
                     }
                 }

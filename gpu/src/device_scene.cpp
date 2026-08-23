@@ -22,15 +22,40 @@
 
 namespace rtx {
 
-    DeviceMaterial ConvertBsdfToDeviceMaterial(const rt::BSDF* bsdf) {
+    struct TextureRegistry {
+        std::vector<const rt::Image2D<rt::Vector3f>*> textures3f;
+        std::vector<const rt::Image2D<float>*> textures1f;
+
+        uint32_t GetOrAdd3f(const rt::Image2D<rt::Vector3f>* tex) {
+            if (!tex) return kNoTexture;
+            for (uint32_t i = 0; i < textures3f.size(); ++i) {
+                if (textures3f[i] == tex) return i;
+            }
+            textures3f.push_back(tex);
+            return static_cast<uint32_t>(textures3f.size() - 1);
+        }
+
+        uint32_t GetOrAdd1f(const rt::Image2D<float>* tex) {
+            if (!tex) return kNoTexture;
+            for (uint32_t i = 0; i < textures1f.size(); ++i) {
+                if (textures1f[i] == tex) return i;
+            }
+            textures1f.push_back(tex);
+            return static_cast<uint32_t>(textures1f.size() - 1);
+        }
+    };
+
+    DeviceMaterial ConvertBsdfToDeviceMaterial(const rt::BSDF* bsdf, TextureRegistry* registry) {
         if (!bsdf) {
             return DeviceMaterial::MakeLambertian(rt::Vector3f(0.5f, 0.5f, 0.5f));
         }
         if (auto l = dynamic_cast<const rt::Lambertian*>(bsdf)) {
-            return DeviceMaterial::MakeLambertian(l->Albedo(), l->Roughness());
+            uint32_t albedoTex = registry ? registry->GetOrAdd3f(l->AlbedoTexture().get()) : kNoTexture;
+            return DeviceMaterial::MakeLambertian(l->Albedo(), l->Roughness(), albedoTex);
         }
         if (auto m = dynamic_cast<const rt::Metal*>(bsdf)) {
-            return DeviceMaterial::MakeMetal(m->Albedo());
+            uint32_t albedoTex = registry ? registry->GetOrAdd3f(m->AlbedoTexture().get()) : kNoTexture;
+            return DeviceMaterial::MakeMetal(m->Albedo(), albedoTex);
         }
         if (auto d = dynamic_cast<const rt::Dielectric*>(bsdf)) {
             return DeviceMaterial::MakeDielectric(d->Ior(), d->Tint(), d->Dispersion());
@@ -42,14 +67,20 @@ namespace rtx {
             if (mf->IsDielectric()) {
                 return DeviceMaterial::MakeMicrofacetDielectric(std::sqrt(mf->Alpha()), mf->Ior());
             } else {
-                return DeviceMaterial::MakeMicrofacetConductor(std::sqrt(mf->Alpha()), mf->Eta(), mf->K(), mf->Tint());
+                uint32_t roughTex = registry ? registry->GetOrAdd1f(mf->RoughnessTexture().get()) : kNoTexture;
+                uint32_t tintTex = registry ? registry->GetOrAdd3f(mf->TintTexture().get()) : kNoTexture;
+                return DeviceMaterial::MakeMicrofacetConductor(std::sqrt(mf->Alpha()), mf->Eta(), mf->K(), mf->Tint(), roughTex, tintTex);
             }
         }
         if (auto dp = dynamic_cast<const rt::DisneyPrincipled*>(bsdf)) {
             const auto& p = dp->Params();
+            uint32_t baseTex = registry ? registry->GetOrAdd3f(p.baseColorTexture.get()) : kNoTexture;
+            uint32_t roughTex = registry ? registry->GetOrAdd1f(p.roughnessTexture.get()) : kNoTexture;
+            uint32_t metalTex = registry ? registry->GetOrAdd1f(p.metallicTexture.get()) : kNoTexture;
             return DeviceMaterial::MakeDisney(
                 p.baseColor, p.metallic, p.subsurface, p.specular, p.roughness,
-                p.specularTint, p.anisotropic, p.sheen, p.sheenTint, p.clearcoat, p.clearcoatGloss
+                p.specularTint, p.anisotropic, p.sheen, p.sheenTint, p.clearcoat, p.clearcoatGloss,
+                baseTex, roughTex, metalTex
             );
         }
         return DeviceMaterial::MakeLambertian(rt::Vector3f(0.5f, 0.5f, 0.5f));
@@ -198,13 +229,19 @@ namespace rtx {
           d_instances(other.d_instances),
           lightList(other.lightList),
           d_lights(other.d_lights),
-          d_lightCdf(other.d_lightCdf) {
+          d_lightCdf(other.d_lightCdf),
+          textureList(other.textureList),
+          d_textures3fViews(other.d_textures3fViews),
+          d_textures1fViews(other.d_textures1fViews) {
         other.iasHandle = 0;
         other.iasBuffer = 0;
         other.d_instances = 0;
         other.d_lights = 0;
         other.d_lightCdf = 0;
         other.lightList = DeviceLightList{};
+        other.d_textures3fViews = 0;
+        other.d_textures1fViews = 0;
+        other.textureList = DeviceTextureList{};
     }
 
     DeviceScene& DeviceScene::operator=(DeviceScene&& other) noexcept {
@@ -219,6 +256,9 @@ namespace rtx {
             lightList = other.lightList;
             d_lights = other.d_lights;
             d_lightCdf = other.d_lightCdf;
+            textureList = other.textureList;
+            d_textures3fViews = other.d_textures3fViews;
+            d_textures1fViews = other.d_textures1fViews;
 
             other.iasHandle = 0;
             other.iasBuffer = 0;
@@ -226,6 +266,9 @@ namespace rtx {
             other.d_lights = 0;
             other.d_lightCdf = 0;
             other.lightList = DeviceLightList{};
+            other.d_textures3fViews = 0;
+            other.d_textures1fViews = 0;
+            other.textureList = DeviceTextureList{};
         }
         return *this;
     }
@@ -262,8 +305,17 @@ namespace rtx {
             cudaFree(reinterpret_cast<void*>(d_lightCdf));
             d_lightCdf = 0;
         }
+        if (d_textures3fViews) {
+            cudaFree(reinterpret_cast<void*>(d_textures3fViews));
+            d_textures3fViews = 0;
+        }
+        if (d_textures1fViews) {
+            cudaFree(reinterpret_cast<void*>(d_textures1fViews));
+            d_textures1fViews = 0;
+        }
         iasHandle = 0;
         lightList = DeviceLightList{};
+        textureList = DeviceTextureList{};
     }
 
     DeviceScene DeviceScene::Build(const std::shared_ptr<rt::SceneNode>& root,
@@ -275,6 +327,7 @@ namespace rtx {
         std::unordered_map<const rt::TriangleMesh*, size_t> meshCache;
         std::vector<OptixInstance> optixInstances;
         std::vector<DeviceLight> hostLights;
+        TextureRegistry textureRegistry;
 
         auto flatten = [&](auto& self, const std::shared_ptr<rt::SceneNode>& node, const rt::Transform& parentToWorld) -> void {
                 if (!node) return;
@@ -292,7 +345,7 @@ namespace rtx {
                         meshCache[node->mesh.get()] = meshIndex;
                     }
 
-                    DeviceMaterial mat = ConvertBsdfToDeviceMaterial(node->bsdf.get());
+                    DeviceMaterial mat = ConvertBsdfToDeviceMaterial(node->bsdf.get(), &textureRegistry);
                     size_t instanceIdx = scene.instances.size();
                     scene.instances.push_back(DeviceInstanceRecord{ meshIndex, mat });
 
@@ -411,6 +464,42 @@ namespace rtx {
             scene.lightList.cdf = reinterpret_cast<float*>(scene.d_lightCdf);
             scene.lightList.count = static_cast<unsigned int>(hostLights.size());
             scene.lightList.totalPower = totalPower;
+        }
+
+        // Upload 3D vector textures (RGB)
+        if (!textureRegistry.textures3f.empty()) {
+            std::vector<rt::Image2DView<rt::Vector3f>> hostViews3f;
+            for (const auto* tex : textureRegistry.textures3f) {
+                size_t byteSize = tex->texels.size() * sizeof(rt::Vector3f);
+                CUdeviceptr d_data = 0;
+                CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_data), byteSize));
+                CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(d_data), tex->texels.data(), byteSize, cudaMemcpyHostToDevice, stream));
+                scene.allocatedBuffers.push_back(d_data);
+                hostViews3f.emplace_back(reinterpret_cast<const rt::Vector3f*>(d_data), tex->width, tex->height, tex->wrap);
+            }
+            size_t viewsByteSize = hostViews3f.size() * sizeof(rt::Image2DView<rt::Vector3f>);
+            CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&scene.d_textures3fViews), viewsByteSize));
+            CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(scene.d_textures3fViews), hostViews3f.data(), viewsByteSize, cudaMemcpyHostToDevice, stream));
+            scene.textureList.textures3f = reinterpret_cast<const rt::Image2DView<rt::Vector3f>*>(scene.d_textures3fViews);
+            scene.textureList.count3f = static_cast<unsigned int>(hostViews3f.size());
+        }
+
+        // Upload 1D scalar textures (float)
+        if (!textureRegistry.textures1f.empty()) {
+            std::vector<rt::Image2DView<float>> hostViews1f;
+            for (const auto* tex : textureRegistry.textures1f) {
+                size_t byteSize = tex->texels.size() * sizeof(float);
+                CUdeviceptr d_data = 0;
+                CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_data), byteSize));
+                CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(d_data), tex->texels.data(), byteSize, cudaMemcpyHostToDevice, stream));
+                scene.allocatedBuffers.push_back(d_data);
+                hostViews1f.emplace_back(reinterpret_cast<const float*>(d_data), tex->width, tex->height, tex->wrap);
+            }
+            size_t viewsByteSize = hostViews1f.size() * sizeof(rt::Image2DView<float>);
+            CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&scene.d_textures1fViews), viewsByteSize));
+            CUDA_CHECK(cudaMemcpyAsync(reinterpret_cast<void*>(scene.d_textures1fViews), hostViews1f.data(), viewsByteSize, cudaMemcpyHostToDevice, stream));
+            scene.textureList.textures1f = reinterpret_cast<const rt::Image2DView<float>*>(scene.d_textures1fViews);
+            scene.textureList.count1f = static_cast<unsigned int>(hostViews1f.size());
         }
 
         CUDA_CHECK(cudaStreamSynchronize(stream));

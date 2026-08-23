@@ -41,6 +41,7 @@ add_executable(rt_tests
     test_quad.cpp
     test_disney_principled.cpp
     test_image2d.cpp
+    test_material_texture.cpp
 )
 
 target_link_libraries(rt_tests PRIVATE rt_core Catch2::Catch2WithMain)

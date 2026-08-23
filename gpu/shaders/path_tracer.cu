@@ -18,6 +18,7 @@ struct PathTracerParams {
     OptixTraversableHandle iasHandle;
     rt::PerspectiveCamera camera;
     rtx::DeviceLightList lights;
+    rtx::DeviceTextureList textures;
     unsigned int width;
     unsigned int height;
     unsigned int samplesPerPixel;
@@ -38,6 +39,7 @@ struct PathHitPayload {
     rt::Point3f p;
     rt::Normal3f n;
     rt::Normal3f ns;
+    rt::Point2f uv;
     rtx::DeviceMaterial material;
     unsigned int instanceIndex;
 };
@@ -59,20 +61,23 @@ static __forceinline__ __device__ rt::Vector3f SkyGradient(const rt::Vector3f& d
     return 0.15f * ((1.0f - t) * rt::Vector3f(0.8f, 0.8f, 0.9f) + t * rt::Vector3f(0.4f, 0.5f, 0.7f));
 }
 
-static __forceinline__ __device__ rt::Vector3f GetAlbedoForGuide(const rtx::DeviceMaterial& mat) {
-    switch (mat.kind) {
+static __forceinline__ __device__ rt::Vector3f GetAlbedoForGuide(const rtx::DeviceMaterial& mat, const rt::Point2f& uv, const rtx::DeviceTextureList* textures) {
+    rtx::DeviceMaterial resolved = rtx::ResolveMaterialTextures(mat, uv, textures);
+    switch (resolved.kind) {
         case rtx::MaterialKind::Lambertian:
-            return mat.lambertian.albedo;
+            return resolved.lambertian.albedo;
         case rtx::MaterialKind::Metal:
-            return mat.metal.albedo;
+            return resolved.metal.albedo;
         case rtx::MaterialKind::Dielectric:
-            return mat.dielectric.tint;
+            return resolved.dielectric.tint;
         case rtx::MaterialKind::MicrofacetDielectric:
             return rt::Vector3f(1.0f, 1.0f, 1.0f);
         case rtx::MaterialKind::MicrofacetConductor:
-            return mat.microfacetConductor.tint;
+            return resolved.microfacetConductor.tint;
+        case rtx::MaterialKind::Disney:
+            return resolved.disney.baseColor;
         case rtx::MaterialKind::Emissive:
-            return mat.emissive.radiance;
+            return resolved.emissive.radiance;
     }
     return rt::Vector3f(0.5f, 0.5f, 0.5f);
 }
@@ -177,7 +182,7 @@ extern "C" __global__ void __raygen__albedo() {
 
             if (depth == 0 && params.normalBuffer && params.albedoBuffer) {
                 params.normalBuffer[pixel] = n;
-                params.albedoBuffer[pixel] = GetAlbedoForGuide(isect.material);
+                params.albedoBuffer[pixel] = GetAlbedoForGuide(isect.material, isect.uv, &params.textures);
             }
 
             rt::Vector3f emitted = rtx::EvaluateEmission(isect.material, wo, n);
@@ -216,9 +221,9 @@ extern "C" __global__ void __raygen__albedo() {
 
                         bool occluded = TraceShadowRay(params.iasHandle, offsetOrigin, lightSample.wi, kEpsilon, lightSample.dist - 2.0f * kEpsilon);
                         if (!occluded) {
-                            rt::Vector3f f = rtx::EvaluateBsdf(isect.material, wo, lightSample.wi, n);
+                            rt::Vector3f f = rtx::EvaluateBsdf(isect.material, wo, lightSample.wi, n, isect.uv, &params.textures);
                             if (f.x > 0.0f || f.y > 0.0f || f.z > 0.0f) {
-                                float bsdfPdf = rtx::PdfBsdf(isect.material, wo, lightSample.wi, n);
+                                float bsdfPdf = rtx::PdfBsdf(isect.material, wo, lightSample.wi, n, isect.uv, &params.textures);
                                 if (bsdfPdf > 0.0f) {
                                     float lPdf = lightSample.pdf * pmf;
                                     float weight = rt::PowerHeuristic(1, lPdf, 1, bsdfPdf);
@@ -240,7 +245,7 @@ extern "C" __global__ void __raygen__albedo() {
             // Sample BSDF for next bounce
             rt::Vector3f wi(0.0f, 0.0f, 0.0f);
             float pdf = 0.0f;
-            rt::Vector3f f = rtx::SampleBsdf(isect.material, wo, n, rng.Uniform2D(), &wi, &pdf);
+            rt::Vector3f f = rtx::SampleBsdf(isect.material, wo, n, rng.Uniform2D(), &wi, &pdf, isect.uv, &params.textures);
 
             if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
 
@@ -252,7 +257,7 @@ extern "C" __global__ void __raygen__albedo() {
                 throughput = throughput * (kMaxSampleContribution / maxComponent);
             }
 
-            prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n);
+            prevBsdfPdf = rtx::PdfBsdf(isect.material, wo, wi, n, isect.uv, &params.textures);
             specularBounce = (prevBsdfPdf == 0.0f);
 
             // Russian Roulette
@@ -320,6 +325,15 @@ extern "C" __global__ void __closesthit__albedo() {
         payload->ns = Normalize(rt::Normal3f(rt::Vector3f(worldShadN.x, worldShadN.y, worldShadN.z)));
     } else {
         payload->ns = payload->n;
+    }
+
+    if (sbtData->uvs != nullptr) {
+        rt::Point2f uv0 = sbtData->uvs[idx0];
+        rt::Point2f uv1 = sbtData->uvs[idx1];
+        rt::Point2f uv2 = sbtData->uvs[idx2];
+        payload->uv = rt::Point2f(w * uv0.x + u * uv1.x + v * uv2.x, w * uv0.y + u * uv1.y + v * uv2.y);
+    } else {
+        payload->uv = rt::Point2f(0.0f, 0.0f);
     }
 
     payload->material = sbtData->material;

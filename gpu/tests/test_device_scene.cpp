@@ -223,14 +223,16 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     cudaMalloc(reinterpret_cast<void**>(&d_missRecord), sizeof(MissRecord));
     cudaMemcpy(reinterpret_cast<void*>(d_missRecord), &missRecord, sizeof(MissRecord), cudaMemcpyHostToDevice);
 
-    std::vector<HitgroupRecord> hitRecords(devScene.meshes.size());
-    for (size_t i = 0; i < devScene.meshes.size(); ++i) {
+    std::vector<HitgroupRecord> hitRecords(devScene.instances.size());
+    for (size_t i = 0; i < devScene.instances.size(); ++i) {
         optixSbtRecordPackHeader(hitPG, &hitRecords[i]);
-        hitRecords[i].data.positions = reinterpret_cast<const rt::Point3f*>(devScene.meshes[i].d_positions);
-        hitRecords[i].data.normals = reinterpret_cast<const rt::Normal3f*>(devScene.meshes[i].d_normals);
-        hitRecords[i].data.uvs = reinterpret_cast<const rt::Point2f*>(devScene.meshes[i].d_uvs);
-        hitRecords[i].data.indices = reinterpret_cast<const int*>(devScene.meshes[i].d_indices);
-        hitRecords[i].data.triangleCount = devScene.meshes[i].triangleCount;
+        size_t meshIdx = devScene.instances[i].meshIndex;
+        hitRecords[i].data.positions = reinterpret_cast<const rt::Point3f*>(devScene.meshes[meshIdx].d_positions);
+        hitRecords[i].data.normals = reinterpret_cast<const rt::Normal3f*>(devScene.meshes[meshIdx].d_normals);
+        hitRecords[i].data.uvs = reinterpret_cast<const rt::Point2f*>(devScene.meshes[meshIdx].d_uvs);
+        hitRecords[i].data.indices = reinterpret_cast<const int*>(devScene.meshes[meshIdx].d_indices);
+        hitRecords[i].data.triangleCount = devScene.meshes[meshIdx].triangleCount;
+        hitRecords[i].data.material = devScene.instances[i].material;
     }
     CUdeviceptr d_hitRecord = 0;
     size_t hitBytes = sizeof(HitgroupRecord) * hitRecords.size();

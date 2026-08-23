@@ -3,6 +3,9 @@
 #pragma warning(push)
 #pragma warning(disable : 4505)
 #endif
+#ifndef STB_IMAGE_WRITE_STATIC
+#define STB_IMAGE_WRITE_STATIC
+#endif
 #ifndef STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #endif

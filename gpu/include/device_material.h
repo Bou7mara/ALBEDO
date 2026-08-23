@@ -6,6 +6,7 @@
 #include "rt/core/sampling.h"
 #include "rt/materials/fresnel.h"
 #include "rt/materials/microfacet.h"
+#include "rt/textures/image2d.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,6 +22,15 @@
 
 namespace rtx {
 
+    constexpr uint32_t kNoTexture = 0xFFFFFFFF;
+
+    struct DeviceTextureList {
+        const rt::Image2DView<rt::Vector3f>* textures3f;
+        unsigned int count3f;
+        const rt::Image2DView<float>* textures1f;
+        unsigned int count1f;
+    };
+
     enum class MaterialKind : uint32_t {
         Lambertian = 0,
         Metal = 1,
@@ -34,11 +44,11 @@ namespace rtx {
     struct DeviceMaterial {
         MaterialKind kind = MaterialKind::Lambertian;
         union {
-            struct { rt::Vector3f albedo; float roughness; } lambertian;
-            struct { rt::Vector3f albedo; } metal;
+            struct { rt::Vector3f albedo; float roughness; uint32_t albedoTexture; uint32_t roughnessTexture; } lambertian;
+            struct { rt::Vector3f albedo; uint32_t albedoTexture; } metal;
             struct { float ior; rt::Vector3f tint; float dispersion; } dielectric;
-            struct { float alpha; float ior; } microfacetDielectric;
-            struct { float alpha; rt::Vector3f eta; rt::Vector3f k; rt::Vector3f tint; } microfacetConductor;
+            struct { float alpha; float ior; uint32_t roughnessTexture; } microfacetDielectric;
+            struct { float alpha; rt::Vector3f eta; rt::Vector3f k; rt::Vector3f tint; uint32_t roughnessTexture; uint32_t tintTexture; } microfacetConductor;
             struct { rt::Vector3f radiance; } emissive;
             struct {
                 rt::Vector3f baseColor;
@@ -52,24 +62,30 @@ namespace rtx {
                 float sheenTint;
                 float clearcoat;
                 float clearcoatGloss;
+                uint32_t baseColorTexture;
+                uint32_t roughnessTexture;
+                uint32_t metallicTexture;
             } disney;
         };
 
         __host__ __device__ constexpr DeviceMaterial()
-            : kind(MaterialKind::Lambertian), lambertian{rt::Vector3f(0.0f, 0.0f, 0.0f), 0.0f} {}
+            : kind(MaterialKind::Lambertian), lambertian{rt::Vector3f(0.0f, 0.0f, 0.0f), 0.0f, kNoTexture, kNoTexture} {}
 
-        __host__ __device__ static DeviceMaterial MakeLambertian(const rt::Vector3f& albedo, float roughness = 0.0f) {
+        __host__ __device__ static DeviceMaterial MakeLambertian(const rt::Vector3f& albedo, float roughness = 0.0f, uint32_t albedoTexture = kNoTexture, uint32_t roughnessTexture = kNoTexture) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Lambertian;
             m.lambertian.albedo = albedo;
             m.lambertian.roughness = roughness;
+            m.lambertian.albedoTexture = albedoTexture;
+            m.lambertian.roughnessTexture = roughnessTexture;
             return m;
         }
 
-        __host__ __device__ static DeviceMaterial MakeMetal(const rt::Vector3f& albedo) {
+        __host__ __device__ static DeviceMaterial MakeMetal(const rt::Vector3f& albedo, uint32_t albedoTexture = kNoTexture) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Metal;
             m.metal.albedo = albedo;
+            m.metal.albedoTexture = albedoTexture;
             return m;
         }
 
@@ -82,21 +98,24 @@ namespace rtx {
             return m;
         }
 
-        __host__ __device__ static DeviceMaterial MakeMicrofacetDielectric(float roughness, float ior) {
+        __host__ __device__ static DeviceMaterial MakeMicrofacetDielectric(float roughness, float ior, uint32_t roughnessTexture = kNoTexture) {
             DeviceMaterial m{};
             m.kind = MaterialKind::MicrofacetDielectric;
             m.microfacetDielectric.alpha = rt::AlphaFromRoughness(roughness);
             m.microfacetDielectric.ior = ior;
+            m.microfacetDielectric.roughnessTexture = roughnessTexture;
             return m;
         }
 
-        __host__ __device__ static DeviceMaterial MakeMicrofacetConductor(float roughness, const rt::Vector3f& eta, const rt::Vector3f& k, const rt::Vector3f& tint = rt::Vector3f(1.0f, 1.0f, 1.0f)) {
+        __host__ __device__ static DeviceMaterial MakeMicrofacetConductor(float roughness, const rt::Vector3f& eta, const rt::Vector3f& k, const rt::Vector3f& tint = rt::Vector3f(1.0f, 1.0f, 1.0f), uint32_t roughnessTexture = kNoTexture, uint32_t tintTexture = kNoTexture) {
             DeviceMaterial m{};
             m.kind = MaterialKind::MicrofacetConductor;
             m.microfacetConductor.alpha = rt::AlphaFromRoughness(roughness);
             m.microfacetConductor.eta = eta;
             m.microfacetConductor.k = k;
             m.microfacetConductor.tint = tint;
+            m.microfacetConductor.roughnessTexture = roughnessTexture;
+            m.microfacetConductor.tintTexture = tintTexture;
             return m;
         }
 
@@ -117,7 +136,10 @@ namespace rtx {
                                                              float sheen = 0.0f,
                                                              float sheenTint = 0.5f,
                                                              float clearcoat = 0.0f,
-                                                             float clearcoatGloss = 1.0f) {
+                                                             float clearcoatGloss = 1.0f,
+                                                             uint32_t baseColorTexture = kNoTexture,
+                                                             uint32_t roughnessTexture = kNoTexture,
+                                                             uint32_t metallicTexture = kNoTexture) {
             DeviceMaterial m{};
             m.kind = MaterialKind::Disney;
             m.disney.baseColor = baseColor;
@@ -131,9 +153,66 @@ namespace rtx {
             m.disney.sheenTint = sheenTint;
             m.disney.clearcoat = clearcoat;
             m.disney.clearcoatGloss = clearcoatGloss;
+            m.disney.baseColorTexture = baseColorTexture;
+            m.disney.roughnessTexture = roughnessTexture;
+            m.disney.metallicTexture = metallicTexture;
             return m;
         }
     };
+
+    __host__ __device__ inline DeviceMaterial ResolveMaterialTextures(const DeviceMaterial& mat, const rt::Point2f& uv, const DeviceTextureList* textures) {
+        if (!textures) return mat;
+        DeviceMaterial resolved = mat;
+        switch (mat.kind) {
+            case MaterialKind::Lambertian: {
+                if (mat.lambertian.albedoTexture != kNoTexture && textures->textures3f && mat.lambertian.albedoTexture < textures->count3f) {
+                    resolved.lambertian.albedo = textures->textures3f[mat.lambertian.albedoTexture].Sample(uv.x, uv.y);
+                }
+                if (mat.lambertian.roughnessTexture != kNoTexture && textures->textures1f && mat.lambertian.roughnessTexture < textures->count1f) {
+                    resolved.lambertian.roughness = textures->textures1f[mat.lambertian.roughnessTexture].Sample(uv.x, uv.y);
+                }
+                break;
+            }
+            case MaterialKind::Metal: {
+                if (mat.metal.albedoTexture != kNoTexture && textures->textures3f && mat.metal.albedoTexture < textures->count3f) {
+                    resolved.metal.albedo = textures->textures3f[mat.metal.albedoTexture].Sample(uv.x, uv.y);
+                }
+                break;
+            }
+            case MaterialKind::MicrofacetDielectric: {
+                if (mat.microfacetDielectric.roughnessTexture != kNoTexture && textures->textures1f && mat.microfacetDielectric.roughnessTexture < textures->count1f) {
+                    float r = textures->textures1f[mat.microfacetDielectric.roughnessTexture].Sample(uv.x, uv.y);
+                    resolved.microfacetDielectric.alpha = rt::AlphaFromRoughness(r);
+                }
+                break;
+            }
+            case MaterialKind::MicrofacetConductor: {
+                if (mat.microfacetConductor.roughnessTexture != kNoTexture && textures->textures1f && mat.microfacetConductor.roughnessTexture < textures->count1f) {
+                    float r = textures->textures1f[mat.microfacetConductor.roughnessTexture].Sample(uv.x, uv.y);
+                    resolved.microfacetConductor.alpha = rt::AlphaFromRoughness(r);
+                }
+                if (mat.microfacetConductor.tintTexture != kNoTexture && textures->textures3f && mat.microfacetConductor.tintTexture < textures->count3f) {
+                    resolved.microfacetConductor.tint = textures->textures3f[mat.microfacetConductor.tintTexture].Sample(uv.x, uv.y);
+                }
+                break;
+            }
+            case MaterialKind::Disney: {
+                if (mat.disney.baseColorTexture != kNoTexture && textures->textures3f && mat.disney.baseColorTexture < textures->count3f) {
+                    resolved.disney.baseColor = textures->textures3f[mat.disney.baseColorTexture].Sample(uv.x, uv.y);
+                }
+                if (mat.disney.roughnessTexture != kNoTexture && textures->textures1f && mat.disney.roughnessTexture < textures->count1f) {
+                    resolved.disney.roughness = textures->textures1f[mat.disney.roughnessTexture].Sample(uv.x, uv.y);
+                }
+                if (mat.disney.metallicTexture != kNoTexture && textures->textures1f && mat.disney.metallicTexture < textures->count1f) {
+                    resolved.disney.metallic = textures->textures1f[mat.disney.metallicTexture].Sample(uv.x, uv.y);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        return resolved;
+    }
 
     __host__ __device__ inline float DisneySchlickWeight(float cosTheta) {
         float m = fmaxf(0.0f, fminf(1.0f, 1.0f - cosTheta));
@@ -181,10 +260,13 @@ namespace rtx {
         return {diffWeight / total, specWeight / total, clearWeight / total};
     }
 
-    __host__ __device__ inline rt::Vector3f EvaluateBsdf(const DeviceMaterial& mat,
+    __host__ __device__ inline rt::Vector3f EvaluateBsdf(const DeviceMaterial& inMat,
                                                          const rt::Vector3f& wo,
                                                          const rt::Vector3f& wi,
-                                                         const rt::Vector3f& n) {
+                                                         const rt::Vector3f& n,
+                                                         const rt::Point2f& uv = rt::Point2f(0.0f, 0.0f),
+                                                         const DeviceTextureList* textures = nullptr) {
+        DeviceMaterial mat = ResolveMaterialTextures(inMat, uv, textures);
         switch (mat.kind) {
             case MaterialKind::Lambertian: {
                 if (Dot(wi, n) <= 0.0f || Dot(wo, n) <= 0.0f) {
@@ -332,24 +414,29 @@ namespace rtx {
         return rt::Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    __host__ __device__ float PdfBsdf(const DeviceMaterial& mat,
+    __host__ __device__ float PdfBsdf(const DeviceMaterial& inMat,
                                       const rt::Vector3f& wo,
                                       const rt::Vector3f& wi,
-                                      const rt::Vector3f& n);
+                                      const rt::Vector3f& n,
+                                      const rt::Point2f& uv = rt::Point2f(0.0f, 0.0f),
+                                      const DeviceTextureList* textures = nullptr);
 
-    __host__ __device__ inline rt::Vector3f SampleBsdf(const DeviceMaterial& mat,
+    __host__ __device__ inline rt::Vector3f SampleBsdf(const DeviceMaterial& inMat,
                                                        const rt::Vector3f& wo,
                                                        const rt::Vector3f& n,
                                                        const rt::Point2f& u,
                                                        rt::Vector3f* wi,
-                                                       float* pdf) {
+                                                       float* pdf,
+                                                       const rt::Point2f& uv = rt::Point2f(0.0f, 0.0f),
+                                                       const DeviceTextureList* textures = nullptr) {
+        DeviceMaterial mat = ResolveMaterialTextures(inMat, uv, textures);
         switch (mat.kind) {
             case MaterialKind::Lambertian: {
                 rt::ONB onb(n);
                 rt::Vector3f localDir = rt::CosineSampleHemisphere(u);
                 *wi = Normalize(onb.ToWorld(localDir));
                 *pdf = rt::CosineHemispherePdf(localDir.z);
-                return EvaluateBsdf(mat, wo, *wi, n);
+                return EvaluateBsdf(mat, wo, *wi, n, uv, textures);
             }
 
             case MaterialKind::Metal: {
@@ -434,7 +521,7 @@ namespace rtx {
                 float NdotV = AbsDot(wo, n);
                 float NdotH = AbsDot(wh, n);
                 *pdf = rt::GgxVndfPdf(NdotV, NdotH, mat.microfacetDielectric.alpha);
-                return EvaluateBsdf(mat, wo, *wi, n);
+                return EvaluateBsdf(mat, wo, *wi, n, uv, textures);
             }
 
             case MaterialKind::MicrofacetConductor: {
@@ -451,7 +538,7 @@ namespace rtx {
                 float NdotV = AbsDot(wo, n);
                 float NdotH = AbsDot(wh, n);
                 *pdf = rt::GgxVndfPdf(NdotV, NdotH, mat.microfacetConductor.alpha);
-                return EvaluateBsdf(mat, wo, *wi, n);
+                return EvaluateBsdf(mat, wo, *wi, n, uv, textures);
             }
 
             case MaterialKind::Disney: {
@@ -490,12 +577,12 @@ namespace rtx {
                     return rt::Vector3f(0.0f, 0.0f, 0.0f);
                 }
 
-                *pdf = PdfBsdf(mat, wo, *wi, n);
+                *pdf = PdfBsdf(mat, wo, *wi, n, uv, textures);
                 if (*pdf <= 0.0f) {
                     return rt::Vector3f(0.0f, 0.0f, 0.0f);
                 }
 
-                return EvaluateBsdf(mat, wo, *wi, n);
+                return EvaluateBsdf(mat, wo, *wi, n, uv, textures);
             }
 
             case MaterialKind::Emissive: {
@@ -509,10 +596,13 @@ namespace rtx {
         return rt::Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    __host__ __device__ inline float PdfBsdf(const DeviceMaterial& mat,
+    __host__ __device__ inline float PdfBsdf(const DeviceMaterial& inMat,
                                              const rt::Vector3f& wo,
                                              const rt::Vector3f& wi,
-                                             const rt::Vector3f& n) {
+                                             const rt::Vector3f& n,
+                                             const rt::Point2f& uv,
+                                             const DeviceTextureList* textures) {
+        DeviceMaterial mat = ResolveMaterialTextures(inMat, uv, textures);
         switch (mat.kind) {
             case MaterialKind::Lambertian:
                 return (Dot(wi, n) > 0.0f && Dot(wo, n) > 0.0f) ? AbsDot(wi, n) * rt::kInvPi : 0.0f;

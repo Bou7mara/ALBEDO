@@ -60,14 +60,24 @@ namespace {
         return {diffWeight / total, specWeight / total, clearWeight / total};
     }
 
+    inline DisneyParams ResolveDisneyParams(const DisneyParams& p, const Point2f& uv) {
+        DisneyParams res = p;
+        if (p.baseColorTexture) res.baseColor = p.baseColorTexture->Sample(uv.x, uv.y);
+        if (p.roughnessTexture) res.roughness = p.roughnessTexture->Sample(uv.x, uv.y);
+        if (p.metallicTexture)  res.metallic  = p.metallicTexture->Sample(uv.x, uv.y);
+        return res;
+    }
+
 } // namespace
 
-Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
+Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n, const Point2f& uv) const {
     float NdotO = Dot(wo, n);
     float NdotI = Dot(wi, n);
     if (NdotO <= 0.0f || NdotI <= 0.0f) {
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
+
+    DisneyParams p = ResolveDisneyParams(params_, uv);
 
     Vector3f wh = wo + wi;
     if (LengthSquared(wh) == 0.0f) return Vector3f(0.0f, 0.0f, 0.0f);
@@ -76,68 +86,69 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
     float NdotH = Dot(wh, n);
     float VdotH = Dot(wo, wh);
 
-    float lum = Luminance(params_.baseColor);
-    Vector3f cTint = (lum > 0.0f) ? (params_.baseColor / lum) : Vector3f(1.0f, 1.0f, 1.0f);
+    float lum = Luminance(p.baseColor);
+    Vector3f cTint = (lum > 0.0f) ? (p.baseColor / lum) : Vector3f(1.0f, 1.0f, 1.0f);
 
     // 1. Diffuse & Subsurface Lobes
     Vector3f fDiffuse(0.0f, 0.0f, 0.0f);
-    if (params_.metallic < 1.0f) {
+    if (p.metallic < 1.0f) {
         float Fo = SchlickWeight(NdotO);
         float Fi = SchlickWeight(NdotI);
-        float Fd90 = 0.5f + 2.0f * params_.roughness * VdotH * VdotH;
+        float Fd90 = 0.5f + 2.0f * p.roughness * VdotH * VdotH;
         float Fd = (1.0f + (Fd90 - 1.0f) * Fo) * (1.0f + (Fd90 - 1.0f) * Fi);
 
         // Hanrahan-Krueger subsurface approximation
-        float Fss90 = params_.roughness * VdotH * VdotH;
+        float Fss90 = p.roughness * VdotH * VdotH;
         float Fss = (1.0f + (Fss90 - 1.0f) * Fo) * (1.0f + (Fss90 - 1.0f) * Fi);
         float ss = 1.25f * (Fss * (1.0f / (NdotO + NdotI) - 0.5f) + 0.5f);
 
-        float diffuseFactor = std::lerp(Fd, ss, params_.subsurface);
-        fDiffuse = params_.baseColor * (std::numbers::inv_pi_v<float> * diffuseFactor * (1.0f - params_.metallic));
+        float diffuseFactor = std::lerp(Fd, ss, p.subsurface);
+        fDiffuse = p.baseColor * (std::numbers::inv_pi_v<float> * diffuseFactor * (1.0f - p.metallic));
 
         // Sheen Lobe
-        if (params_.sheen > 0.0f) {
+        if (p.sheen > 0.0f) {
             float Fh = SchlickWeight(VdotH);
-            Vector3f cSheen = (1.0f - params_.sheenTint) * Vector3f(1.0f, 1.0f, 1.0f) + params_.sheenTint * cTint;
-            Vector3f fSheen = params_.sheen * cSheen * Fh * (1.0f - params_.metallic);
+            Vector3f cSheen = (1.0f - p.sheenTint) * Vector3f(1.0f, 1.0f, 1.0f) + p.sheenTint * cTint;
+            Vector3f fSheen = p.sheen * cSheen * Fh * (1.0f - p.metallic);
             fDiffuse += fSheen;
         }
     }
 
     // 2. Specular (GGX) Lobe
     Vector3f fSpec(0.0f, 0.0f, 0.0f);
-    float alpha = std::max(0.001f, Sq(params_.roughness));
+    float alpha = std::max(0.001f, Sq(p.roughness));
     float D = GgxD(NdotH, alpha);
     float G = SmithG(NdotO, NdotI, alpha);
 
-    Vector3f cSpec0 = 0.08f * params_.specular * ((1.0f - params_.specularTint) * Vector3f(1.0f, 1.0f, 1.0f) + params_.specularTint * cTint);
-    Vector3f F0 = (1.0f - params_.metallic) * cSpec0 + params_.metallic * params_.baseColor;
+    Vector3f cSpec0 = 0.08f * p.specular * ((1.0f - p.specularTint) * Vector3f(1.0f, 1.0f, 1.0f) + p.specularTint * cTint);
+    Vector3f F0 = (1.0f - p.metallic) * cSpec0 + p.metallic * p.baseColor;
     Vector3f F = F0 + (Vector3f(1.0f, 1.0f, 1.0f) - F0) * SchlickWeight(VdotH);
 
     fSpec = (D * G * F) / (4.0f * NdotO * NdotI);
 
     // 3. Clearcoat Lobe (GTR1)
     Vector3f fClearcoat(0.0f, 0.0f, 0.0f);
-    if (params_.clearcoat > 0.0f) {
-        float alphaG = std::lerp(0.1f, 0.001f, params_.clearcoatGloss);
+    if (p.clearcoat > 0.0f) {
+        float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
         float Dc = Gtr1D(NdotH, alphaG);
         float Gc = Gtr1SmithG(NdotO, NdotI);
         float Fc = 0.04f + (1.0f - 0.04f) * SchlickWeight(VdotH);
-        float cVal = 0.25f * params_.clearcoat * (Dc * Gc * Fc) / (4.0f * NdotO * NdotI);
+        float cVal = 0.25f * p.clearcoat * (Dc * Gc * Fc) / (4.0f * NdotO * NdotI);
         fClearcoat = Vector3f(cVal, cVal, cVal);
     }
 
     return fDiffuse + fSpec + fClearcoat;
 }
 
-Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf) const {
+Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const Point2f& u, Vector3f* wi, float* pdf, const Point2f& uv) const {
     float NdotO = Dot(wo, n);
     if (NdotO <= 0.0f) {
         *pdf = 0.0f;
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    LobeWeights w = ComputeLobeWeights(params_);
+    DisneyParams p = ResolveDisneyParams(params_, uv);
+    LobeWeights w = ComputeLobeWeights(p);
     ONB onb(n);
 
     if (u.x < w.wDiff) {
@@ -150,7 +161,7 @@ Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const
         // 2. Sample Specular (GGX microfacet normal)
         float remappedUx = (u.x - w.wDiff) / w.wSpec;
         Point2f uSub(remappedUx, u.y);
-        float alpha = std::max(0.001f, Sq(params_.roughness));
+        float alpha = std::max(0.001f, Sq(p.roughness));
         Vector3f localWh = SampleGgx(uSub, alpha);
         Vector3f wh = Normalize(onb.ToWorld(localWh));
         *wi = Normalize(2.0f * Dot(wo, wh) * wh - wo);
@@ -158,7 +169,7 @@ Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const
         // 3. Sample Clearcoat (GTR1 microfacet normal)
         float remappedUx = (u.x - (w.wDiff + w.wSpec)) / w.wClear;
         Point2f uSub(remappedUx, u.y);
-        float alphaG = std::lerp(0.1f, 0.001f, params_.clearcoatGloss);
+        float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
         Vector3f localWh = SampleGtr1(uSub, alphaG);
         Vector3f wh = Normalize(onb.ToWorld(localWh));
         *wi = Normalize(2.0f * Dot(wo, wh) * wh - wo);
@@ -169,15 +180,15 @@ Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    *pdf = Pdf(wo, *wi, n);
+    *pdf = Pdf(wo, *wi, n, uv);
     if (*pdf <= 0.0f) {
         return Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    return f(wo, *wi, n);
+    return f(wo, *wi, n, uv);
 }
 
-float DisneyPrincipled::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n) const {
+float DisneyPrincipled::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector3f& n, const Point2f& uv) const {
     float NdotO = Dot(wo, n);
     float NdotI = Dot(wi, n);
     if (NdotO <= 0.0f || NdotI <= 0.0f) {
@@ -192,18 +203,19 @@ float DisneyPrincipled::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector
     float VdotH = Dot(wo, wh);
     if (VdotH <= 0.0f) return 0.0f;
 
-    LobeWeights w = ComputeLobeWeights(params_);
+    DisneyParams p = ResolveDisneyParams(params_, uv);
+    LobeWeights w = ComputeLobeWeights(p);
 
     // Diffuse PDF
     float pdfDiff = CosineHemispherePdf(NdotI);
 
     // Specular PDF
-    float alpha = std::max(0.001f, Sq(params_.roughness));
+    float alpha = std::max(0.001f, Sq(p.roughness));
     float D = GgxD(NdotH, alpha);
     float pdfSpec = (D * NdotH) / (4.0f * VdotH);
 
     // Clearcoat PDF
-    float alphaG = std::lerp(0.1f, 0.001f, params_.clearcoatGloss);
+    float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
     float Dc = Gtr1D(NdotH, alphaG);
     float pdfClear = (Dc * NdotH) / (4.0f * VdotH);
 
