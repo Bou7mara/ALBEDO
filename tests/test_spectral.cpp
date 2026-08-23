@@ -130,7 +130,7 @@ TEST_CASE("Hero-wavelength sampling reduces spectral variance over single-wavele
     Dielectric diamond(kDiamondSellmeier);
 
     Vector3f n(0.0f, 1.0f, 0.0f);
-    Vector3f wo = Normalize(Vector3f(0.35f, -0.93f, 0.0f));
+    Vector3f wo = Normalize(Vector3f(0.85f, -0.25f, 0.0f));
 
     constexpr int kPaths = 3000;
 

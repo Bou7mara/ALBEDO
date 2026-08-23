@@ -140,33 +140,35 @@ namespace rt {
             return false;
         }
 
-        // Evaluate all 4 companion wavelengths along the hero ray direction
-        for (int i = 0; i < 4; ++i) {
-            float lambdaUm = hw.lambda[i] * 0.001f;
-            float ior_i = SellmeierIOR(sellmeier_, lambdaUm);
-            float etaI_i = entering ? 1.0f : ior_i;
-            float etaT_i = entering ? ior_i : 1.0f;
-            float eta_i = etaI_i / etaT_i;
-
-            float Ri = FrDielectric(cosThetaI, etaI_i, etaT_i);
-            float tintWeight = RgbToSpectrum(tint_, hw.lambda[i]);
-
-            if (heroReflect) {
-                // Hero reflected: companion wavelength contribution
-                float weight = (*pdfHero > 1e-6f) ? (Ri / *pdfHero) : 0.0f;
-                throughputWeights[i] = tintWeight * weight;
-            } else {
-                // Hero refracted: check if companion wavelength would undergo TIR
-                float sin2ThetaI = std::max(0.0f, 1.0f - cosThetaI * cosThetaI);
-                float sin2ThetaT_i = (eta_i * eta_i) * sin2ThetaI;
-                if (sin2ThetaT_i >= 1.0f) {
-                    // Companion wavelength undergoes TIR at this angle, cannot transmit
-                    throughputWeights[i] = 0.0f;
+        // Evaluate companion wavelengths
+        bool hasDisp = HasDispersion();
+        if (heroReflect || !hasDisp) {
+            // Specular reflection or achromatic refraction: all wavelengths share identical direction
+            for (int i = 0; i < 4; ++i) {
+                float lambdaUm = hw.lambda[i] * 0.001f;
+                float ior_i = SellmeierIOR(sellmeier_, lambdaUm);
+                float etaI_i = entering ? 1.0f : ior_i;
+                float etaT_i = entering ? ior_i : 1.0f;
+                float Ri = FrDielectric(cosThetaI, etaI_i, etaT_i);
+                float tintWeight = RgbToSpectrum(tint_, hw.lambda[i]);
+                if (heroReflect) {
+                    float weight = (*pdfHero > 1e-6f) ? (Ri / *pdfHero) : 0.0f;
+                    throughputWeights[i] = tintWeight * weight;
                 } else {
+                    float eta_i = etaI_i / etaT_i;
                     float weight = (*pdfHero > 1e-6f) ? (((1.0f - Ri) / *pdfHero) / (eta_i * eta_i)) : 0.0f;
                     throughputWeights[i] = tintWeight * weight;
                 }
             }
+        } else {
+            // Dispersive refraction: the hero wavelength alone carries this path along its true
+            // physical Snell trajectory, representing the 4-slot partition
+            float tintWeight0 = RgbToSpectrum(tint_, hw.lambda[0]);
+            float weight0 = (*pdfHero > 1e-6f) ? (((1.0f - R0) / *pdfHero) / (eta0 * eta0)) : 0.0f;
+            throughputWeights[0] = tintWeight0 * weight0 * 4.0f;
+            throughputWeights[1] = 0.0f;
+            throughputWeights[2] = 0.0f;
+            throughputWeights[3] = 0.0f;
         }
 
         return true;
