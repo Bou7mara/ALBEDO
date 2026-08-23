@@ -37,6 +37,7 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     bool isSpectral = false;
     bool specularBounce = true;
     float prevBsdfPdf = 0.0f;
+    bool spectralCompanionsCollapsed = false;
 
     for (int depth = 0; depth < maxDepth; ++depth) {
         SurfaceInteraction isect;
@@ -179,6 +180,18 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
             float throughputWeights[4];
             if (!dielectric->Sample_HeroWavelengths(isect.wo, Vector3f(isect.n), rng.Uniform2D(), hw, &wi, &pdf, throughputWeights)) {
                 break;
+            }
+
+            // Companions collapse to zero exactly when a real dispersive refraction
+            // (as opposed to specular reflection or achromatic transmission) occurs.
+            // The hero-slot compensation (4x, for representing 1-of-4 stratified
+            // wavelength samples) belongs to that collapse event, and only the FIRST
+            // one along a path -- applying it again at a later dispersive refraction
+            // (e.g. the diamond's exit face) would double-count it.
+            bool collapsesThisEvent = (throughputWeights[1] == 0.0f && throughputWeights[2] == 0.0f && throughputWeights[3] == 0.0f);
+            if (collapsesThisEvent && !spectralCompanionsCollapsed) {
+                throughputWeights[0] *= 4.0f;
+                spectralCompanionsCollapsed = true;
             }
 
             for (int i = 0; i < 4; ++i) {

@@ -234,7 +234,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
 
     auto matLambertian   = std::make_shared<Lambertian>(Vector3f(0.6f, 0.35f, 0.3f));
     auto matGlass        = std::make_shared<Dielectric>(1.5f);
-    auto matDiamond      = std::make_shared<Dielectric>(2.42f, Vector3f(1.0f, 1.0f, 1.0f));
+    auto matDiamond      = std::make_shared<Dielectric>(kDiamondSellmeier, Vector3f(1.0f, 1.0f, 1.0f));
     auto matRuby         = std::make_shared<Dielectric>(1.76f, Vector3f(0.85f, 0.05f, 0.12f));
     auto matSapphire     = std::make_shared<Dielectric>(1.77f, Vector3f(0.12f, 0.38f, 0.88f));
     auto matFrostedGlass = std::make_shared<Microfacet>(Microfacet::MakeDielectricMicrofacet(0.15f, 1.5f));

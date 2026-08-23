@@ -165,7 +165,11 @@ namespace rt {
             // physical Snell trajectory, representing the 4-slot partition
             float tintWeight0 = RgbToSpectrum(tint_, hw.lambda[0]);
             float weight0 = (*pdfHero > 1e-6f) ? (((1.0f - R0) / *pdfHero) / (eta0 * eta0)) : 0.0f;
-            throughputWeights[0] = tintWeight0 * weight0 * 4.0f;
+            // NOTE: the 4x hero-slot compensation is applied exactly once per path,
+            // by the caller (main.cpp), the first time companions collapse to zero.
+            // It must NOT be baked in here, or paths with >1 dispersive refraction
+            // event (e.g. entering AND exiting a diamond) get compensated multiple times.
+            throughputWeights[0] = tintWeight0 * weight0;
             throughputWeights[1] = 0.0f;
             throughputWeights[2] = 0.0f;
             throughputWeights[3] = 0.0f;

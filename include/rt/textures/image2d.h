@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <utility>
+#include <cstdint>
 
 #include "rt/core/vector3.h"
 
