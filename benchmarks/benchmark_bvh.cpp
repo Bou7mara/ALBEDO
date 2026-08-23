@@ -1,4 +1,6 @@
 #include "rt/accel/bvh.h"
+#include "rt/accel/bvh4.h"
+#include "rt/accel/bvh8.h"
 #include "rt/cam/perspective_camera.h"
 #include "rt/shapes/sphere.h"
 
@@ -91,54 +93,109 @@ std::string NextResultsPath(const std::string& directory = "benchmark_results") 
 }
 
 int main() {
-    const std::vector<int> sphereCounts = {1, 10, 100, 1000, 10000};
+    const std::vector<int> smallSphereCounts = {1, 10, 100, 1000};
+    const std::vector<int> largeSphereCounts = {10000, 50000, 100000, 200000};
+
     PerspectiveCamera camera = MakeBenchmarkCamera();
     std::vector<Ray> frameRays = GenerateFrameRays(camera);
 
     std::string resultsPath = NextResultsPath();
     std::ofstream csv(resultsPath);
-    csv << "spheres,linear_ms,bvh_build_mid_ms,bvh_query_mid_ms,speedup_mid,"
-           "bvh_build_sah_ms,bvh_query_sah_ms,speedup_sah\n";
+    csv << "section,spheres,linear_ms,build_serial_ms,build_parallel_ms,build_speedup,query_ms\n";
 
-    std::cout << "N spheres | Linear (ms) | Mid build/query (ms) | Mid speedup | "
-                 "SAH build/query (ms) | SAH speedup\n";
+    std::cout << "========================================================================================\n";
+    std::cout << " Part 1: Traversal Performance vs Linear Scan (400x200 = 80,000 rays)\n";
+    std::cout << "========================================================================================\n";
+    std::cout << "N spheres | Linear (ms) | BVH Query (ms) | Query Speedup\n";
 
-    for (int n : sphereCounts) {
+    for (int n : smallSphereCounts) {
         auto shapes = GenerateRandomSpheres(n, 12345);
 
         auto [linearMs, linearHits] = RunFramePass(frameRays,
             [&](const Ray& r, SurfaceInteraction* isect) { return LinearIntersect(shapes, r, isect); });
 
-        double buildMidMs = 0.0;
-        std::unique_ptr<BVH> bvhMid;
-        buildMidMs = TimeMs([&] { bvhMid = std::make_unique<BVH>(shapes, 4, BVH::SplitMethod::Midpoint); });
-        auto [queryMidMs, midHits] = RunFramePass(frameRays,
-            [&](const Ray& r, SurfaceInteraction* isect) { return bvhMid->Intersect(r, isect); });
+        std::unique_ptr<BVH> bvh;
+        bvh = std::make_unique<BVH>(shapes, 4, BVH::SplitMethod::SAH, 0);
+        auto [queryMs, bvhHits] = RunFramePass(frameRays,
+            [&](const Ray& r, SurfaceInteraction* isect) { return bvh->Intersect(r, isect); });
 
-        double buildSahMs = 0.0;
-        std::unique_ptr<BVH> bvhSah;
-        buildSahMs = TimeMs([&] { bvhSah = std::make_unique<BVH>(shapes, 4, BVH::SplitMethod::SAH); });
-        auto [querySahMs, sahHits] = RunFramePass(frameRays,
-            [&](const Ray& r, SurfaceInteraction* isect) { return bvhSah->Intersect(r, isect); });
-
-        if (linearHits != midHits || linearHits != sahHits) {
-            std::cerr << "*** CORRECTNESS MISMATCH at N=" << n
-                      << " (linear=" << linearHits << ", mid=" << midHits
-                      << ", sah=" << sahHits << ") -- DO NOT TRUST THESE NUMBERS ***\n";
+        if (linearHits != bvhHits) {
+            std::cerr << "*** CORRECTNESS MISMATCH at N=" << n << " ***\n";
             continue;
         }
 
-        double speedupMid = linearMs / queryMidMs;
-        double speedupSah = linearMs / querySahMs;
-
-        std::cout << n << " | " << linearMs << " | "
-                  << buildMidMs << "/" << queryMidMs << " | " << speedupMid << "x | "
-                  << buildSahMs << "/" << querySahMs << " | " << speedupSah << "x\n";
-
-        csv << n << "," << linearMs << "," << buildMidMs << "," << queryMidMs << "," << speedupMid << ","
-            << buildSahMs << "," << querySahMs << "," << speedupSah << "\n";
+        double speedup = linearMs / queryMs;
+        std::cout << n << " | " << linearMs << " ms | " << queryMs << " ms | " << speedup << "x\n";
+        csv << "linear_vs_bvh," << n << "," << linearMs << ",0,0,0," << queryMs << "\n";
     }
 
-    std::cout << "Results written to " << resultsPath << "\n";
+    std::cout << "\n========================================================================================\n";
+    std::cout << " Part 2: Parallel BVH Construction Scaling (Serial vs Parallel SAH Build)\n";
+    std::cout << "========================================================================================\n";
+    std::cout << "N spheres | Serial Build (ms) | Parallel Build (ms) | Build Speedup | BVH Query (ms)\n";
+
+    for (int n : largeSphereCounts) {
+        auto shapes = GenerateRandomSpheres(n, 54321 + n);
+
+        std::unique_ptr<BVH> bvhSerial;
+        double serialBuildMs = TimeMs([&] {
+            bvhSerial = std::make_unique<BVH>(shapes, 4, BVH::SplitMethod::SAH, 1);
+        });
+
+        std::unique_ptr<BVH> bvhParallel;
+        double parallelBuildMs = TimeMs([&] {
+            bvhParallel = std::make_unique<BVH>(shapes, 4, BVH::SplitMethod::SAH, 0);
+        });
+
+        auto [queryMs, hits] = RunFramePass(frameRays,
+            [&](const Ray& r, SurfaceInteraction* isect) { return bvhParallel->Intersect(r, isect); });
+
+        double buildSpeedup = serialBuildMs / parallelBuildMs;
+        std::cout << n << " | " << serialBuildMs << " ms | " << parallelBuildMs << " ms | "
+                  << buildSpeedup << "x | " << queryMs << " ms\n";
+
+        csv << "parallel_build," << n << ",0," << serialBuildMs << "," << parallelBuildMs << ","
+            << buildSpeedup << "," << queryMs << "\n";
+    }
+
+    std::cout << "\n========================================================================================\n";
+    std::cout << " Part 3: 3-Way Wide BVH Traversal (Binary vs. BVH4 vs. BVH8, 80,000 rays)\n";
+    std::cout << "========================================================================================\n";
+    std::cout << "N spheres | Binary Query | BVH4 Query (Speedup) | BVH8 Query (Speedup) | Nodes (Bin / 4 / 8)\n";
+
+    for (int n : largeSphereCounts) {
+        auto shapes = GenerateRandomSpheres(n, 9999 + n);
+
+        BVH binaryBvh(shapes, 4, BVH::SplitMethod::SAH);
+        BVH4 wideBvh4(shapes, 4);
+        BVH8 wideBvh8(shapes, 4);
+
+        auto [binaryQueryMs, binaryHits] = RunFramePass(frameRays,
+            [&](const Ray& r, SurfaceInteraction* isect) { return binaryBvh.Intersect(r, isect); });
+
+        auto [bvh4QueryMs, bvh4Hits] = RunFramePass(frameRays,
+            [&](const Ray& r, SurfaceInteraction* isect) { return wideBvh4.Intersect(r, isect); });
+
+        auto [bvh8QueryMs, bvh8Hits] = RunFramePass(frameRays,
+            [&](const Ray& r, SurfaceInteraction* isect) { return wideBvh8.Intersect(r, isect); });
+
+        if (binaryHits != bvh4Hits || binaryHits != bvh8Hits) {
+            std::cerr << "*** CORRECTNESS MISMATCH in Wide BVH at N=" << n << " ***\n";
+            continue;
+        }
+
+        double speedup4 = binaryQueryMs / bvh4QueryMs;
+        double speedup8 = binaryQueryMs / bvh8QueryMs;
+
+        std::cout << n << " | " << binaryQueryMs << " ms | "
+                  << bvh4QueryMs << " ms (" << speedup4 << "x) | "
+                  << bvh8QueryMs << " ms (" << speedup8 << "x) | "
+                  << binaryBvh.NodeCount() << " / " << wideBvh4.NodeCount() << " / " << wideBvh8.NodeCount() << "\n";
+
+        csv << "bvh_3way," << n << ",0," << binaryQueryMs << "," << bvh4QueryMs << "," << speedup4 << "," << bvh8QueryMs << "\n";
+    }
+
+    std::cout << "\nResults written to " << resultsPath << "\n";
     return 0;
 }
+
