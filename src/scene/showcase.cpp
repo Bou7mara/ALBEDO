@@ -244,7 +244,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
 
     auto tileDark  = std::make_shared<Lambertian>(Vector3f(0.04f, 0.04f, 0.05f));
     auto tileLight = std::make_shared<Lambertian>(Vector3f(0.22f, 0.22f, 0.24f));
-    AddTiledFloor(scene, 12.0f, 24, tileLight, tileDark);
+    AddTiledFloor(scene, 12.6f, 36, tileLight, tileDark);
 
     std::vector<std::shared_ptr<BSDF>> heroMaterials = {
         matLambertian, matGlass, matFrostedGlass, matGold, matCopper
