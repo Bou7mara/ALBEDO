@@ -1,5 +1,6 @@
 #pragma once
 #include "rt/accel/bvh.h"
+#include "rt/accel/bvh8.h"
 #include "rt/shapes/shape.h"
 #include "rt/lights/diffuse_area_light.h"
 #include <memory>
@@ -19,7 +20,7 @@ namespace rt {
         }
 
         void Build() {
-            bvh_ = std::make_unique<BVH>(shapes_);
+            bvh_ = std::make_unique<BVH8>(shapes_, 4);
 
             lightPowers_.clear();
             lightCdf_.clear();
@@ -102,6 +103,6 @@ namespace rt {
         std::vector<float> lightPmf_;
         std::vector<float> lightCdf_;
         float totalLightPower_ = 0.0f;
-        std::unique_ptr<BVH> bvh_;
+        std::unique_ptr<BLAS> bvh_;
     };
 }

@@ -26,10 +26,14 @@ add_library(rt_core STATIC
     src/shapes/Triangle.cpp
     src/io/obj_loader.cpp
     src/shapes/mesh_instance.cpp
+    src/shapes/instance.cpp
     src/scene/scene_node.cpp
     src/shapes/quad.cpp
     src/materials/disney_principled.cpp
     src/materials/energy_compensation.cpp
+    src/accel/tlas.cpp
+    src/accel/bvh4.cpp
+    src/accel/wide_bvh.cpp
 )
 
 target_include_directories(rt_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -43,9 +47,9 @@ endif()
 add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE rt_core)
 
-add_executable(benchmark_bvh benchmarks/benchmark_bvh.cpp
-        include/rt/shapes/triangle.h)
+add_executable(benchmark_bvh benchmarks/bench_main.cpp)
 target_link_libraries(benchmark_bvh PRIVATE rt_core)
+target_include_directories(benchmark_bvh PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 enable_testing()
 include(FetchContent)

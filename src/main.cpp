@@ -303,9 +303,9 @@ void RenderCpu(const ShowcaseSetup& setup, std::vector<Vector3f>& framebuffer) {
 }
 
 int main(int argc, char* argv[]) {
-    int width = 2560;
-    int height = 1600;
-    int spp = 50;
+    int width = 1600;
+    int height = 2560;
+    int spp = 500;
     std::string sceneChoice = "gem";
 #ifdef ALBEDO_ENABLE_GPU
     std::string backend = "gpu";
@@ -314,16 +314,23 @@ int main(int argc, char* argv[]) {
 #endif
     bool denoise = false;
 
-    if (argc > 1) width = std::atoi(argv[1]);
-    if (argc > 2) height = std::atoi(argv[2]);
-    if (argc > 3) spp = std::atoi(argv[3]);
-    if (argc > 4) sceneChoice = argv[4];
-
-    for (int i = 5; i < argc; ++i) {
+    int positionalIdx = 0;
+    for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--backend=gpu" || arg == "gpu") backend = "gpu";
         else if (arg == "--backend=cpu" || arg == "cpu") backend = "cpu";
         else if (arg == "--denoise" || arg == "denoise") denoise = true;
+        else if (arg.rfind("--scene=", 0) == 0) sceneChoice = arg.substr(8);
+        else if (arg.rfind("--width=", 0) == 0) width = std::stoi(arg.substr(8));
+        else if (arg.rfind("--height=", 0) == 0) height = std::stoi(arg.substr(9));
+        else if (arg.rfind("--spp=", 0) == 0) spp = std::stoi(arg.substr(6));
+        else if (!arg.empty() && (std::isdigit(arg[0]) || arg == "gem" || arg == "sphere" || arg == "cornell")) {
+            if (positionalIdx == 0 && std::isdigit(arg[0])) width = std::stoi(arg);
+            else if (positionalIdx == 1 && std::isdigit(arg[0])) height = std::stoi(arg);
+            else if (positionalIdx == 2 && std::isdigit(arg[0])) spp = std::stoi(arg);
+            else if (positionalIdx == 3 || arg == "gem" || arg == "sphere" || arg == "cornell") sceneChoice = arg;
+            ++positionalIdx;
+        }
     }
 
     ShowcaseSetup setup = (sceneChoice == "sphere") ? CreateSphereShowcaseScene(width, height, spp) :

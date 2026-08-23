@@ -272,7 +272,7 @@ ShowcaseSetup CreateGemRoomShowcaseScene(int width, int height, int spp) {
         }
     }
 
-    AddDiamond(scene, Point3f(0.0f, 0.0f, -2.31f), 0.6f, 0.0f, matSapphire);
+    AddDiamond(scene, Point3f(0.0f, 0.0f, -2.31f), 0.6f, 0.0f, matDiamond);
 
     auto keyLightMat   = std::make_shared<Emissive>(Vector3f(8.5f, 6.0f, 3.8f));
     auto fillLightMat  = std::make_shared<Emissive>(Vector3f(2.8f, 3.8f, 6.2f));
