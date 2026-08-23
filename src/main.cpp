@@ -26,9 +26,15 @@
 
 using namespace rt;
 
+#include "rt/materials/dielectric.h"
+#include "rt/spectral/spectrum.h"
+
 Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
     Vector3f L(0.0f, 0.0f, 0.0f);
     Vector3f throughput(1.0f, 1.0f, 1.0f);
+    float spectralThroughput[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    HeroWavelengths hw;
+    bool isSpectral = false;
     bool specularBounce = true;
     float prevBsdfPdf = 0.0f;
 
@@ -38,26 +44,51 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
             Vector3f unitDir = Normalize(r.d);
             float t = 0.5f * (unitDir.y + 1.0f);
             Vector3f bg = 0.15f * ((1.0f - t) * Vector3f(0.8f, 0.8f, 0.9f) + t * Vector3f(0.4f, 0.5f, 0.7f));
-            L += throughput * bg;
+            if (isSpectral) {
+                float spectralL[4];
+                for (int i = 0; i < 4; ++i) {
+                    spectralL[i] = spectralThroughput[i] * RgbToSpectrum(bg, hw.lambda[i]);
+                }
+                L += SpectralToRgb(hw, spectralL);
+            } else {
+                L += throughput * bg;
+            }
             break;
         }
 
         const BSDF* bsdf = isect.shape->GetBSDF();
         if (!bsdf) {
             Vector3f n = Vector3f(isect.n);
-            L += throughput * Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f), 0.5f * (n.z + 1.0f));
+            Vector3f normalCol = Vector3f(0.5f * (n.x + 1.0f), 0.5f * (n.y + 1.0f), 0.5f * (n.z + 1.0f));
+            if (isSpectral) {
+                float spectralL[4];
+                for (int i = 0; i < 4; ++i) {
+                    spectralL[i] = spectralThroughput[i] * RgbToSpectrum(normalCol, hw.lambda[i]);
+                }
+                L += SpectralToRgb(hw, spectralL);
+            } else {
+                L += throughput * normalCol;
+            }
             break;
         }
 
         Vector3f emitted = bsdf->Le(isect.wo, Vector3f(isect.n));
         if (emitted.x > 0.0f || emitted.y > 0.0f || emitted.z > 0.0f) {
-            if (specularBounce || scene.Lights().empty()) {
-                L += throughput * emitted;
-            } else {
+            float weight = 1.0f;
+            if (!specularBounce && !scene.Lights().empty()) {
                 float pmf = scene.LightPmf(isect.shape);
                 float lightPdf = isect.shape->Pdf(r.o, r.d) * pmf;
-                float weight = PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
-                L += throughput * emitted * weight;
+                weight = PowerHeuristic(1, prevBsdfPdf, 1, lightPdf);
+            }
+            Vector3f contrib = emitted * weight;
+            if (isSpectral) {
+                float spectralL[4];
+                for (int i = 0; i < 4; ++i) {
+                    spectralL[i] = spectralThroughput[i] * RgbToSpectrum(contrib, hw.lambda[i]);
+                }
+                L += SpectralToRgb(hw, spectralL);
+            } else {
+                L += throughput * contrib;
             }
         }
 
@@ -82,13 +113,31 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                                 float lPdf = lightSample.pdf * pmf;
                                 float weight = PowerHeuristic(1, lPdf, 1, bsdfPdf);
                                 float cosTheta = AbsDot(lightSample.wi, isect.n);
-                                constexpr float kMaxSampleContribution = 10.0f;
-                                Vector3f neeContribution = throughput * f * lightSample.Li * cosTheta * weight / lPdf;
-                                float neeMax = MaxChannel(neeContribution);
-                                if (neeMax > kMaxSampleContribution) {
-                                    neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                float factor = (cosTheta * weight) / lPdf;
+
+                                if (isSpectral) {
+                                    float spectralNEE[4];
+                                    for (int i = 0; i < 4; ++i) {
+                                        float sF = RgbToSpectrum(f, hw.lambda[i]);
+                                        float sLi = RgbToSpectrum(lightSample.Li, hw.lambda[i]);
+                                        spectralNEE[i] = spectralThroughput[i] * sF * sLi * factor;
+                                    }
+                                    Vector3f neeContrib = SpectralToRgb(hw, spectralNEE);
+                                    constexpr float kMaxSampleContribution = 10.0f;
+                                    float neeMax = MaxChannel(neeContrib);
+                                    if (neeMax > kMaxSampleContribution) {
+                                        neeContrib = neeContrib * (kMaxSampleContribution / neeMax);
+                                    }
+                                    L += neeContrib;
+                                } else {
+                                    constexpr float kMaxSampleContribution = 10.0f;
+                                    Vector3f neeContribution = throughput * f * lightSample.Li * factor;
+                                    float neeMax = MaxChannel(neeContribution);
+                                    if (neeMax > kMaxSampleContribution) {
+                                        neeContribution = neeContribution * (kMaxSampleContribution / neeMax);
+                                    }
+                                    L += neeContribution;
                                 }
-                                L += neeContribution;
                             }
                         }
                     }
@@ -97,27 +146,65 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         }
 
         Vector3f wi;
-        float pdf;
-        Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf, isect.uv);
-        
-        if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+        float pdf = 0.0f;
 
-        float cosTheta = AbsDot(wi, isect.n);
-        throughput = throughput * f * cosTheta / pdf;
-        constexpr float kMaxSampleContribution = 10.0f;
-        float maxComponent = MaxChannel(throughput);
-        if (maxComponent > kMaxSampleContribution) {
-            throughput = throughput * (kMaxSampleContribution / maxComponent);
+        const Dielectric* dielectric = dynamic_cast<const Dielectric*>(bsdf);
+        if (dielectric && dielectric->HasDispersion()) {
+            if (!isSpectral) {
+                isSpectral = true;
+                hw = SampleHeroWavelengths(rng.Uniform1D());
+                for (int i = 0; i < 4; ++i) {
+                    spectralThroughput[i] = RgbToSpectrum(throughput, hw.lambda[i]);
+                }
+            }
+
+            float throughputWeights[4];
+            if (!dielectric->Sample_HeroWavelengths(isect.wo, Vector3f(isect.n), rng.Uniform2D(), hw, &wi, &pdf, throughputWeights)) {
+                break;
+            }
+
+            for (int i = 0; i < 4; ++i) {
+                spectralThroughput[i] *= throughputWeights[i];
+            }
+            prevBsdfPdf = 0.0f;
+            specularBounce = true;
+        } else if (isSpectral) {
+            Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf, isect.uv);
+            if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+
+            float cosTheta = AbsDot(wi, isect.n);
+            float weight = cosTheta / pdf;
+            for (int i = 0; i < 4; ++i) {
+                spectralThroughput[i] *= RgbToSpectrum(f, hw.lambda[i]) * weight;
+            }
+            prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n), isect.uv);
+            specularBounce = (prevBsdfPdf == 0.0f);
+        } else {
+            Vector3f f = bsdf->Sample_f(isect.wo, Vector3f(isect.n), rng.Uniform2D(), &wi, &pdf, isect.uv);
+            if (pdf <= 0.0f || (f.x == 0.0f && f.y == 0.0f && f.z == 0.0f)) break;
+
+            float cosTheta = AbsDot(wi, isect.n);
+            throughput = throughput * f * (cosTheta / pdf);
+            constexpr float kMaxSampleContribution = 10.0f;
+            float maxComponent = MaxChannel(throughput);
+            if (maxComponent > kMaxSampleContribution) {
+                throughput = throughput * (kMaxSampleContribution / maxComponent);
+            }
+            prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n), isect.uv);
+            specularBounce = (prevBsdfPdf == 0.0f);
         }
-        
-        prevBsdfPdf = bsdf->Pdf(isect.wo, wi, Vector3f(isect.n), isect.uv);
-        specularBounce = (prevBsdfPdf == 0.0f);
 
-		if (depth >= kRRStartDepth) {
-			const float q = std::clamp(MaxChannel(throughput), kRRProbabilityMinimumThreshold, kRRProbabilityMaximumThreshold);
-			if (rng.Uniform1D() > q) break;
-			throughput = throughput / q;
-		}
+        if (depth >= kRRStartDepth) {
+            float maxVal = isSpectral ? std::max({spectralThroughput[0], spectralThroughput[1], spectralThroughput[2], spectralThroughput[3]})
+                                      : MaxChannel(throughput);
+            const float q = std::clamp(maxVal, kRRProbabilityMinimumThreshold, kRRProbabilityMaximumThreshold);
+            if (rng.Uniform1D() > q) break;
+            if (isSpectral) {
+                for (int i = 0; i < 4; ++i) spectralThroughput[i] /= q;
+            } else {
+                throughput = throughput / q;
+            }
+        }
 
         constexpr float kEpsilon = 1e-4f;
         Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
