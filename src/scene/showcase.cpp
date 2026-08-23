@@ -103,7 +103,19 @@ namespace {
                     Point3f(maxX, 0.0f, maxZ),
                     Point3f(minX, 0.0f, maxZ)
                 };
-                mesh->indices = { 0, 1, 2, 0, 2, 3 };
+                mesh->normals = {
+                    Normal3f(0.0f, 1.0f, 0.0f),
+                    Normal3f(0.0f, 1.0f, 0.0f),
+                    Normal3f(0.0f, 1.0f, 0.0f),
+                    Normal3f(0.0f, 1.0f, 0.0f)
+                };
+                mesh->uvs = {
+                    Point2f(0.0f, 0.0f),
+                    Point2f(1.0f, 0.0f),
+                    Point2f(1.0f, 1.0f),
+                    Point2f(0.0f, 1.0f)
+                };
+                mesh->indices = { 0, 2, 1, 0, 3, 2 };
 
                 auto material = ((row + col) % 2 == 0) ? matLight : matDark;
                 auto faces = MakeTriangleMesh(mesh, material);
