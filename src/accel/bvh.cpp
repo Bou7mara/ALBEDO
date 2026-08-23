@@ -1,6 +1,8 @@
 #include "rt/accel/bvh.h"
+#include "rt/core/thread_pool.h"
 #include <algorithm>
 #include <array>
+#include <cassert>
 
 namespace rt {
 
@@ -13,7 +15,7 @@ struct BucketInfo {
 };
 }
 
-BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode, SplitMethod splitMethod)
+BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode, SplitMethod splitMethod, int numThreads)
     : originalShapes_(std::move(shapes)), maxPrimsInNode_(maxPrimsInNode), splitMethod_(splitMethod) {
     if (originalShapes_.empty()) return;
         
@@ -24,8 +26,34 @@ BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode, SplitMe
         primInfo[i] = {i, b, b.Centroid()};
     }
 
-    orderedShapes_.reserve(originalShapes_.size());
-    auto root = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()));
+    orderedShapes_.resize(originalShapes_.size());
+
+    std::unique_ptr<BVHNode> root;
+    if (numThreads == 1 || originalShapes_.size() <= static_cast<size_t>(kParallelCutoff)) {
+        root = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()), 0, nullptr, 0);
+    } else {
+        std::unique_ptr<ThreadPool> customPool;
+        ThreadPool* poolPtr = nullptr;
+        if (numThreads > 1) {
+            customPool = std::make_unique<ThreadPool>(numThreads);
+            poolPtr = customPool.get();
+        } else {
+            poolPtr = &ThreadPool::Default();
+        }
+
+        int threadsCount = static_cast<int>(poolPtr->ThreadCount());
+        int maxDepth = kDefaultMaxParallelDepth;
+        if (threadsCount > 1) {
+            int log2T = 1;
+            while ((1 << log2T) < threadsCount) ++log2T;
+            maxDepth = 2 * log2T + 2;
+        }
+
+        TaskGroup taskGroup(*poolPtr);
+        root = BuildRecursive(primInfo, 0, static_cast<int>(primInfo.size()), 0, &taskGroup, maxDepth);
+        taskGroup.Wait();
+    }
+
     if (root) {
         int totalNodes = CountNodes(root.get());
         nodes_.resize(totalNodes);
@@ -56,18 +84,23 @@ int BVH::FlattenBVHTree(const BVHNode* node, int* offset) {
     return myOffset;
 }
 
-std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(std::vector<PrimitiveInfo>& primInfo,int start, int end, const Bounds3f& bounds) {
+std::unique_ptr<BVH::BVHNode> BVH::MakeLeaf(const std::vector<PrimitiveInfo>& primInfo, int start, int end, const Bounds3f& bounds) {
     auto node = std::make_unique<BVHNode>();
     node->bounds = bounds;
-    node->firstPrimOffset = static_cast<int>(orderedShapes_.size());
+    node->firstPrimOffset = start;
     node->nPrimitives = end - start;
     for (int i = start; i < end; ++i) {
-        orderedShapes_.push_back(originalShapes_[primInfo[i].index]);
+        orderedShapes_[i] = originalShapes_[primInfo[i].index];
     }
     return node;
 }
 
-std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& primInfo, int start, int end) {
+std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& primInfo,
+                                                  int start, int end,
+                                                  int depth,
+                                                  TaskGroup* taskGroup,
+                                                  int maxParallelDepth) {
+    assert(start >= 0 && end <= static_cast<int>(primInfo.size()) && start <= end);
     Bounds3f nodeBounds;
     for (int i = start; i < end; ++i) nodeBounds = Union(nodeBounds, primInfo[i].bounds);
 
@@ -147,8 +180,23 @@ std::unique_ptr<BVH::BVHNode> BVH::BuildRecursive(std::vector<PrimitiveInfo>& pr
     auto node = std::make_unique<BVHNode>();
     node->bounds = nodeBounds;
     node->splitAxis = axis;
-    node->left = BuildRecursive(primInfo, start, mid);
-    node->right = BuildRecursive(primInfo, mid, end);
+
+    if (taskGroup && nPrimitives > kParallelCutoff && depth < maxParallelDepth) {
+        std::unique_ptr<BVHNode> rightChild;
+        TaskGroup childGroup(taskGroup->Pool());
+        childGroup.Run([&]() {
+            rightChild = BuildRecursive(primInfo, mid, end, depth + 1, &childGroup, maxParallelDepth);
+        });
+
+        node->left = BuildRecursive(primInfo, start, mid, depth + 1, taskGroup, maxParallelDepth);
+
+        childGroup.Wait();
+        node->right = std::move(rightChild);
+    } else {
+        node->left = BuildRecursive(primInfo, start, mid, depth + 1, nullptr, maxParallelDepth);
+        node->right = BuildRecursive(primInfo, mid, end, depth + 1, nullptr, maxParallelDepth);
+    }
+
     return node;
 }
 

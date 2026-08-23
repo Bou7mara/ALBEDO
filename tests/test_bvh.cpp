@@ -84,3 +84,100 @@ TEST_CASE("BVH with a single shape still works", "[bvh][regression]") {
     SurfaceInteraction isect;
     REQUIRE(bvh.Intersect(r, &isect));
 }
+
+TEST_CASE("Parallel BVH construction produces bit-for-bit identical tree to serial build (SAH)", "[bvh][parallel]") {
+    std::mt19937 rng(1337);
+    std::uniform_real_distribution<float> posDist(-20.0f, 20.0f);
+    std::uniform_real_distribution<float> radDist(0.1f, 0.5f);
+
+    const int kNumSpheres = 3000;
+    std::vector<std::shared_ptr<Shape>> shapes;
+    shapes.reserve(kNumSpheres);
+    for (int i = 0; i < kNumSpheres; ++i) {
+        Point3f center(posDist(rng), posDist(rng), posDist(rng) - 30.0f);
+        shapes.push_back(std::make_shared<Sphere>(Transform::Translate(Vector3f(center.x, center.y, center.z)), radDist(rng)));
+    }
+
+    BVH bvhSerial(shapes, 4, BVH::SplitMethod::SAH, 1);
+    BVH bvhParallel(shapes, 4, BVH::SplitMethod::SAH, 0);
+
+    REQUIRE(bvhSerial.NodeCount() > 0);
+    REQUIRE(bvhSerial.NodeCount() == bvhParallel.NodeCount());
+    REQUIRE(bvhSerial.OrderedShapes().size() == bvhParallel.OrderedShapes().size());
+
+    const auto& nodesSerial = bvhSerial.Nodes();
+    const auto& nodesParallel = bvhParallel.Nodes();
+    for (size_t i = 0; i < nodesSerial.size(); ++i) {
+        REQUIRE(nodesSerial[i].bounds.minPt.x == nodesParallel[i].bounds.minPt.x);
+        REQUIRE(nodesSerial[i].bounds.minPt.y == nodesParallel[i].bounds.minPt.y);
+        REQUIRE(nodesSerial[i].bounds.minPt.z == nodesParallel[i].bounds.minPt.z);
+        REQUIRE(nodesSerial[i].bounds.maxPt.x == nodesParallel[i].bounds.maxPt.x);
+        REQUIRE(nodesSerial[i].bounds.maxPt.y == nodesParallel[i].bounds.maxPt.y);
+        REQUIRE(nodesSerial[i].bounds.maxPt.z == nodesParallel[i].bounds.maxPt.z);
+        REQUIRE(nodesSerial[i].nPrimitives == nodesParallel[i].nPrimitives);
+        REQUIRE(nodesSerial[i].axis == nodesParallel[i].axis);
+        if (nodesSerial[i].nPrimitives > 0) {
+            REQUIRE(nodesSerial[i].primitivesOffset == nodesParallel[i].primitivesOffset);
+        } else {
+            REQUIRE(nodesSerial[i].secondChildOffset == nodesParallel[i].secondChildOffset);
+        }
+    }
+
+    const auto& shapesSerial = bvhSerial.OrderedShapes();
+    const auto& shapesParallel = bvhParallel.OrderedShapes();
+    for (size_t i = 0; i < shapesSerial.size(); ++i) {
+        REQUIRE(shapesSerial[i].get() == shapesParallel[i].get());
+    }
+
+    // Ray queries match exactly
+    for (int i = 0; i < 500; ++i) {
+        Ray ray(Point3f(posDist(rng) * 0.5f, posDist(rng) * 0.5f, 10.0f),
+                Normalize(Vector3f(posDist(rng), posDist(rng), -1.0f)));
+        SurfaceInteraction isectSerial, isectParallel;
+        bool hitSerial = bvhSerial.Intersect(ray, &isectSerial);
+        bool hitParallel = bvhParallel.Intersect(ray, &isectParallel);
+        REQUIRE(hitSerial == hitParallel);
+        if (hitSerial) {
+            REQUIRE(isectSerial.t == Catch::Approx(isectParallel.t).margin(1e-5f));
+            REQUIRE(isectSerial.p.x == Catch::Approx(isectParallel.p.x).margin(1e-5f));
+            REQUIRE(isectSerial.p.y == Catch::Approx(isectParallel.p.y).margin(1e-5f));
+            REQUIRE(isectSerial.p.z == Catch::Approx(isectParallel.p.z).margin(1e-5f));
+        }
+    }
+}
+
+TEST_CASE("Parallel BVH handles small scenes below parallel cutoff", "[bvh][parallel]") {
+    auto shapes = MakeGridOfSpheres();
+    BVH bvhSerial(shapes, 4, BVH::SplitMethod::SAH, 1);
+    BVH bvhParallel(shapes, 4, BVH::SplitMethod::SAH, 0);
+
+    REQUIRE(bvhSerial.NodeCount() == bvhParallel.NodeCount());
+    for (size_t i = 0; i < bvhSerial.NodeCount(); ++i) {
+        REQUIRE(bvhSerial.Nodes()[i].nPrimitives == bvhParallel.Nodes()[i].nPrimitives);
+        REQUIRE(bvhSerial.Nodes()[i].axis == bvhParallel.Nodes()[i].axis);
+    }
+}
+
+TEST_CASE("Parallel BVH stress and repeated construction stability", "[bvh][parallel][stress]") {
+    std::mt19937 rng(4242);
+    std::uniform_real_distribution<float> dist(-15.0f, 15.0f);
+
+    const int kNumSpheres = 5000;
+    std::vector<std::shared_ptr<Shape>> shapes;
+    shapes.reserve(kNumSpheres);
+    for (int i = 0; i < kNumSpheres; ++i) {
+        shapes.push_back(std::make_shared<Sphere>(
+            Transform::Translate(Vector3f(dist(rng), dist(rng), dist(rng) - 25.0f)), 0.25f));
+    }
+
+    BVH ref(shapes, 4, BVH::SplitMethod::SAH, 0);
+    size_t expectedNodes = ref.NodeCount();
+
+    for (int run = 0; run < 5; ++run) {
+        BVH bvh(shapes, 4, BVH::SplitMethod::SAH, 0);
+        REQUIRE(bvh.NodeCount() == expectedNodes);
+        REQUIRE(bvh.WorldBound().minPt.x == Catch::Approx(ref.WorldBound().minPt.x));
+        REQUIRE(bvh.WorldBound().maxPt.x == Catch::Approx(ref.WorldBound().maxPt.x));
+    }
+}
+
