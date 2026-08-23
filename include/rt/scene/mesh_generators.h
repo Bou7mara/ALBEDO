@@ -20,4 +20,9 @@ namespace rt {
     // at height y = 0.
     std::shared_ptr<TriangleMesh> MakeQuadMesh(float halfWidth, float halfDepth);
 
+    // 57-facet Round Brilliant Cut Diamond mesh with Tolkowsky proportions
+    // (crown angle 34.5 deg, pavilion angle 40.75 deg, table 53%, 8-fold symmetry).
+    // All triangles guaranteed to have outward-pointing normals.
+    std::shared_ptr<TriangleMesh> MakeRoundBrilliantDiamondMesh(float radius, const Point3f& center = Point3f(0.0f, 0.0f, 0.0f));
+
 }

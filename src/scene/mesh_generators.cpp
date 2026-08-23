@@ -77,4 +77,162 @@ namespace rt {
         return mesh;
     }
 
+    std::shared_ptr<TriangleMesh> MakeRoundBrilliantDiamondMesh(float radius, const Point3f& center) {
+        auto mesh = std::make_shared<TriangleMesh>();
+
+        const float R = radius;
+        constexpr float pi = 3.14159265358979323846f;
+
+        // Tolkowsky diamond proportions
+        const float rTable = 0.53f * R;
+        const float rStar  = 0.76f * R;
+        const float rGirdle = R;
+
+        const float hCrown    = 0.323f * R; // 34.5 deg crown angle
+        const float hPavilion = 0.862f * R; // 40.75 deg pavilion angle
+        const float hGirdle   = 0.035f * R;
+
+        const float yTable = hGirdle * 0.5f + hCrown;
+        const float yStar  = hGirdle * 0.5f + hCrown * 0.55f;
+        const float yUG    = hGirdle * 0.5f;
+        const float yLG    = -hGirdle * 0.5f;
+        const float yCulet = -hPavilion;
+
+        // 1. Table vertices (0..7)
+        for (int j = 0; j < 8; ++j) {
+            float angle = j * (2.0f * pi / 8.0f);
+            mesh->positions.emplace_back(rTable * std::cos(angle), yTable, rTable * std::sin(angle));
+        }
+
+        // 2. Star vertices (8..15)
+        for (int j = 0; j < 8; ++j) {
+            float angle = (j + 0.5f) * (2.0f * pi / 8.0f);
+            mesh->positions.emplace_back(rStar * std::cos(angle), yStar, rStar * std::sin(angle));
+        }
+
+        // 3. Upper Girdle vertices (16..31)
+        for (int k = 0; k < 16; ++k) {
+            float angle = k * (2.0f * pi / 16.0f);
+            mesh->positions.emplace_back(rGirdle * std::cos(angle), yUG, rGirdle * std::sin(angle));
+        }
+
+        // 4. Lower Girdle vertices (32..47)
+        for (int k = 0; k < 16; ++k) {
+            float angle = k * (2.0f * pi / 16.0f);
+            mesh->positions.emplace_back(rGirdle * std::cos(angle), yLG, rGirdle * std::sin(angle));
+        }
+
+        // 5. Culet vertex (48)
+        mesh->positions.emplace_back(0.0f, yCulet, 0.0f);
+        const int culetIdx = 48;
+
+        // --- Indices ---
+
+        // Table facet (8-gon fan)
+        for (int j = 1; j < 7; ++j) {
+            mesh->indices.push_back(0);
+            mesh->indices.push_back(j + 1);
+            mesh->indices.push_back(j);
+        }
+
+        // 8 Star facets
+        for (int j = 0; j < 8; ++j) {
+            int t1 = j;
+            int t2 = (j + 1) % 8;
+            int s = 8 + j;
+            mesh->indices.push_back(t1);
+            mesh->indices.push_back(t2);
+            mesh->indices.push_back(s);
+        }
+
+        // 8 Bezel (Kite) facets (2 triangles each)
+        for (int j = 0; j < 8; ++j) {
+            int t = j;
+            int sRight = 8 + j;
+            int sLeft  = 8 + ((j + 7) % 8);
+            int ug = 16 + 2 * j;
+
+            mesh->indices.push_back(t);
+            mesh->indices.push_back(sRight);
+            mesh->indices.push_back(ug);
+
+            mesh->indices.push_back(t);
+            mesh->indices.push_back(ug);
+            mesh->indices.push_back(sLeft);
+        }
+
+        // 16 Upper Girdle facets
+        for (int j = 0; j < 8; ++j) {
+            int s = 8 + j;
+            int ug1 = 16 + 2 * j;
+            int ug2 = 16 + 2 * j + 1;
+            int ug3 = 16 + (2 * j + 2) % 16;
+
+            mesh->indices.push_back(s);
+            mesh->indices.push_back(ug1);
+            mesh->indices.push_back(ug2);
+
+            mesh->indices.push_back(s);
+            mesh->indices.push_back(ug2);
+            mesh->indices.push_back(ug3);
+        }
+
+        // 16 Girdle ribbon facets
+        for (int k = 0; k < 16; ++k) {
+            int ug1 = 16 + k;
+            int ug2 = 16 + (k + 1) % 16;
+            int lg1 = 32 + k;
+            int lg2 = 32 + (k + 1) % 16;
+
+            mesh->indices.push_back(ug1);
+            mesh->indices.push_back(lg1);
+            mesh->indices.push_back(lg2);
+
+            mesh->indices.push_back(ug1);
+            mesh->indices.push_back(lg2);
+            mesh->indices.push_back(ug2);
+        }
+
+        // 16 Lower Girdle / Pavilion facets
+        for (int k = 0; k < 16; ++k) {
+            int lg1 = 32 + k;
+            int lg2 = 32 + (k + 1) % 16;
+
+            mesh->indices.push_back(lg1);
+            mesh->indices.push_back(lg2);
+            mesh->indices.push_back(culetIdx);
+        }
+
+        // Strict outward-facing normal verification for 100% of triangles
+        int numTris = mesh->TriangleCount();
+        for (int t = 0; t < numTris; ++t) {
+            int idx0 = mesh->indices[t * 3 + 0];
+            int idx1 = mesh->indices[t * 3 + 1];
+            int idx2 = mesh->indices[t * 3 + 2];
+
+            const Point3f& v0 = mesh->positions[idx0];
+            const Point3f& v1 = mesh->positions[idx1];
+            const Point3f& v2 = mesh->positions[idx2];
+
+            Vector3f n = Cross(v1 - v0, v2 - v0);
+            Point3f centroid((v0.x + v1.x + v2.x) / 3.0f, (v0.y + v1.y + v2.y) / 3.0f, (v0.z + v1.z + v2.z) / 3.0f);
+
+            // Vector from internal center (0, yGirdle, 0) to facet centroid
+            Vector3f outVec(centroid.x, centroid.y, centroid.z);
+            if (Dot(n, outVec) < 0.0f) {
+                // Swap winding to guarantee strictly outward normal
+                std::swap(mesh->indices[t * 3 + 1], mesh->indices[t * 3 + 2]);
+            }
+        }
+
+        // Offset to center position
+        float culetOffsetY = -yCulet;
+        for (auto& p : mesh->positions) {
+            p = Point3f(p.x + center.x, p.y + center.y + culetOffsetY, p.z + center.z);
+        }
+
+        return mesh;
+    }
+
 }
+

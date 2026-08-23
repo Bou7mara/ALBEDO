@@ -125,69 +125,9 @@ namespace {
         }
     }
 
-    void AddDiamond(Scene& scene, const Point3f& center, float radius, float height,
+    void AddDiamond(Scene& scene, const Point3f& center, float radius, float /*height*/,
                     std::shared_ptr<BSDF> glass) {
-        auto mesh = std::make_shared<TriangleMesh>();
-
-        float girdleRadius = radius;
-        float tableRadius  = radius * 0.72f;
-
-        float deltaR   = girdleRadius - tableRadius;
-        float yGirdle  = 0.0f;
-        float yTable   = yGirdle + deltaR * 1.15f;
-        float yCulet   = yGirdle - (height - (yTable - yGirdle));
-
-        constexpr int numFacets = 16;
-
-        for (int i = 0; i < numFacets; ++i) {
-            float angle = i * (2.0f * std::numbers::pi_v<float> / numFacets);
-            mesh->positions.emplace_back(tableRadius * std::cos(angle), yTable, tableRadius * std::sin(angle));
-        }
-
-        for (int i = 0; i < numFacets; ++i) {
-            float angle = (i + 0.5f) * (2.0f * std::numbers::pi_v<float> / numFacets);
-            mesh->positions.emplace_back(girdleRadius * std::cos(angle), yGirdle, girdleRadius * std::sin(angle));
-        }
-
-        mesh->positions.emplace_back(0.0f, yCulet, 0.0f);
-        int culetIdx = static_cast<int>(mesh->positions.size()) - 1;
-
-        // Winding order
-        for (int i = 1; i < numFacets - 1; ++i) {
-            mesh->indices.push_back(0);
-            mesh->indices.push_back(i + 1);
-            mesh->indices.push_back(i);
-        }
-
-        for (int i = 0; i < numFacets; ++i) {
-            int t1 = i;
-            int t2 = (i + 1) % numFacets;
-            int g1 = numFacets + i;
-            int g2 = numFacets + ((i == 0) ? numFacets - 1 : i - 1);
-
-            mesh->indices.push_back(t1);
-            mesh->indices.push_back(g1);
-            mesh->indices.push_back(t2);
-
-            mesh->indices.push_back(t1);
-            mesh->indices.push_back(g2);
-            mesh->indices.push_back(g1);
-        }
-
-        for (int i = 0; i < numFacets; ++i) {
-            int g1 = numFacets + i;
-            int g2 = numFacets + (i + 1) % numFacets;
-
-            mesh->indices.push_back(g1);
-            mesh->indices.push_back(culetIdx);
-            mesh->indices.push_back(g2);
-        }
-
-        float culetOffsetY = -yCulet;
-        for (auto& p : mesh->positions) {
-            p = Point3f(p.x + center.x, p.y + center.y + culetOffsetY, p.z + center.z);
-        }
-
+        auto mesh = MakeRoundBrilliantDiamondMesh(radius, center);
         auto faces = MakeTriangleMesh(mesh, glass);
         for (auto& f : faces) scene.Add(f);
     }
