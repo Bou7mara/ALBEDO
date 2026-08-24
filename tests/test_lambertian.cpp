@@ -54,7 +54,7 @@ TEST_CASE("Oren-Nayar roughness sigma > 0 enhances grazing reflectance compared 
 
     Vector3f n(0.0f, 1.0f, 0.0f);
     Vector3f wo = Normalize(Vector3f(0.8f, 0.6f, 0.0f));
-    Vector3f wi = Normalize(Vector3f(0.8f, 0.6f, 0.0f)); // retro-reflection geometry
+    Vector3f wi = Normalize(Vector3f(0.8f, 0.6f, 0.0f));
 
     Vector3f fSmooth = smooth.f(wo, wi, n);
     Vector3f fRough = rough.f(wo, wi, n);

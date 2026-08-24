@@ -6,7 +6,7 @@ using namespace rt;
 
 namespace {
     std::shared_ptr<TriangleMesh> MakeUnitTriangle() {
-        // (0,0,0), (1,0,0), (0,1,0) in the z=0 plane, facing +z
+
         auto mesh = std::make_shared<TriangleMesh>();
         mesh->positions = { Point3f(0,0,0), Point3f(1,0,0), Point3f(0,1,0) };
         mesh->indices   = { 0, 1, 2 };
@@ -69,11 +69,11 @@ TEST_CASE("Triangle: geometric normal matches CCW winding via right-hand rule", 
     Ray r(Point3f(0.2f, 0.2f, -5.0f), Vector3f(0, 0, 1));
     SurfaceInteraction isect;
     REQUIRE(tri.Intersect(r, &isect));
-    REQUIRE(isect.n.z == Catch::Approx(1.0f)); // (1,0,0) x (0,1,0) = (0,0,1)
+    REQUIRE(isect.n.z == Catch::Approx(1.0f));
 }
 
 TEST_CASE("Triangle: shading normal falls back to geometric normal when mesh has no per-vertex normals", "[triangle]") {
-    auto mesh = MakeUnitTriangle(); // normals left empty
+    auto mesh = MakeUnitTriangle();
     Triangle tri(mesh, 0);
 
     Ray r(Point3f(0.2f, 0.2f, -5.0f), Vector3f(0, 0, 1));
@@ -156,8 +156,8 @@ TEST_CASE("MakeTriangleMesh: builds one Triangle per face and shares mesh data",
     auto shapes = MakeTriangleMesh(mesh);
     REQUIRE(shapes.size() == 2);
 
-    Ray r1(Point3f(0.2f, 0.2f, -5.0f), Vector3f(0, 0, 1)); // hits first triangle
-    Ray r2(Point3f(0.8f, 0.8f, -5.0f), Vector3f(0, 0, 1)); // hits second triangle
+    Ray r1(Point3f(0.2f, 0.2f, -5.0f), Vector3f(0, 0, 1));
+    Ray r2(Point3f(0.8f, 0.8f, -5.0f), Vector3f(0, 0, 1));
     SurfaceInteraction isect;
     REQUIRE(shapes[0]->Intersect(r1, &isect));
     REQUIRE(shapes[1]->Intersect(r2, &isect));

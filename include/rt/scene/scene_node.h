@@ -17,4 +17,4 @@ namespace rt {
 
     void FlattenSceneGraph(const std::shared_ptr<SceneNode>& root, Scene& scene);
 
-} // namespace rt
+}

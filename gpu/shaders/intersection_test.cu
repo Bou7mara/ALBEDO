@@ -71,9 +71,9 @@ extern "C" __global__ void __raygen__intersection_test() {
         0.0f,
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_NONE,
-        0, // SBT offset
-        1, // SBT stride
-        0, // missSBTIndex
+        0,
+        1,
+        0,
         p0, p1
     );
 

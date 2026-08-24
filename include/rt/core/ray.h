@@ -21,7 +21,7 @@ namespace rt {
     public:
         Point3f o;
         Vector3f d;
-        mutable float tMax; 
+        mutable float tMax;
         float time;
 
         constexpr __host__ __device__ Ray()
@@ -45,4 +45,4 @@ namespace rt {
     }
 #endif
 
-} // namespace rt
+}

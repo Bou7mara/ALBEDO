@@ -115,14 +115,14 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
             int lightIdx = -1;
             float pmf = 0.0f;
             const Light* light = scene.SampleLight(rng.Uniform1D(), &lightIdx, &pmf);
-            
+
             if (light && pmf > 0.0f) {
                 Light::LiSample lightSample = light->Sample_Li(isect.p, rng.Uniform2D());
                 if (lightSample.pdf > 0.0f) {
                     constexpr float kEpsilon = 1e-4f;
                     Vector3f offsetNormal = (Dot(lightSample.wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
                     Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
-                    
+
                     Ray shadowRay(offsetOrigin, lightSample.wi, lightSample.dist - 2.0f * kEpsilon);
                     if (!scene.IntersectP(shadowRay)) {
                         Vector3f f = bsdf->f(isect.wo, lightSample.wi, Vector3f(isect.n), isect.uv);
@@ -182,12 +182,6 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
                 break;
             }
 
-            // Companions collapse to zero exactly when a real dispersive refraction
-            // (as opposed to specular reflection or achromatic transmission) occurs.
-            // The hero-slot compensation (4x, for representing 1-of-4 stratified
-            // wavelength samples) belongs to that collapse event, and only the FIRST
-            // one along a path -- applying it again at a later dispersive refraction
-            // (e.g. the diamond's exit face) would double-count it.
             bool collapsesThisEvent = (throughputWeights[1] == 0.0f && throughputWeights[2] == 0.0f && throughputWeights[3] == 0.0f);
             if (collapsesThisEvent && !spectralCompanionsCollapsed) {
                 throughputWeights[0] *= 4.0f;
@@ -240,7 +234,7 @@ Vector3f ALBEDO(Ray r, const Scene& scene, RNG& rng, int maxDepth) {
         constexpr float kEpsilon = 1e-4f;
         Vector3f offsetNormal = (Dot(wi, isect.n) > 0.0f) ? Vector3f(isect.n) : -Vector3f(isect.n);
         Point3f offsetOrigin = isect.p + kEpsilon * offsetNormal;
-        
+
         r = Ray(offsetOrigin, wi);
     }
     return L;

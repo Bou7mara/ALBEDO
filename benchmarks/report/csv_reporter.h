@@ -31,7 +31,7 @@ struct RepetitionRecord {
     std::string sceneName;
     std::string asVariant;
     std::string raySetName;
-    int repId; // 1..N
+    int repId;
     size_t primitiveCount;
     size_t rayCount;
     double buildTimeMs;
@@ -47,7 +47,7 @@ class CSVReporter {
 public:
     explicit CSVReporter(const std::string& directory = "benchmark_results") {
         std::filesystem::create_directories(directory);
-        
+
         auto now = std::chrono::system_clock::now();
         auto in_time_t = std::chrono::system_clock::to_time_t(now);
         std::tm tm_buf{};
@@ -59,7 +59,7 @@ public:
         std::stringstream ssSummary, ssReps;
         ssSummary << directory << "/as_evaluation_" << std::put_time(&tm_buf, "%Y%m%d_%H%M%S") << "_summary.csv";
         ssReps << directory << "/as_evaluation_" << std::put_time(&tm_buf, "%Y%m%d_%H%M%S") << "_reps.csv";
-        
+
         filePathSummary_ = ssSummary.str();
         filePathReps_ = ssReps.str();
 
@@ -127,4 +127,4 @@ private:
     std::ofstream fileReps_;
 };
 
-} // namespace rt::bench
+}

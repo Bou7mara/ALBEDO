@@ -18,10 +18,10 @@ struct alignas(64) WideBVHNode {
     float minZ[N];
     float maxZ[N];
 
-    uint32_t children[N];       // if leaf: firstPrimOffset; if interior: node index
-    uint32_t numPrimitives[N];   // if leaf: nPrimitives; if interior: 0
-    uint8_t  childIsLeaf;       // bit i set if children[i] is leaf
-    uint8_t  activeChildCount;  // number of valid children (<= N)
+    uint32_t children[N];
+    uint32_t numPrimitives[N];
+    uint8_t  childIsLeaf;
+    uint8_t  activeChildCount;
     uint8_t  pad[2];
 
     void SetChildBox(int i, const Bounds3f& b) {
@@ -115,4 +115,4 @@ private:
 using BVH4 = WideBVH<4>;
 using BVH8 = WideBVH<8>;
 
-} // namespace rt
+}

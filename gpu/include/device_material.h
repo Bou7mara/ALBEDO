@@ -395,7 +395,6 @@ namespace rtx {
                 float lum = DisneyLuminance(mat.disney.baseColor);
                 rt::Vector3f cTint = (lum > 0.0f) ? (mat.disney.baseColor / lum) : rt::Vector3f(1.0f, 1.0f, 1.0f);
 
-                // 1. Diffuse & Subsurface
                 rt::Vector3f fDiffuse(0.0f, 0.0f, 0.0f);
                 if (mat.disney.metallic < 1.0f) {
                     float Fo = DisneySchlickWeight(NdotO);
@@ -418,7 +417,6 @@ namespace rtx {
                     }
                 }
 
-                // 2. Specular (GGX)
                 float alpha = fmaxf(0.001f, mat.disney.roughness * mat.disney.roughness);
                 float D = rt::GgxD(NdotH, alpha);
                 float G = rt::SmithG(NdotO, NdotI, alpha);
@@ -429,7 +427,6 @@ namespace rtx {
 
                 rt::Vector3f fSpec = (D * G * F) / (4.0f * NdotO * NdotI);
 
-                // 3. Clearcoat (GTR1)
                 rt::Vector3f fClearcoat(0.0f, 0.0f, 0.0f);
                 if (mat.disney.clearcoat > 0.0f) {
                     float alphaG = (1.0f - mat.disney.clearcoatGloss) * 0.1f + mat.disney.clearcoatGloss * 0.001f;
@@ -617,7 +614,6 @@ namespace rtx {
         rt::Vector3f nf = entering ? n : -n;
         float cosThetaI = AbsDot(wo, n);
 
-        // Hero wavelength IOR (slot 0)
         float lambda0Um = hw.lambda[0] * 0.001f;
         float iorHero = rt::SellmeierIOR(mat.dielectric.sellmeier, lambda0Um);
         float etaI0 = entering ? 1.0f : iorHero;
@@ -632,7 +628,7 @@ namespace rtx {
             *pdfHero = R0;
         } else {
             if (!rt::Refract(wo, nf, eta0, wi)) {
-                // Hero TIR fallback
+
                 *wi = rt::Reflect(wo, n);
                 heroReflect = true;
                 *pdfHero = 1.0f;
@@ -749,4 +745,4 @@ namespace rtx {
         return rt::Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-} // namespace rtx
+}

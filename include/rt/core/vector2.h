@@ -57,4 +57,4 @@ namespace rt {
         return Vector2<T>(std::abs(v.x), std::abs(v.y));
     }
 
-} // namespace rt
+}

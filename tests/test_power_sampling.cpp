@@ -10,7 +10,7 @@ using Catch::Matchers::WithinRel;
 
 TEST_CASE("Power-Weighted Light Selection CDF & PMF", "[scene][light_sampling]") {
     Scene scene;
-    
+
     auto lightMat1 = std::make_shared<Emissive>(Vector3f(10.0f, 10.0f, 10.0f));
     scene.Add(std::make_shared<Sphere>(Transform::Translate(Vector3f(0, 0, 0)), 0.5f, lightMat1));
 

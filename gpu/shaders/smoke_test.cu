@@ -8,7 +8,7 @@ extern "C" {
 
 extern "C" __global__ void __raygen__smoke_test() {
     const uint3 idx = optixGetLaunchIndex();
-    
+
     if (idx.x >= params.width || idx.y >= params.height) {
         return;
     }

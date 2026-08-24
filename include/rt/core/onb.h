@@ -25,7 +25,7 @@ namespace rt {
 
             float a = -1.0f / (sign + w.z);
             float b = w.x * w.y * a;
-            
+
             u = Vector3f(1.0f + sign * w.x * w.x * a, sign * b, -sign * w.x);
             v = Vector3f(b, sign + w.y * w.y * a, -w.y);
         }
@@ -35,4 +35,4 @@ namespace rt {
         }
     };
 
-} // namespace rt
+}

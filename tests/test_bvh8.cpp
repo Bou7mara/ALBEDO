@@ -71,16 +71,16 @@ TEST_CASE("BVH8 - Isolated 8-wide SIMD box test vs scalar reference", "[bvh8][si
     node.activeChildCount = 5;
 
     std::vector<Ray> testRays = {
-        Ray(Point3f(0, 0, 10), Vector3f(0, 0, -1)),                // hits box 0
-        Ray(Point3f(6, 6, 20), Vector3f(0, 0, -1)),                // hits box 1
-        Ray(Point3f(-7.5f, 1.0f, 0), Vector3f(0, 0, -1)),          // hits box 2
-        Ray(Point3f(11, -4, 5), Vector3f(0, 0, -1)),               // hits box 3
-        Ray(Point3f(-1, 11, 10), Vector3f(0, 0, -1)),              // hits box 4
-        Ray(Point3f(100, 100, 100), Vector3f(0, 0, -1)),           // misses all
-        Ray(Point3f(0, 0, 0), Vector3f(1, 0, 0)),                   // inside box 0
-        Ray(Point3f(0, 0, -10), Vector3f(0, 0, 1)),                 // negative z to positive z
-        Ray(Point3f(-20, -20, -20), Normalize(Vector3f(1, 1, 1))), // diagonal ray
-        Ray(Point3f(6, 6, 6), Vector3f(0, 1, 0))                    // inside box 1 parallel to Y
+        Ray(Point3f(0, 0, 10), Vector3f(0, 0, -1)),
+        Ray(Point3f(6, 6, 20), Vector3f(0, 0, -1)),
+        Ray(Point3f(-7.5f, 1.0f, 0), Vector3f(0, 0, -1)),
+        Ray(Point3f(11, -4, 5), Vector3f(0, 0, -1)),
+        Ray(Point3f(-1, 11, 10), Vector3f(0, 0, -1)),
+        Ray(Point3f(100, 100, 100), Vector3f(0, 0, -1)),
+        Ray(Point3f(0, 0, 0), Vector3f(1, 0, 0)),
+        Ray(Point3f(0, 0, -10), Vector3f(0, 0, 1)),
+        Ray(Point3f(-20, -20, -20), Normalize(Vector3f(1, 1, 1))),
+        Ray(Point3f(6, 6, 6), Vector3f(0, 1, 0))
     };
 
     for (const auto& ray : testRays) {
@@ -92,7 +92,6 @@ TEST_CASE("BVH8 - Isolated 8-wide SIMD box test vs scalar reference", "[bvh8][si
         float simdTEnter[8];
         int simdMask = Intersect8(node, ray, invDir, dirIsNeg, ray.tMax, simdTEnter);
 
-        // Degenerate lanes 5, 6, 7 must NEVER be hit
         for (int lane = 5; lane < 8; ++lane) {
             REQUIRE((simdMask & (1 << lane)) == 0);
         }
@@ -118,8 +117,8 @@ TEST_CASE("BVH8 - Parity with Binary BVH and BVH4 on complex scenes", "[bvh8]") 
     BVH8 wideBvh8(shapes, 4);
 
     REQUIRE(wideBvh8.NodeCount() > 0);
-    REQUIRE(wideBvh8.NodeCount() < wideBvh4.NodeCount());   // BVH8 has fewer nodes than BVH4
-    REQUIRE(wideBvh4.NodeCount() < binaryBvh.NodeCount());  // BVH4 has fewer nodes than Binary
+    REQUIRE(wideBvh8.NodeCount() < wideBvh4.NodeCount());
+    REQUIRE(wideBvh4.NodeCount() < binaryBvh.NodeCount());
 
     std::mt19937 rng(888);
     std::uniform_real_distribution<float> dist(-15.0f, 15.0f);
@@ -150,7 +149,7 @@ TEST_CASE("BVH8 - Collapse quality diagnostic", "[bvh8][diagnostic]") {
     BVH8 wideBvh8(shapes, 4);
 
     float avgChildren = wideBvh8.AverageChildrenPerNode();
-    // For an 8-wide tree, average fanout should be > 4.5
+
     REQUIRE(avgChildren >= 4.0f);
     REQUIRE(avgChildren <= 8.0f);
 }

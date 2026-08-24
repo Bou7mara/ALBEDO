@@ -30,4 +30,4 @@ namespace rtx {
         void Destroy();
     };
 
-} // namespace rtx
+}

@@ -61,4 +61,4 @@ inline std::vector<Ray> GenerateSecondaryRays(const std::vector<Ray>& primaryRay
     return secondaryRays;
 }
 
-} // namespace rt::bench
+}

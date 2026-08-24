@@ -19,7 +19,7 @@ namespace rt {
         sample.dist = std::sqrt(distSq);
         sample.wi = wi / sample.dist;
         sample.pdf = shapeSample.pdf;
-        
+
         const BSDF* bsdf = shape_->GetBSDF();
         if (bsdf) {
             sample.Li = bsdf->Le(-sample.wi, Vector3f(shapeSample.n));

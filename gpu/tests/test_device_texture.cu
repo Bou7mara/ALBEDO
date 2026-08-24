@@ -33,10 +33,10 @@ namespace {
         }
     }
 
-} // namespace
+}
 
 TEST_CASE("Image2DView host/device scalar sampling parity", "[gpu][texture][parity]") {
-    // 4x4 checkerboard
+
     int w = 4;
     int h = 4;
     std::vector<float> hostData(w * h);

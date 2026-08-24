@@ -40,4 +40,4 @@ namespace rt {
         DisneyParams params_;
     };
 
-} // namespace rt
+}

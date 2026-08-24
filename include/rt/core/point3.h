@@ -105,4 +105,4 @@ namespace rt {
         return Point3<T>(p[ix], p[iy], p[iz]);
     }
 
-} // namespace rt
+}

@@ -1,5 +1,3 @@
-# sah_correlation.R
-# Evaluates monotonic correlation between static tree metrics and measured traversal throughput.
 
 suppressPackageStartupMessages({
   if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2", repos = "https://cloud.r-project.org")
@@ -20,9 +18,8 @@ run_sah_correlation <- function(df, output_dir = "benchmarks/analysis/results") 
       .groups = "drop"
     )
 
-  # Monotonic rank correlation between fan-out / node compaction and throughput
   corr_fanout <- cor.test(summary_df$avg_fanout, summary_df$median_mrays, method = "spearman")
-  
+
   p_corr <- ggplot(summary_df, aes(x = avg_fanout, y = median_mrays, color = as_variant, shape = ray_set)) +
     geom_point(size = 3.5, alpha = 0.85) +
     facet_wrap(~ scene, scales = "free") +

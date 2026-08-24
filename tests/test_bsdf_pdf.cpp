@@ -21,7 +21,7 @@ TEST_CASE("BSDF Pdf vs Sample_f matches", "[bsdf][pdf]") {
             Vector3f wi;
             float pdf;
             [[maybe_unused]] Vector3f f = bsdf.Sample_f(wo, n, rng.Uniform2D(), &wi, &pdf);
-            
+
             float expectedPdf = bsdf.Pdf(wo, wi, n);
             REQUIRE_THAT(pdf, WithinAbs(expectedPdf, 1e-4f));
         }

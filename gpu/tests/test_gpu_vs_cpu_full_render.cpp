@@ -22,11 +22,9 @@ TEST_CASE("Full showcase scene end-to-end GPU vs CPU parity", "[gpu][full][rende
     REQUIRE_NOTHROW(rtx::RenderGpu(setup, gpuFramebuffer));
     REQUIRE(gpuFramebuffer.size() == static_cast<size_t>(kWidth * kHeight));
 
-    // Verify written PNG output sanity
     std::string testPng = "test_gpu_render.png";
     REQUIRE(rt::WritePNG(testPng, kWidth, kHeight, gpuFramebuffer));
 
-    // Verify all pixels are finite and non-negative
     for (const auto& pixel : gpuFramebuffer) {
         REQUIRE(!std::isnan(pixel.x));
         REQUIRE(!std::isnan(pixel.y));

@@ -35,9 +35,6 @@ namespace {
         return ApproxEqual(a.x, b.x, eps) && ApproxEqual(a.y, b.y, eps) && ApproxEqual(a.z, b.z, eps);
     }
 
-    // ==========================================
-    // 1. Vector3 & Tuple3 Tests
-    // ==========================================
     __host__ __device__ bool TestVector3Math() {
         Vector3f a(1.0f, 2.0f, 3.0f);
         Vector3f b(4.0f, 5.0f, 6.0f);
@@ -83,9 +80,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 2. Vector2 & Tuple2 Tests
-    // ==========================================
     __host__ __device__ bool TestVector2Math() {
         Vector2f a(2.0f, 3.0f);
         Vector2f b(4.0f, 5.0f);
@@ -105,9 +99,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 3. Point3 & Point2 Tests
-    // ==========================================
     __host__ __device__ bool TestPointMath() {
         Point3f p1(1.0f, 2.0f, 3.0f);
         Point3f p2(4.0f, 6.0f, 8.0f);
@@ -132,9 +123,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 4. Normal3 Tests
-    // ==========================================
     __host__ __device__ bool TestNormal3Math() {
         Normal3f n(0.0f, 1.0f, 0.0f);
         Vector3f v(0.0f, -2.0f, 0.0f);
@@ -151,12 +139,9 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 5. Bounds3 Tests
-    // ==========================================
     __host__ __device__ bool TestBounds3Math() {
         Bounds3f b1(Point3f(-1.0f, -1.0f, -1.0f), Point3f(1.0f, 1.0f, 1.0f));
-        
+
         if (b1.SurfaceArea() != 24.0f) return false;
         if (!ApproxEqual(b1.Centroid(), Point3f(0, 0, 0))) return false;
         if (!ApproxEqual(b1.Diagonal(), Vector3f(2, 2, 2))) return false;
@@ -176,9 +161,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 6. ONB Tests
-    // ==========================================
     __host__ __device__ bool TestONBMath() {
         Vector3f normal = Normalize(Vector3f(0.3f, 0.4f, 0.866f));
         ONB onb(normal);
@@ -195,9 +177,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 7. Quadratic Tests
-    // ==========================================
     __host__ __device__ bool TestQuadraticMath() {
         float t0 = 0.0f, t1 = 0.0f;
         if (!Quadratic(1.0f, -5.0f, 6.0f, &t0, &t1)) return false;
@@ -236,9 +215,6 @@ namespace {
         return true;
     }
 
-    // ==========================================
-    // 9. RNG Determinism Test
-    // ==========================================
     __host__ __device__ bool TestRNGDeterminism() {
         RNG rng1(1337);
         RNG rng2(1337);
@@ -259,11 +235,8 @@ namespace {
 
     constexpr int kNumTestCases = 9;
 
-} // namespace
+}
 
-// ==========================================
-// Host-side Catch2 Test Cases
-// ==========================================
 TEST_CASE("Vector3 arithmetic (host)", "[math][parity]") {
     REQUIRE(TestVector3Math());
 }
@@ -324,9 +297,6 @@ TEST_CASE("RNG determinism (host)", "[math][parity]") {
     REQUIRE(TestRNGDeterminism());
 }
 
-// ==========================================
-// Device Kernel & GPU-gated Test Case
-// ==========================================
 __global__ void RunMathTestsOnDevice(int* results) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         results[0] = TestVector3Math() ? 1 : 0;

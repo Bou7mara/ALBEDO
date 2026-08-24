@@ -3,7 +3,7 @@
 #include "rt/core/point2.h"
 
 namespace rt {
- 
+
     class BSDF {
     public:
         virtual ~BSDF() = default;

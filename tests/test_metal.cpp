@@ -36,7 +36,7 @@ TEST_CASE("Straight-on incidence reflects straight back along the normal", "[met
 TEST_CASE("Angle of incidence equals angle of reflection", "[metal][regression]") {
     Metal m(Vector3f(1, 1, 1));
     Vector3f n(0, 1, 0);
-    Vector3f wo = Normalize(Vector3f(1, 1, 0)); 
+    Vector3f wo = Normalize(Vector3f(1, 1, 0));
     Vector3f wi;
     float pdf;
     m.Sample_f(wo, n, Point2f(0.5f, 0.5f), &wi, &pdf);

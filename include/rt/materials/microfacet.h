@@ -68,7 +68,7 @@ namespace rt {
         float G1 = (2.0f * NdotV) / (NdotV + lambdaV);
 
         float D = GgxD(NdotH, alpha);
-        
+
         return (G1 * D) / (4.0f * NdotV);
     }
 

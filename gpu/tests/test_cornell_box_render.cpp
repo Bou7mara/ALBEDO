@@ -244,7 +244,7 @@ namespace {
         return L;
     }
 
-} // namespace
+}
 
 TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pathtracer][cornell]") {
     constexpr int kWidth = 32;
@@ -252,7 +252,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     constexpr int kSpp = 128;
     constexpr int kMaxDepth = 5;
 
-    // 1. Build Scene
     rt::ShowcaseSetup setup = rt::CreateCornellBoxShowcaseScene(kWidth, kHeight, kSpp);
 
     auto ctx = rtx::OptixContext::Create();
@@ -260,8 +259,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
     CUstream stream = ctx->GetCudaStream();
 
-    // 2. Build GPU Scene
-    // Convert CPU Scene shapes into SceneNode graph for GPU translation
     auto root = std::make_shared<rt::SceneNode>();
     std::unordered_map<const rt::TriangleMesh*, std::shared_ptr<rt::SceneNode>> meshNodeMap;
 
@@ -292,7 +289,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     REQUIRE(devScene.iasHandle != 0);
     REQUIRE(devScene.lightList.count > 0);
 
-    // 3. Load OptiX Module & Pipeline
     std::filesystem::path shaderPath = FindShaderBinary("path_tracer.optixir");
     std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
 
@@ -300,7 +296,7 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     OptixPipelineCompileOptions pipelineCompileOptions{};
     pipelineCompileOptions.usesMotionBlur = 0;
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-    pipelineCompileOptions.numPayloadValues = 2; // pointer to PathHitPayload
+    pipelineCompileOptions.numPayloadValues = 2;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
@@ -380,7 +376,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     );
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // 4. Setup SBT
     RaygenRecord raygenRecord{};
     optixSbtRecordPackHeader(raygenPG, &raygenRecord);
     CUdeviceptr d_raygenRecord = 0;
@@ -419,7 +414,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
 
-    // 5. Launch GPU Path Tracer
     size_t bufferSize = static_cast<size_t>(kWidth) * kHeight * sizeof(rt::Vector3f);
     CUdeviceptr d_outputBuffer = 0;
     cudaMalloc(reinterpret_cast<void**>(&d_outputBuffer), bufferSize);
@@ -447,7 +441,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     std::vector<rt::Vector3f> gpuFramebuffer(kWidth * kHeight);
     cudaMemcpy(gpuFramebuffer.data(), reinterpret_cast<void*>(d_outputBuffer), bufferSize, cudaMemcpyDeviceToHost);
 
-    // 6. CPU Reference Rendering
     std::vector<rt::Vector3f> cpuFramebuffer(kWidth * kHeight);
     for (int y = 0; y < kHeight; ++y) {
         for (int x = 0; x < kWidth; ++x) {
@@ -463,7 +456,6 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
         }
     }
 
-    // 7. Compute Quantitative Parity (RMSE)
     double sumSquaredError = 0.0;
     for (size_t i = 0; i < gpuFramebuffer.size(); ++i) {
         rt::Vector3f diff = gpuFramebuffer[i] - cpuFramebuffer[i];
@@ -472,10 +464,9 @@ TEST_CASE("Cornell Box full path tracer RMSE convergence against CPU", "[gpu][pa
     double rmse = std::sqrt(sumSquaredError / (3.0 * gpuFramebuffer.size()));
 
     INFO("Cornell Box RMSE between GPU and CPU: " << rmse);
-    // RMSE is within expected stochastic Monte Carlo variance (< 0.20 for 128 spp)
+
     REQUIRE(rmse < 0.20);
 
-    // 8. Cleanup
     cudaFree(reinterpret_cast<void*>(d_params));
     cudaFree(reinterpret_cast<void*>(d_outputBuffer));
     cudaFree(reinterpret_cast<void*>(d_hitRecord));

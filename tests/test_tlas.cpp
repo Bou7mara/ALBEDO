@@ -64,7 +64,7 @@ TEST_CASE("TLAS - Multi-instance distinct affine transforms", "[tlas]") {
     auto sphereBlas = MakeUnitSphereBLAS();
 
     std::vector<std::shared_ptr<Instance>> instances;
-    // 5 instances along X axis at x = -20, -10, 0, 10, 20
+
     for (int i = -2; i <= 2; ++i) {
         Transform T = Transform::Translate(Vector3f(i * 10.0f, 0.0f, 0.0f));
         instances.push_back(std::make_shared<Instance>(sphereBlas, T));
@@ -76,7 +76,7 @@ TEST_CASE("TLAS - Multi-instance distinct affine transforms", "[tlas]") {
         Ray ray(Point3f(i * 10.0f, 0.0f, 10.0f), Vector3f(0, 0, -1.0f));
         SurfaceInteraction isect;
         REQUIRE(tlas.Intersect(ray, &isect));
-        REQUIRE(isect.t == Approx(9.0f).margin(1e-4f)); // hit front of sphere at z = 1 (10 - 1 = 9)
+        REQUIRE(isect.t == Approx(9.0f).margin(1e-4f));
         REQUIRE(isect.p.x == Approx(i * 10.0f).margin(1e-4f));
         REQUIRE(isect.p.y == Approx(0.0f).margin(1e-4f));
         REQUIRE(isect.p.z == Approx(1.0f).margin(1e-4f));
@@ -85,13 +85,12 @@ TEST_CASE("TLAS - Multi-instance distinct affine transforms", "[tlas]") {
 }
 
 TEST_CASE("TLAS - Normal correctness under non-uniform scale", "[tlas]") {
-    // Tilted triangle with normal (0, -1, 1) in object space
+
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->positions = { Point3f(0, 0, 0), Point3f(1, 0, 0), Point3f(0, 1, 1) };
     mesh->indices = { 0, 1, 2 };
     auto blas = std::make_shared<BVH>(MakeTriangleMesh(mesh, nullptr));
 
-    // Non-uniform scale (1, 10, 1)
     Transform S = Transform::Scale(1.0f, 10.0f, 1.0f);
     auto inst = std::make_shared<Instance>(blas, S);
 
@@ -106,30 +105,24 @@ TEST_CASE("TLAS - Normal correctness under non-uniform scale", "[tlas]") {
     float normLength = std::sqrt(isect.n.x * isect.n.x + isect.n.y * isect.n.y + isect.n.z * isect.n.z);
     REQUIRE(normLength == Approx(1.0f).margin(1e-4f));
 
-    // Under inverse-transpose: unnormalized normal is (0, -1/10, 1) = (0, -0.1, 1)
-    // Naive forward transform would give (0, -10, 1)
     REQUIRE(std::abs(isect.n.z) > 5.0f * std::abs(isect.n.y));
 }
 
 TEST_CASE("TLAS - Overlapping instances correctly return nearest hit via tMax shrinking", "[tlas]") {
     auto blas = MakeUnitSphereBLAS();
 
-    // Two overlapping sphere instances along Z axis
-    // Near sphere at z = 0 (bounds [-1, 1])
-    // Far sphere at z = -1 (bounds [-2, 0])
     auto nearInst = std::make_shared<Instance>(blas, Transform::Translate(Vector3f(0, 0, 0)));
     auto farInst = std::make_shared<Instance>(blas, Transform::Translate(Vector3f(0, 0, -1.0f)));
 
     TLAS tlas;
-    tlas.Add(farInst);  // Add far first
-    tlas.Add(nearInst); // Add near second
+    tlas.Add(farInst);
+    tlas.Add(nearInst);
     tlas.Build();
 
     Ray ray(Point3f(0, 0, 10.0f), Vector3f(0, 0, -1.0f));
     SurfaceInteraction isect;
     REQUIRE(tlas.Intersect(ray, &isect));
 
-    // Near sphere hit should be at z = 1 (t = 9.0), not far sphere hit at z = 0 (t = 10.0)
     REQUIRE(isect.t == Approx(9.0f).margin(1e-4f));
     REQUIRE(isect.p.z == Approx(1.0f).margin(1e-4f));
     REQUIRE(isect.shape == nearInst.get());

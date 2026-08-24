@@ -12,33 +12,29 @@ using namespace rt;
 using Catch::Approx;
 
 TEST_CASE("Sellmeier equation accuracy against optical reference values", "[spectral][sellmeier]") {
-    // 589.3 nm is Sodium D-line, standard reference for IOR
+
     constexpr float kSodiumDLineUm = 0.5893f;
 
-    // 1. Diamond: n ~ 2.417
     float nDiamond = SellmeierIOR(kDiamondSellmeier, kSodiumDLineUm);
     REQUIRE(nDiamond == Approx(2.417f).margin(0.002f));
 
-    // 2. Schott BK7 Optical Glass: n ~ 1.5168
     float nBK7 = SellmeierIOR(kBK7Sellmeier, kSodiumDLineUm);
     REQUIRE(nBK7 == Approx(1.5168f).margin(0.002f));
 
-    // 3. Sapphire (ordinary ray): n ~ 1.768
     float nSapphire = SellmeierIOR(kSapphireSellmeier, kSodiumDLineUm);
     REQUIRE(nSapphire == Approx(1.768f).margin(0.003f));
 
-    // 4. Physical dispersion ordering: blue (450 nm) > green (550 nm) > red (650 nm)
     float nBlue = SellmeierIOR(kDiamondSellmeier, 0.450f);
     float nGreen = SellmeierIOR(kDiamondSellmeier, 0.550f);
     float nRed = SellmeierIOR(kDiamondSellmeier, 0.650f);
 
     REQUIRE(nBlue > nGreen);
     REQUIRE(nGreen > nRed);
-    REQUIRE(nBlue - nRed > 0.034f); // Diamond has substantial dispersion (Abbe ~ 55)
+    REQUIRE(nBlue - nRed > 0.034f);
 }
 
 TEST_CASE("Wyman CIE 1931 fit and SpectralToRgb white point integration", "[spectral][wyman]") {
-    // Flat unit spectral radiance (1.0 across all wavelengths) should integrate to linear sRGB (1.0, 1.0, 1.0)
+
     constexpr int N = 200;
     Vector3f accumulatedRgb(0.0f, 0.0f, 0.0f);
 
@@ -66,7 +62,6 @@ TEST_CASE("Hero wavelength stratification across full visible spectrum", "[spect
             REQUIRE(hw.lambda[i] <= kLambdaMax);
         }
 
-        // Spacing between companion wavelengths is exactly (730 - 380) / 4 = 87.5 nm modulo 350
         float d1 = std::abs(hw.lambda[1] - hw.lambda[0]);
         float d2 = std::abs(hw.lambda[2] - hw.lambda[1]);
         float d3 = std::abs(hw.lambda[3] - hw.lambda[2]);
@@ -79,7 +74,7 @@ TEST_CASE("Hero wavelength stratification across full visible spectrum", "[spect
 }
 
 TEST_CASE("RGB-to-Spectrum upsampling partition of unity", "[spectral][upsampling]") {
-    // For any constant gray level c, RgbToSpectrum(Vector3f(c, c, c), lambda) == c for all lambda
+
     for (float c : { 0.0f, 0.25f, 0.5f, 0.73f, 1.0f }) {
         Vector3f gray(c, c, c);
         for (float lambda = 380.0f; lambda <= 730.0f; lambda += 10.0f) {
@@ -119,7 +114,6 @@ TEST_CASE("Achromatic (zero-dispersion) Dielectric Hero-Wavelength Parity", "[sp
         REQUIRE(wiSpectral.z == Approx(wiNonSpectral.z).margin(1e-4f));
         REQUIRE(pdfHero == Approx(pdfNonSpectral).margin(1e-4f));
 
-        // For zero dispersion, all 4 wavelengths receive the exact same throughput weight
         for (int k = 0; k < 4; ++k) {
             REQUIRE(weights[k] == Approx(weights[0]).margin(1e-4f));
         }
@@ -134,7 +128,6 @@ TEST_CASE("Hero-wavelength sampling reduces spectral variance over single-wavele
 
     constexpr int kPaths = 3000;
 
-    // 1. Single wavelength per path: 1 random wavelength converted to RGB
     RNG rngSingle(54321);
     double singleVarSum = 0.0;
     Vector3f singleMean(0.0f, 0.0f, 0.0f);
@@ -150,7 +143,6 @@ TEST_CASE("Hero-wavelength sampling reduces spectral variance over single-wavele
         float weights[4];
         diamond.Sample_HeroWavelengths(wo, n, u, hw, &wi, &pdfHero, weights);
 
-        // Single wavelength estimate: only 1 wavelength sample evaluated
         float factor = kLambdaRange / kCieYIntegral;
         Vector3f xyz(CieX(hw.lambda[0]) * weights[0] * factor,
                      CieY(hw.lambda[0]) * weights[0] * factor,
@@ -166,7 +158,6 @@ TEST_CASE("Hero-wavelength sampling reduces spectral variance over single-wavele
     }
     double singleVar = singleVarSum / kPaths;
 
-    // 2. 4-Hero-Wavelength sampling: 4 stratified hero wavelengths converted to RGB
     RNG rngHero(54321);
     double heroVarSum = 0.0;
     Vector3f heroMean(0.0f, 0.0f, 0.0f);
@@ -182,7 +173,6 @@ TEST_CASE("Hero-wavelength sampling reduces spectral variance over single-wavele
         float weights[4];
         diamond.Sample_HeroWavelengths(wo, n, u, hw, &wi, &pdfHero, weights);
 
-        // 4-Hero stratified estimate
         Vector3f rgb = SpectralToRgb(hw, weights);
         heroColors[i] = rgb;
         heroMean += rgb;

@@ -16,9 +16,6 @@
 
 namespace rt {
 
-// ===========================
-// 1. OG Sphere Showcase Scene
-// ===========================
 ShowcaseSetup CreateSphereShowcaseScene(int width, int height, int spp) {
     PerspectiveCamera camera(
         Point3f(0.0f, 1.2f, 4.0f),
@@ -79,9 +76,6 @@ ShowcaseSetup CreateSphereShowcaseScene(int width, int height, int spp) {
     return ShowcaseSetup(std::move(scene), camera, width, height, spp, 50);
 }
 
-// =================
-// 2. "The Gem Room"
-// =================
 namespace {
 
     void AddTiledFloor(Scene& scene, float extent, int numTiles,
@@ -125,7 +119,7 @@ namespace {
         }
     }
 
-    void AddDiamond(Scene& scene, const Point3f& center, float radius, float /*height*/,
+    void AddDiamond(Scene& scene, const Point3f& center, float radius, float ,
                     std::shared_ptr<BSDF> glass) {
         auto mesh = MakeRoundBrilliantDiamondMesh(radius, center);
         auto faces = MakeTriangleMesh(mesh, glass);
@@ -194,22 +188,18 @@ ShowcaseSetup CreateCornellBoxShowcaseScene(int width, int height, int spp) {
     auto glassMat = std::make_shared<Dielectric>(1.5f);
     auto metalMat = std::make_shared<Metal>(Vector3f(0.95f, 0.93f, 0.88f));
 
-    // 5-quad box walls
-    // Floor (y = 0)
     scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, 0.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, -2.0f), whiteMat));
-    // Ceiling (y = 2)
+
     scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 2.0f, -2.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 2.0f), whiteMat));
-    // Back wall (z = -2)
+
     scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, -2.0f), Vector3f(2.0f, 0.0f, 0.0f), Vector3f(0.0f, 2.0f, 0.0f), whiteMat));
-    // Left wall (x = -1, red)
+
     scene.Add(std::make_shared<Quad>(Point3f(-1.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, -2.0f), Vector3f(0.0f, 2.0f, 0.0f), redMat));
-    // Right wall (x = 1, green)
+
     scene.Add(std::make_shared<Quad>(Point3f(1.0f, 0.0f, -2.0f), Vector3f(0.0f, 0.0f, 2.0f), Vector3f(0.0f, 2.0f, 0.0f), greenMat));
 
-    // Ceiling light quad
     scene.Add(std::make_shared<Quad>(Point3f(-0.3f, 1.99f, -1.3f), Vector3f(0.6f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 0.6f), lightMat));
 
-    // Inner hero objects
     scene.Add(std::make_shared<Sphere>(Transform::Translate(Vector3f(-0.4f, 0.4f, -1.2f)), 0.4f, glassMat));
     scene.Add(std::make_shared<Sphere>(Transform::Translate(Vector3f(0.4f, 0.4f, -0.7f)), 0.4f, metalMat));
 

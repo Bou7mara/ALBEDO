@@ -5,5 +5,5 @@ namespace rt {
 
 using MeshInstance = Instance;
 
-} // namespace rt
+}
 

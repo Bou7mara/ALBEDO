@@ -88,4 +88,4 @@ namespace rt {
         return (Dot(n, n2) < static_cast<T>(0)) ? -n : n;
     }
 
-} // namespace rt
+}

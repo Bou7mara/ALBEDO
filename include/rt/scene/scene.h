@@ -55,7 +55,7 @@ namespace rt {
         bool Intersect(const Ray& ray, SurfaceInteraction* isect) const {
             return bvh_ && bvh_->Intersect(ray, isect);
         }
-        
+
         bool IntersectP(const Ray& ray) const {
             return bvh_ && bvh_->IntersectP(ray);
         }

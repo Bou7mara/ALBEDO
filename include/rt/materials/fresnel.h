@@ -14,7 +14,7 @@
 #endif
 
 namespace rt {
-    constexpr float kRefWavelengthUm = 0.589f; // Sodium D-line, reference wavelength for IOR
+    constexpr float kRefWavelengthUm = 0.589f;
 
     [[nodiscard]] __host__ __device__ inline float CauchyIOR(float iorAtRef, float dispersionB, float lambdaUm) {
         float A = iorAtRef - dispersionB / (kRefWavelengthUm * kRefWavelengthUm);

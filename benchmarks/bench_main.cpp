@@ -54,7 +54,7 @@ int RunRayPass(const BLAS& as, const std::vector<Ray>& rays) {
     return hits;
 }
 
-} // namespace
+}
 
 int main() {
     std::cout << "=================================================================================================================\n";
@@ -78,7 +78,6 @@ int main() {
     for (const auto& scene : scenes) {
         auto registry = GetStandardASRegistry(scene.isInstanced);
 
-        // First build a baseline AS to generate secondary rays if needed
         auto referenceAS = registry[0].buildFn(scene.shapes);
         std::vector<Ray> secondaryRays = GenerateSecondaryRays(primaryRays, *referenceAS, 2, 777);
 
@@ -98,7 +97,6 @@ int main() {
             for (size_t asIdx = 0; asIdx < registry.size(); ++asIdx) {
                 const auto& asDesc = registry[asIdx];
 
-                // 1. Measure Build Time (5 runs)
                 std::vector<double> buildTimes;
                 buildTimes.reserve(kNumRuns);
                 std::unique_ptr<BLAS> builtAS;
@@ -116,10 +114,8 @@ int main() {
                 double buildMinMs = buildTimes.front();
                 double buildMaxMs = buildTimes.back();
 
-                // 2. Warm up CPU caches
                 WarmUp(*builtAS, rays);
 
-                // 3. Measure Query Time (5 runs)
                 std::vector<double> queryTimes;
                 queryTimes.reserve(kNumRuns);
                 int hitCount = 0;
@@ -147,7 +143,6 @@ int main() {
 
                 double mraysPerSec = (rays.size() / (queryMedianMs * 1e-3)) * 1e-6;
 
-                // 4. Log per-repetition records for statistical analysis
                 for (int r = 0; r < kNumRuns; ++r) {
                     double repMrayPerSec = (rays.size() / (queryTimes[r] * 1e-3)) * 1e-6;
                     RepetitionRecord repRecord{

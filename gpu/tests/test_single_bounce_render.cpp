@@ -92,14 +92,13 @@ namespace {
         return 0.15f * ((1.0f - t) * rt::Vector3f(0.8f, 0.8f, 0.9f) + t * rt::Vector3f(0.4f, 0.5f, 0.7f));
     }
 
-} // namespace
+}
 
 TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials][render]") {
     constexpr int kWidth = 32;
     constexpr int kHeight = 32;
     constexpr unsigned int kSeed = 1337;
 
-    // 1. Camera
     rt::PerspectiveCamera camera(
         rt::Point3f(0.0f, 0.0f, 3.0f),
         rt::Point3f(0.0f, 0.0f, 0.0f),
@@ -108,7 +107,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
         kWidth, kHeight
     );
 
-    // 2. Setup Scene: Floor (Lambertian) and Emissive Light
     auto mesh = std::make_shared<rt::TriangleMesh>();
     mesh->positions = {
         rt::Point3f(-2.0f, -1.0f,  2.0f),
@@ -153,12 +151,10 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     lightNode->bsdf = lightMat;
     root->children.push_back(lightNode);
 
-    // 3. Build CPU Scene
     rt::Scene cpuScene;
     rt::FlattenSceneGraph(root, cpuScene);
     cpuScene.Build();
 
-    // 4. Build GPU Scene
     auto ctx = rtx::OptixContext::Create();
     REQUIRE(ctx != nullptr);
     OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
@@ -167,7 +163,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     rtx::DeviceScene devScene = rtx::DeviceScene::Build(root, optixContext, stream);
     REQUIRE(devScene.iasHandle != 0);
 
-    // 5. Load OptiX Module & Pipeline
     std::filesystem::path shaderPath = FindShaderBinary("single_bounce.optixir");
     std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
 
@@ -175,7 +170,7 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     OptixPipelineCompileOptions pipelineCompileOptions{};
     pipelineCompileOptions.usesMotionBlur = 0;
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-    pipelineCompileOptions.numPayloadValues = 2; // pointer to HitPayload
+    pipelineCompileOptions.numPayloadValues = 2;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
@@ -245,7 +240,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     );
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // 6. Setup SBT (per instance)
     RaygenRecord raygenRecord{};
     optixSbtRecordPackHeader(raygenPG, &raygenRecord);
     CUdeviceptr d_raygenRecord = 0;
@@ -283,7 +277,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
 
-    // 7. Launch GPU
     size_t bufferSize = static_cast<size_t>(kWidth) * kHeight * sizeof(rt::Vector3f);
     CUdeviceptr d_outputBuffer = 0;
     cudaMalloc(reinterpret_cast<void**>(&d_outputBuffer), bufferSize);
@@ -307,7 +300,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
     std::vector<rt::Vector3f> gpuFramebuffer(kWidth * kHeight);
     cudaMemcpy(gpuFramebuffer.data(), reinterpret_cast<void*>(d_outputBuffer), bufferSize, cudaMemcpyDeviceToHost);
 
-    // 8. CPU Single-Bounce Reference Evaluation
     for (int y = 0; y < kHeight; ++y) {
         for (int x = 0; x < kWidth; ++x) {
             int pixelIdx = y * kWidth + x;
@@ -353,7 +345,6 @@ TEST_CASE("Single-bounce direct lighting render parity vs CPU", "[gpu][materials
         }
     }
 
-    // 9. Cleanup
     cudaFree(reinterpret_cast<void*>(d_params));
     cudaFree(reinterpret_cast<void*>(d_outputBuffer));
     cudaFree(reinterpret_cast<void*>(d_hitRecord));

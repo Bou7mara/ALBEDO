@@ -12,7 +12,7 @@ namespace rtx {
 
     namespace {
 
-        void OptixLogCallback(unsigned int level, const char* tag, const char* message, void* /*cbdata*/) {
+        void OptixLogCallback(unsigned int level, const char* tag, const char* message, void* ) {
             std::cerr << "[OptiX][" << level << "][" << (tag ? tag : "STATUS") << "]: "
                       << (message ? message : "") << "\n";
         }
@@ -52,7 +52,7 @@ namespace rtx {
                 }                                                                                    \
             } while (0)
 
-    } // namespace
+    }
 
     OptixContext::OptixContext() = default;
 
@@ -99,7 +99,6 @@ namespace rtx {
     std::unique_ptr<OptixContext> OptixContext::Create() {
         auto ctx = std::make_unique<OptixContext>();
 
-        // 1. Initialize CUDA Driver & Runtime
         CU_CHECK(cuInit(0));
 
         int deviceCount = 0;
@@ -110,7 +109,7 @@ namespace rtx {
 
         ctx->deviceId_ = 0;
         CUDA_CHECK(cudaSetDevice(ctx->deviceId_));
-        CUDA_CHECK(cudaFree(0)); // Initialize CUDA context for the active thread
+        CUDA_CHECK(cudaFree(0));
 
         cudaDeviceProp prop{};
         CUDA_CHECK(cudaGetDeviceProperties(&prop, ctx->deviceId_));
@@ -123,10 +122,8 @@ namespace rtx {
 
         CUDA_CHECK(cudaStreamCreate(&ctx->stream_));
 
-        // 2. Initialize OptiX runtime function table
         OPTIX_CHECK(optixInit());
 
-        // 3. Create OptixDeviceContext
         OptixDeviceContextOptions options{};
         options.logCallbackFunction = &OptixLogCallback;
         options.logCallbackData = nullptr;
@@ -137,4 +134,4 @@ namespace rtx {
         return ctx;
     }
 
-} // namespace rtx
+}

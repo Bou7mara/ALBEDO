@@ -113,9 +113,9 @@ static __forceinline__ __device__ PathHitPayload TraceRay(OptixTraversableHandle
         0.0f,
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_NONE,
-        0, // SBT offset
-        1, // SBT stride
-        0, // missSBTIndex
+        0,
+        1,
+        0,
         p0, p1
     );
 
@@ -239,7 +239,6 @@ extern "C" __global__ void __raygen__albedo() {
                 }
             }
 
-            // Next Event Estimation (Direct Light Sampling)
             if (params.lights.count > 0) {
                 int lightIdx = -1;
                 float pmf = 0.0f;
@@ -293,7 +292,6 @@ extern "C" __global__ void __raygen__albedo() {
                 }
             }
 
-            // Sample BSDF for next bounce
             rt::Vector3f wi(0.0f, 0.0f, 0.0f);
             float pdf = 0.0f;
 
@@ -348,7 +346,6 @@ extern "C" __global__ void __raygen__albedo() {
                 specularBounce = (prevBsdfPdf == 0.0f);
             }
 
-            // Russian Roulette
             if (depth >= rt::kRRStartDepth) {
                 float maxVal = isSpectral ? fmaxf(fmaxf(spectralThroughput[0], spectralThroughput[1]), fmaxf(spectralThroughput[2], spectralThroughput[3]))
                                           : rt::MaxChannel(throughput);

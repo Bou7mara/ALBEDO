@@ -49,4 +49,4 @@ private:
     float halfWidth_;
 };
 
-} // namespace rt
+}

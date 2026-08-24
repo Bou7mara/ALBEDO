@@ -13,7 +13,6 @@ namespace rtx {
         OptixContext();
         ~OptixContext();
 
-        // Non-copyable, movable
         OptixContext(const OptixContext&) = delete;
         OptixContext& operator=(const OptixContext&) = delete;
         OptixContext(OptixContext&& other) noexcept;
@@ -35,4 +34,4 @@ namespace rtx {
         CUstream stream_ = nullptr;
     };
 
-} // namespace rtx
+}

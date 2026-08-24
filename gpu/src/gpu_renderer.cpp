@@ -160,7 +160,7 @@ namespace {
         accumBuffer[idx] = accumBuffer[idx] * invSpp;
     }
 
-} // namespace
+}
 
 namespace rtx {
 
@@ -173,13 +173,11 @@ namespace rtx {
 
         framebuffer.resize(totalPixels);
 
-        // 1. Context
         auto ctx = OptixContext::Create();
         if (!ctx) throw std::runtime_error("Failed to create OptixContext");
         OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
         CUstream stream = ctx->GetCudaStream();
 
-        // 2. Build GPU Scene from setup.scene
         auto root = std::make_shared<rt::SceneNode>();
         std::unordered_map<const rt::TriangleMesh*, std::shared_ptr<rt::SceneNode>> meshNodeMap;
 
@@ -209,7 +207,6 @@ namespace rtx {
         DeviceScene devScene = DeviceScene::Build(root, optixContext, stream);
         if (!devScene.iasHandle) throw std::runtime_error("Failed to build DeviceScene IAS");
 
-        // 3. Load OptiX Module & Pipeline
         std::filesystem::path shaderPath = FindShaderBinary("path_tracer.optixir");
         std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
 
@@ -217,7 +214,7 @@ namespace rtx {
         OptixPipelineCompileOptions pipelineCompileOptions{};
         pipelineCompileOptions.usesMotionBlur = 0;
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-        pipelineCompileOptions.numPayloadValues = 2; // pointer to PathHitPayload
+        pipelineCompileOptions.numPayloadValues = 2;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
@@ -327,7 +324,6 @@ namespace rtx {
             2
         );
 
-        // 4. Setup SBT
         RaygenRecord raygenRecord{};
         optixSbtRecordPackHeader(raygenPG, &raygenRecord);
         CUdeviceptr d_raygenRecord = 0;
@@ -366,7 +362,6 @@ namespace rtx {
         sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
         sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
 
-        // 5. Device Buffers
         size_t bufferBytes = totalPixels * sizeof(rt::Vector3f);
         CUdeviceptr d_accumulationBuffer = 0;
         CUdeviceptr d_scratchBuffer = 0;
@@ -387,7 +382,6 @@ namespace rtx {
         CUdeviceptr d_params = 0;
         cudaMalloc(reinterpret_cast<void**>(&d_params), sizeof(PathTracerParams));
 
-        // 6. Launch Accumulation Loop
         rt::ProgressReporter progress(spp);
         constexpr int blockSize = 256;
         int numBlocks = (totalPixels + blockSize - 1) / blockSize;
@@ -420,7 +414,6 @@ namespace rtx {
         }
         progress.Finish();
 
-        // 7. Normalize by SPP
         NormalizeKernel<<<numBlocks, blockSize, 0, stream>>>(
             reinterpret_cast<rt::Vector3f*>(d_accumulationBuffer),
             1.0f / static_cast<float>(spp),
@@ -428,7 +421,6 @@ namespace rtx {
         );
         cudaStreamSynchronize(stream);
 
-        // 8. Denoise if requested
         if (denoise) {
             std::cout << "Applying OptiX AI Denoiser with Albedo and Normal guide layers...\n";
             auto denoiserWrapper = OptixDenoiserWrapper::Create(optixContext, width, height, true);
@@ -449,7 +441,6 @@ namespace rtx {
             cudaMemcpy(framebuffer.data(), reinterpret_cast<void*>(d_accumulationBuffer), bufferBytes, cudaMemcpyDeviceToHost);
         }
 
-        // 9. Cleanup
         cudaFree(reinterpret_cast<void*>(d_params));
         cudaFree(reinterpret_cast<void*>(d_scratchBuffer));
         cudaFree(reinterpret_cast<void*>(d_accumulationBuffer));
@@ -469,4 +460,4 @@ namespace rtx {
         devScene.Destroy();
     }
 
-} // namespace rtx
+}

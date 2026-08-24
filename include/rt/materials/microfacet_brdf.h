@@ -36,7 +36,7 @@ namespace rt {
 
     private:
         enum class FresnelKind { Dielectric, Conductor };
-        
+
         Microfacet(float roughness, FresnelKind kind,
                    float ior, const Vector3f& eta, const Vector3f& k, const Vector3f& tint,
                    std::shared_ptr<Image2D<float>> roughnessTexture = nullptr,

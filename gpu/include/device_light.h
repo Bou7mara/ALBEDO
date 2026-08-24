@@ -54,7 +54,6 @@ namespace rtx {
             return nullptr;
         }
 
-        // Linear scan CDF inversion, identical to Scene::SampleLight
         for (unsigned int i = 0; i < list.count; ++i) {
             if (u <= list.cdf[i]) {
                 *lightIdx = static_cast<int>(i);
@@ -89,7 +88,6 @@ namespace rtx {
             return sample;
         }
 
-        // Pick triangle
         float uScaled = u.x * static_cast<float>(light.triangleCount);
         unsigned int triIdx = static_cast<unsigned int>(uScaled);
         if (triIdx >= light.triangleCount) triIdx = light.triangleCount - 1;
@@ -103,7 +101,6 @@ namespace rtx {
         rt::Point3f v1 = light.positions[i1];
         rt::Point3f v2 = light.positions[i2];
 
-        // Sample point on triangle
         float sqrtU = std::sqrt(uTri);
         float b0 = 1.0f - sqrtU;
         float b1 = u.y * sqrtU;
@@ -129,9 +126,9 @@ namespace rtx {
         }
 
         sample.Li = light.radiance;
-        // Reproduce triangle area-to-solid-angle measure
+
         sample.pdf = (sample.dist * sample.dist) / (light.totalArea * cosThetaLight);
         return sample;
     }
 
-} // namespace rtx
+}

@@ -135,4 +135,4 @@ inline std::vector<ASDescriptor> GetStandardASRegistry(bool isInstanced = false)
     };
 }
 
-} // namespace rt::bench
+}

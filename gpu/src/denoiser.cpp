@@ -42,7 +42,7 @@ namespace rtx {
             return img;
         }
 
-    } // namespace
+    }
 
     OptixDenoiserWrapper OptixDenoiserWrapper::Create(OptixDeviceContext ctx,
                                                      unsigned int width,
@@ -98,7 +98,7 @@ namespace rtx {
         }
 
         OptixDenoiserParams params{};
-        params.blendFactor = 0.0f; // 0.0 = full denoised image
+        params.blendFactor = 0.0f;
 
         OPTIX_CHECK(optixDenoiserInvoke(
             handle,
@@ -131,4 +131,4 @@ namespace rtx {
         }
     }
 
-} // namespace rtx
+}

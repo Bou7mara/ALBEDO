@@ -26,7 +26,6 @@ namespace rt {
 
         Transform() = default;
 
-        // Host-only: inverts mat via Inverse4x4
         explicit Transform(const float mat[4][4]);
 
         __host__ __device__ Transform(const float mat[4][4], const float matInv[4][4]) {
@@ -86,7 +85,6 @@ namespace rt {
 
         static Transform LookAt(const Point3f& eye, const Point3f& look, const Vector3f& up);
 
-        // OptiX row-major 3x4 affine transform matrix
         __host__ std::array<float, 12> ToOptixRowMajor3x4() const {
             return {
                 m[0][0], m[0][1], m[0][2], m[0][3],
@@ -95,7 +93,6 @@ namespace rt {
             };
         }
 
-        // Note: Inverse() is host-only by design and should only be used during host-side scene setup.
         __host__ __device__ Transform Inverse() const {
             return Transform(mInv, m);
         }
@@ -113,7 +110,7 @@ namespace rt {
             float xp = m[0][0] * x + m[0][1] * y + m[0][2] * z + m[0][3];
             float yp = m[1][0] * x + m[1][1] * y + m[1][2] * z + m[1][3];
             float zp = m[2][0] * x + m[2][1] * y + m[2][2] * z + m[2][3];
-            
+
             float wp = m[3][0] * x + m[3][1] * y + m[3][2] * z + m[3][3];
             if (wp == 1.0f) return Point3f(xp, yp, zp);
             return Point3f(xp, yp, zp) / wp;
@@ -178,8 +175,7 @@ namespace rt {
                 }
         }
 
-        // Host-only 4x4 matrix inversion
         static void Inverse4x4(const float mat[4][4], float out[4][4]);
     };
 
-} // namespace rt
+}

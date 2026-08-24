@@ -27,4 +27,4 @@ inline void InitDegenerateBox(float minP[N], float maxP[N], int lane) {
     maxP[lane] = -kInf;
 }
 
-} // namespace rt
+}

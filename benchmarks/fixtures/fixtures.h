@@ -20,7 +20,6 @@ struct BenchmarkScene {
     bool isInstanced = false;
 };
 
-// 1. Uniform random spheres in a bounding box
 inline BenchmarkScene GenerateUniformScene(int count = 20000, uint32_t seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> posDist(-20.0f, 20.0f);
@@ -36,7 +35,6 @@ inline BenchmarkScene GenerateUniformScene(int count = 20000, uint32_t seed = 42
     return {"Uniform Spheres", shapes, static_cast<size_t>(count), false};
 }
 
-// 2. Problem case: Long thin overlapping diagonal triangles mixed with tight clusters
 inline BenchmarkScene GenerateProblemCaseScene(int numSlices = 2000, uint32_t seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> xDist(-15.0f, 15.0f);
@@ -62,7 +60,6 @@ inline BenchmarkScene GenerateProblemCaseScene(int numSlices = 2000, uint32_t se
 
     std::vector<std::shared_ptr<Shape>> shapes = MakeTriangleMesh(mesh);
 
-    // Tight clusters of small spheres inside the bounding box of the long triangles
     for (int i = 0; i < numSlices * 2; ++i) {
         shapes.push_back(std::make_shared<Sphere>(
             Transform::Translate(Vector3f(xDist(rng) * 0.4f, yDist(rng) * 0.4f, zDist(rng))),
@@ -72,7 +69,6 @@ inline BenchmarkScene GenerateProblemCaseScene(int numSlices = 2000, uint32_t se
     return {"Problem Case (Overlapping Diagonals)", shapes, shapes.size(), false};
 }
 
-// 3. Instanced scene: 1,000 instances of a shared base mesh
 inline BenchmarkScene GenerateInstancedScene(int numInstances = 1000, int trianglesPerMesh = 200, uint32_t seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> posDist(-30.0f, 30.0f);
@@ -111,7 +107,6 @@ inline BenchmarkScene GenerateInstancedScene(int numInstances = 1000, int triang
     return {"Instanced Geometry (1K Instances)", instances, static_cast<size_t>(numInstances * trianglesPerMesh), true};
 }
 
-// 4. Large primitive scaling scene: 100,000+ primitives
 inline BenchmarkScene GenerateLargeScene(int count = 100000, uint32_t seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> posDist(-35.0f, 35.0f);
@@ -127,4 +122,4 @@ inline BenchmarkScene GenerateLargeScene(int count = 100000, uint32_t seed = 42)
     return {"Large Scale (100K Primitives)", shapes, static_cast<size_t>(count), false};
 }
 
-} // namespace rt::bench
+}

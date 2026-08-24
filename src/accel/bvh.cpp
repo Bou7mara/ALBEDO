@@ -18,9 +18,9 @@ struct BucketInfo {
 BVH::BVH(std::vector<std::shared_ptr<Shape>> shapes, int maxPrimsInNode, SplitMethod splitMethod, int numThreads)
     : originalShapes_(std::move(shapes)), maxPrimsInNode_(maxPrimsInNode), splitMethod_(splitMethod) {
     if (originalShapes_.empty()) return;
-        
+
     std::vector<PrimitiveInfo> primInfo(originalShapes_.size());
-        
+
     for (size_t i = 0; i < originalShapes_.size(); ++i) {
         Bounds3f b = originalShapes_[i]->WorldBound();
         primInfo[i] = {i, b, b.Centroid()};

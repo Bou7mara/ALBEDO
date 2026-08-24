@@ -40,8 +40,7 @@ f 1/1/1 2/2/1 3/3/1 4/4/1
 }
 
 TEST_CASE("OBJ Loader - Cube corner with shared position but different normals", "[obj_loader]") {
-    // Position v1 at (0,0,0) used by 3 faces with 3 different normals (vn1, vn2, vn3).
-    // Positions v2, v3, v4 share vn1 across their face references.
+
     std::string objData = R"(
 v 0 0 0
 v 1 0 0
@@ -56,8 +55,7 @@ f 1//3 4//1 2//1
 )";
     auto mesh = LoadOBJFromString(objData);
     REQUIRE(mesh->TriangleCount() == 3);
-    // Position (0,0,0) with 3 different normals must produce 3 distinct unified vertices for that position
-    // Plus v2, v3, v4 each used once = total 6 unified vertices
+
     REQUIRE(mesh->positions.size() == 6);
     REQUIRE(mesh->normals.size() == 6);
 }

@@ -46,7 +46,7 @@ namespace {
         out.evalPdf = rtx::PdfBsdf(in.mat, in.wo, in.wiEval, in.n, in.uv, &in.textures);
     }
 
-} // namespace
+}
 
 TEST_CASE("Lambertian host/device parity with CPU BSDF", "[gpu][material][lambertian]") {
     rt::Vector3f albedo(0.7f, 0.2f, 0.3f);
@@ -161,7 +161,7 @@ TEST_CASE("Dielectric reflection and refraction parity", "[gpu][material][dielec
 
     rt::Vector3f wo = Normalize(rt::Vector3f(0.2f, 0.3f, 0.9f));
     rt::Vector3f n(0.0f, 0.0f, 1.0f);
-    rt::Point2f u(0.1f, 0.5f); // choose refraction branch (u.x > Fr)
+    rt::Point2f u(0.1f, 0.5f);
 
     rt::Vector3f cpuWi;
     float cpuPdf = 0.0f;
@@ -187,9 +187,9 @@ TEST_CASE("Dielectric TIR and dispersion parity", "[gpu][material][dielectric]")
     rt::Dielectric cpuMat(ior, tint, dispersion);
     rtx::DeviceMaterial devMat = rtx::DeviceMaterial::MakeDielectric(ior, tint, dispersion);
 
-    rt::Vector3f woTir = Normalize(rt::Vector3f(0.95f, 0.0f, 0.1f)); // grazing inside -> TIR
-    rt::Vector3f n(0.0f, 0.0f, -1.0f); // exiting interface
-    rt::Point2f u(0.99f, 0.1f); // choose transmission branch -> triggers TIR fallback
+    rt::Vector3f woTir = Normalize(rt::Vector3f(0.95f, 0.0f, 0.1f));
+    rt::Vector3f n(0.0f, 0.0f, -1.0f);
+    rt::Point2f u(0.99f, 0.1f);
 
     rt::Vector3f cpuWi;
     float cpuPdf = 0.0f;
@@ -256,7 +256,6 @@ TEST_CASE("Metal host/device parity with CPU BSDF", "[gpu][material][metal]") {
     cudaFree(d_out);
 }
 
-
 TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material][disney]") {
     rt::DisneyParams params{};
     params.baseColor = rt::Vector3f(0.8f, 0.5f, 0.2f);
@@ -313,14 +312,13 @@ TEST_CASE("Disney Principled host/device parity with CPU BSDF", "[gpu][material]
 }
 
 TEST_CASE("Textured material host/device parity with CPU BSDF", "[gpu][material][texture][parity]") {
-    // 2x2 color texture
+
     auto colorTex = std::make_shared<rt::Image2D<rt::Vector3f>>(2, 2, rt::WrapMode::Clamp);
     colorTex->Set(0, 0, rt::Vector3f(0.9f, 0.1f, 0.1f));
     colorTex->Set(1, 0, rt::Vector3f(0.1f, 0.9f, 0.1f));
     colorTex->Set(0, 1, rt::Vector3f(0.1f, 0.1f, 0.9f));
     colorTex->Set(1, 1, rt::Vector3f(0.8f, 0.8f, 0.2f));
 
-    // Upload texture to GPU
     rt::Vector3f* d_texData = nullptr;
     cudaMalloc(&d_texData, colorTex->texels.size() * sizeof(rt::Vector3f));
     cudaMemcpy(d_texData, colorTex->texels.data(), colorTex->texels.size() * sizeof(rt::Vector3f), cudaMemcpyHostToDevice);
@@ -341,7 +339,7 @@ TEST_CASE("Textured material host/device parity with CPU BSDF", "[gpu][material]
     rt::Vector3f wo(0.0f, 0.0f, 1.0f);
     rt::Vector3f n(0.0f, 0.0f, 1.0f);
     rt::Vector3f wiEval(0.0f, 0.0f, 1.0f);
-    rt::Point2f uv(0.25f, 0.75f); // blue tile center
+    rt::Point2f uv(0.25f, 0.75f);
 
     rt::Vector3f cpuF = cpuMat.f(wo, wiEval, n, uv);
     rt::Vector3f hostF = rtx::EvaluateBsdf(devMat, wo, wiEval, n, uv, &hostTexList);
@@ -384,7 +382,6 @@ TEST_CASE("Energy-compensated Microfacet Conductor host/device parity with CPU B
 
     const auto& lut = rt::GetDirectionalAlbedoLUT();
 
-    // Upload LUTs to device
     float* d_lutTexels = nullptr;
     size_t lutBytes = lut.eTable.texels.size() * sizeof(float);
     cudaMalloc(&d_lutTexels, lutBytes);

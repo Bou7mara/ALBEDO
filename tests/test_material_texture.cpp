@@ -42,13 +42,11 @@ TEST_CASE("Checkerboard textured Lambertian evaluation", "[material][texture][la
     Vector3f wi(0.0f, 0.0f, 1.0f);
     Vector3f n(0.0f, 0.0f, 1.0f);
 
-    // Sample top-left (white tile center at (0.25, 0.25))
     Vector3f fWhite = lamb.f(wo, wi, n, Point2f(0.25f, 0.25f));
     REQUIRE(fWhite.x == Approx(std::numbers::inv_pi_v<float>));
     REQUIRE(fWhite.y == Approx(std::numbers::inv_pi_v<float>));
     REQUIRE(fWhite.z == Approx(std::numbers::inv_pi_v<float>));
 
-    // Sample top-right (black tile center at (0.75, 0.25))
     Vector3f fBlack = lamb.f(wo, wi, n, Point2f(0.75f, 0.25f));
     REQUIRE(fBlack.x == Approx(0.0f));
     REQUIRE(fBlack.y == Approx(0.0f));

@@ -24,7 +24,7 @@ TEST_CASE("Point2-Vector2 operations (affine spaces)", "[point2]") {
     SECTION("Point + Vector -> Point") {
         Point2f r = p + v;
         REQUIRE(r == Point2f(4.0f, 6.0f));
-        
+
         Point2f rCommutative = v + p;
         REQUIRE(rCommutative == Point2f(4.0f, 6.0f));
     }

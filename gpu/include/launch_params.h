@@ -20,4 +20,4 @@ namespace rtx {
         rt::Vector3f* outputBuffer;
     };
 
-} // namespace rtx
+}

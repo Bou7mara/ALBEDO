@@ -302,7 +302,6 @@ int WideBVH<N>::CollapseNode(const BinaryBuildNode* node) {
         return myIndex;
     }
 
-    // Bottom-up greedy treelet merging (Wald et al. / Ylitie et al.)
     std::vector<const BinaryBuildNode*> treelet = { node->left.get(), node->right.get() };
 
     while (treelet.size() < static_cast<size_t>(N)) {
@@ -403,7 +402,6 @@ bool WideBVH<N>::Intersect(const Ray& ray, SurfaceInteraction* isect) const {
             }
         }
 
-        // Sort descending so nearest is pushed last (popped first from stack)
         for (int i = 1; i < hitCount; ++i) {
             StackEntry key = hits[i];
             int j = i - 1;
@@ -471,7 +469,6 @@ bool WideBVH<N>::IntersectP(const Ray& ray) const {
             }
         }
 
-        // Sort descending so nearest is pushed last (popped first from stack)
         for (int i = 1; i < hitCount; ++i) {
             StackEntry key = hits[i];
             int j = i - 1;
@@ -513,4 +510,4 @@ float WideBVH<N>::AverageChildrenPerNode() const {
 template class WideBVH<4>;
 template class WideBVH<8>;
 
-} // namespace rt
+}

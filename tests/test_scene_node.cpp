@@ -43,7 +43,6 @@ TEST_CASE("SceneNode - Hierarchical transform composition order", "[scene_node]"
     FlattenSceneGraph(parent, scene);
     scene.Build();
 
-    // Combined position should be at (10, 5, 0)
     Ray ray(Point3f(10.0f, 5.0f, 2.0f), Vector3f(0, 0, -1));
     SurfaceInteraction isect;
     REQUIRE(scene.Intersect(ray, &isect));
@@ -87,7 +86,6 @@ TEST_CASE("SceneNode - BLAS caching for shared mesh reference", "[scene_node]") 
     REQUIRE(inst2 != nullptr);
     REQUIRE(inst1 != inst2);
 
-    // BLAS pointer equality confirms single BVH build for shared mesh
     REQUIRE(inst1->GetBLAS() == inst2->GetBLAS());
 }
 

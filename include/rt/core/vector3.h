@@ -92,4 +92,4 @@ namespace rt {
         return Vector3<T>(a.x * b.x, a.y * b.y, a.z * b.z);
     }
 
-} // namespace rt
+}

@@ -56,18 +56,18 @@ TEST_CASE("BVH4 - Isolated SIMD ray-vs-4-boxes test vs scalar reference", "[bvh4
     node.SetChildBox(0, b0);
     node.SetChildBox(1, b1);
     node.SetChildBox(2, b2);
-    node.SetEmptyChild(3); // degenerate box
+    node.SetEmptyChild(3);
     node.activeChildCount = 3;
 
     std::vector<Ray> testRays = {
-        Ray(Point3f(0, 0, 10), Vector3f(0, 0, -1)),                // hits b0
-        Ray(Point3f(6, 6, 20), Vector3f(0, 0, -1)),                // hits b1
-        Ray(Point3f(-7.5f, 1.0f, 0), Vector3f(0, 0, -1)),          // hits b2
-        Ray(Point3f(100, 100, 100), Vector3f(0, 0, -1)),           // misses all
-        Ray(Point3f(0, 0, 0), Vector3f(1, 0, 0)),                   // inside b0
-        Ray(Point3f(0, 0, -10), Vector3f(0, 0, 1)),                 // negative z to positive z
-        Ray(Point3f(-20, -20, -20), Normalize(Vector3f(1, 1, 1))), // diagonal ray
-        Ray(Point3f(6, 6, 6), Vector3f(0, 1, 0))                    // inside b1 parallel to Y
+        Ray(Point3f(0, 0, 10), Vector3f(0, 0, -1)),
+        Ray(Point3f(6, 6, 20), Vector3f(0, 0, -1)),
+        Ray(Point3f(-7.5f, 1.0f, 0), Vector3f(0, 0, -1)),
+        Ray(Point3f(100, 100, 100), Vector3f(0, 0, -1)),
+        Ray(Point3f(0, 0, 0), Vector3f(1, 0, 0)),
+        Ray(Point3f(0, 0, -10), Vector3f(0, 0, 1)),
+        Ray(Point3f(-20, -20, -20), Normalize(Vector3f(1, 1, 1))),
+        Ray(Point3f(6, 6, 6), Vector3f(0, 1, 0))
     };
 
     for (const auto& ray : testRays) {
@@ -79,7 +79,6 @@ TEST_CASE("BVH4 - Isolated SIMD ray-vs-4-boxes test vs scalar reference", "[bvh4
         float simdTEnter[4];
         int simdMask = Intersect4(node, ray, invDir, dirIsNeg, ray.tMax, simdTEnter);
 
-        // Verify degenerate lane 3 is NEVER hit
         REQUIRE((simdMask & (1 << 3)) == 0);
 
         for (int lane = 0; lane < 3; ++lane) {
@@ -103,7 +102,7 @@ TEST_CASE("BVH4 - Parity with binary BVH on random scenes", "[bvh4]") {
     BVH4 wideBvh(shapes, 4);
 
     REQUIRE(wideBvh.NodeCount() > 0);
-    REQUIRE(wideBvh.NodeCount() < binaryBvh.NodeCount()); // Wide BVH must have fewer nodes
+    REQUIRE(wideBvh.NodeCount() < binaryBvh.NodeCount());
 
     std::mt19937 rng(777);
     std::uniform_real_distribution<float> dist(-15.0f, 15.0f);
@@ -131,7 +130,7 @@ TEST_CASE("BVH4 - Collapse quality diagnostic", "[bvh4][diagnostic]") {
     BVH4 wideBvh(shapes, 4);
 
     float avgChildren = wideBvh.AverageChildrenPerNode();
-    // A 4-wide BVH created with greedy treelet merging should achieve average fan-out > 2.8
+
     REQUIRE(avgChildren >= 2.5f);
     REQUIRE(avgChildren <= 4.0f);
 }

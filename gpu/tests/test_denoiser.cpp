@@ -14,7 +14,7 @@ using Catch::Matchers::WithinAbs;
 TEST_CASE("OptiX AI Denoiser reduces variance at low SPP", "[gpu][denoiser]") {
     constexpr int kWidth = 64;
     constexpr int kHeight = 64;
-    constexpr int kSpp = 4; // Intentionally noisy low SPP
+    constexpr int kSpp = 4;
 
     rt::ShowcaseSetup setup = rt::CreateCornellBoxShowcaseScene(kWidth, kHeight, kSpp);
 
@@ -26,7 +26,6 @@ TEST_CASE("OptiX AI Denoiser reduces variance at low SPP", "[gpu][denoiser]") {
 
     REQUIRE(rawFramebuffer.size() == denoisedFramebuffer.size());
 
-    // Calculate variance in a center patch (e.g. back wall)
     int startX = 20, endX = 44;
     int startY = 20, endY = 44;
     int patchPixelCount = (endX - startX) * (endY - startY);
@@ -59,13 +58,10 @@ TEST_CASE("OptiX AI Denoiser reduces variance at low SPP", "[gpu][denoiser]") {
     INFO("Raw Mean: " << rawMean << ", Raw Variance: " << rawVariance);
     INFO("Denoised Mean: " << denoMean << ", Denoised Variance: " << denoVariance);
 
-    // Mean radiance is preserved without significant drift
     REQUIRE_THAT(denoMean, WithinAbs(rawMean, 0.2));
 
-    // Denoised image has reduced variance
     REQUIRE(denoVariance <= rawVariance);
 
-    // Verify valid PNG write
     std::string testDenoisedPng = "test_denoised.png";
     REQUIRE(rt::WritePNG(testDenoisedPng, kWidth, kHeight, denoisedFramebuffer));
 }

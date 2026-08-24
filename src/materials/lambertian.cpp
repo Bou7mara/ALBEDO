@@ -32,7 +32,6 @@ Vector3f Lambertian::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n
         tanBeta = (cosThetaI > 1e-6f) ? (sinThetaI / cosThetaI) : 0.0f;
     }
 
-    // Azimuthal difference: cos(phi_i - phi_o)
     float cosPhiDiff = 0.0f;
     if (sinThetaI > 1e-6f && sinThetaO > 1e-6f) {
         Vector3f vO = Normalize(wo - cosThetaO * n);

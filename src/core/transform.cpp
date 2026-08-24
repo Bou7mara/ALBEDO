@@ -12,7 +12,7 @@ Transform Transform::RotateX(float thetaDeg) {
     float rad = thetaDeg * std::numbers::pi_v<float> / 180.0f;
     float sinTheta = std::sin(rad);
     float cosTheta = std::cos(rad);
-    
+
     float mat[4][4] = {
         {1, 0, 0, 0},
         {0, cosTheta, -sinTheta, 0},
@@ -32,7 +32,7 @@ Transform Transform::RotateY(float thetaDeg) {
     float rad = thetaDeg * std::numbers::pi_v<float> / 180.0f;
     float sinTheta = std::sin(rad);
     float cosTheta = std::cos(rad);
-    
+
     float mat[4][4] = {
         {cosTheta, 0, sinTheta, 0},
         {0, 1, 0, 0},
@@ -52,7 +52,7 @@ Transform Transform::RotateZ(float thetaDeg) {
     float rad = thetaDeg * std::numbers::pi_v<float> / 180.0f;
     float sinTheta = std::sin(rad);
     float cosTheta = std::cos(rad);
-    
+
     float mat[4][4] = {
         {cosTheta, -sinTheta, 0, 0},
         {sinTheta, cosTheta, 0, 0},

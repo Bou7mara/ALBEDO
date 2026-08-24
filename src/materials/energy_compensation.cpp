@@ -45,7 +45,6 @@ namespace rt {
                 eTable.Set(x, y, E);
             }
 
-            // Integrate E_avg(alpha) = 2 * int_0^1 mu * E(mu, alpha) dmu
             float sumEAvg = 0.0f;
             for (int x = 0; x < kResolution; ++x) {
                 float mu = (static_cast<float>(x) + 0.5f) / static_cast<float>(kResolution);
@@ -61,4 +60,4 @@ namespace rt {
         return lut;
     }
 
-} // namespace rt
+}

@@ -5,7 +5,7 @@
 namespace rt {
 
     namespace {
-        constexpr float kChannelWavelengthUm[3] = { 0.630f, 0.532f, 0.465f }; // R, G, B
+        constexpr float kChannelWavelengthUm[3] = { 0.630f, 0.532f, 0.465f };
     }
 
     Dielectric::Dielectric(float ior, const Vector3f& tint, float dispersion)
@@ -36,7 +36,7 @@ namespace rt {
         float R = FrDielectric(cosThetaI, etaI, etaT);
 
         if (u.x < R) {
-            // Reflection: Stays untinted (white specular reflections)
+
             *wi = Reflect(wo, n);
             *pdf = R;
 
@@ -51,12 +51,12 @@ namespace rt {
         *pdf = 1.0f - R;
 
         if (!sellmeier_.hasDispersion) {
-            // Exact code path for non-dispersive dielectrics
+
             Vector3f nf = entering ? n : -n;
             float eta = etaI / etaT;
 
             if (!Refract(wo, nf, eta, wi)) {
-                // TIR fallback
+
                 *wi = Reflect(wo, n);
                 *pdf = 1.0f;
                 float cosThetaWi = AbsDot(*wi, n);
@@ -72,7 +72,6 @@ namespace rt {
             return T / (eta * eta) / cosThetaWi;
         }
 
-        // 3-channel Cauchy fallback for legacy non-hero single paths
         int channel = std::min(2, static_cast<int>(u.y * 3.0f));
         float lambdaUm = kChannelWavelengthUm[channel];
         float iorChannel = SellmeierIOR(sellmeier_, lambdaUm);
@@ -110,7 +109,6 @@ namespace rt {
         Vector3f nf = entering ? n : -n;
         float cosThetaI = AbsDot(wo, n);
 
-        // Hero wavelength IOR (slot 0)
         float lambda0Um = hw.lambda[0] * 0.001f;
         float iorHero = SellmeierIOR(sellmeier_, lambda0Um);
         float etaI0 = entering ? 1.0f : iorHero;
@@ -125,7 +123,7 @@ namespace rt {
             *pdfHero = R0;
         } else {
             if (!Refract(wo, nf, eta0, wi)) {
-                // Hero TIR fallback
+
                 *wi = Reflect(wo, n);
                 heroReflect = true;
                 *pdfHero = 1.0f;
@@ -140,10 +138,9 @@ namespace rt {
             return false;
         }
 
-        // Evaluate companion wavelengths
         bool hasDisp = HasDispersion();
         if (heroReflect || !hasDisp) {
-            // Specular reflection or achromatic refraction: all wavelengths share identical direction
+
             for (int i = 0; i < 4; ++i) {
                 float lambdaUm = hw.lambda[i] * 0.001f;
                 float ior_i = SellmeierIOR(sellmeier_, lambdaUm);
@@ -161,14 +158,10 @@ namespace rt {
                 }
             }
         } else {
-            // Dispersive refraction: the hero wavelength alone carries this path along its true
-            // physical Snell trajectory, representing the 4-slot partition
+
             float tintWeight0 = RgbToSpectrum(tint_, hw.lambda[0]);
             float weight0 = (*pdfHero > 1e-6f) ? (((1.0f - R0) / *pdfHero) / (eta0 * eta0)) : 0.0f;
-            // NOTE: the 4x hero-slot compensation is applied exactly once per path,
-            // by the caller (main.cpp), the first time companions collapse to zero.
-            // It must NOT be baked in here, or paths with >1 dispersive refraction
-            // event (e.g. entering AND exiting a diamond) get compensated multiple times.
+
             throughputWeights[0] = tintWeight0 * weight0;
             throughputWeights[1] = 0.0f;
             throughputWeights[2] = 0.0f;
@@ -182,4 +175,4 @@ namespace rt {
         return 0.0f;
     }
 
-} // namespace rt
+}

@@ -30,7 +30,7 @@ TEST_CASE("Scene returns the CLOSEST hit, regardless of insertion order", "[scen
     scene.Add(std::make_shared<Sphere>(
         Transform::Translate(Vector3f(0, 0, -10)), 1.0f));
     scene.Add(std::make_shared<Sphere>(
-        Transform::Translate(Vector3f(0, 0, -3)), 1.0f)); 
+        Transform::Translate(Vector3f(0, 0, -3)), 1.0f));
     scene.Build();
 
     Ray r(Point3f(0, 0, 0), Vector3f(0, 0, -1));

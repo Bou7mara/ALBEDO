@@ -8,4 +8,4 @@ namespace rtx {
 
     void RenderGpu(const rt::ShowcaseSetup& setup, std::vector<rt::Vector3f>& framebuffer, bool denoise = false);
 
-} // namespace rtx
+}

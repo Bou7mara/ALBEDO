@@ -72,7 +72,7 @@ namespace {
         throw std::runtime_error("Could not locate OptiX-IR shader file: " + filename);
     }
 
-} // namespace
+}
 
 int main(int argc, char* argv[]) {
     int width = 1280;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
               << "==================================================\n";
 
     try {
-        // 1. Create CUDA + OptiX Context
+
         auto ctx = rtx::OptixContext::Create();
         OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
         CUstream stream = ctx->GetCudaStream();
@@ -102,7 +102,6 @@ int main(int argc, char* argv[]) {
                   << "OptiX Version:   " << (OPTIX_VERSION / 10000) << "." << ((OPTIX_VERSION % 10000) / 100) << "." << (OPTIX_VERSION % 100) << "\n"
                   << "Resolution:      " << width << "x" << height << "\n\n";
 
-        // 2. Load OptiX-IR Module
         std::filesystem::path shaderPath = FindShaderBinary("smoke_test.optixir", argv[0]);
         std::cout << "Loading OptiX-IR: " << shaderPath.string() << "\n";
         std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
@@ -134,7 +133,6 @@ int main(int argc, char* argv[]) {
             std::cout << "[OptiX Module Log]: " << logBuffer << "\n";
         }
 
-        // 3. Create Raygen Program Group
         OptixProgramGroupDesc pgDesc{};
         pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         pgDesc.raygen.module = module;
@@ -157,7 +155,6 @@ int main(int argc, char* argv[]) {
             std::cout << "[OptiX ProgramGroup Log]: " << logBuffer << "\n";
         }
 
-        // 4. Create Pipeline
         OptixPipelineLinkOptions linkOptions{};
         linkOptions.maxTraceDepth = 1;
 
@@ -178,7 +175,6 @@ int main(int argc, char* argv[]) {
             std::cout << "[OptiX Pipeline Log]: " << logBuffer << "\n";
         }
 
-        // 5. Build Shader Binding Table (SBT)
         RaygenRecord raygenRecord{};
         OPTIX_CHECK(optixSbtRecordPackHeader(raygenPG, &raygenRecord));
 
@@ -194,12 +190,10 @@ int main(int argc, char* argv[]) {
         OptixShaderBindingTable sbt{};
         sbt.raygenRecord = d_raygenRecord;
 
-        // 6. Allocate Output Buffer on Device
         size_t bufferSize = static_cast<size_t>(width) * height * sizeof(rt::Vector3f);
         CUdeviceptr d_outputBuffer = 0;
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_outputBuffer), bufferSize));
 
-        // 7. Setup & Upload Launch Parameters
         rtx::LaunchParams params{};
         params.width = static_cast<unsigned int>(width);
         params.height = static_cast<unsigned int>(height);
@@ -214,7 +208,6 @@ int main(int argc, char* argv[]) {
             cudaMemcpyHostToDevice
         ));
 
-        // 8. Launch OptiX Pipeline
         std::cout << "Launching OptiX pipeline on GPU grid " << width << "x" << height << "...\n";
         OPTIX_CHECK(optixLaunch(
             pipeline,
@@ -229,7 +222,6 @@ int main(int argc, char* argv[]) {
         CUDA_CHECK(cudaStreamSynchronize(stream));
         std::cout << "OptiX kernel execution completed successfully.\n";
 
-        // 9. Readback to Host Framebuffer
         std::vector<rt::Vector3f> framebuffer(width * height);
         CUDA_CHECK(cudaMemcpy(
             framebuffer.data(),
@@ -238,7 +230,6 @@ int main(int argc, char* argv[]) {
             cudaMemcpyDeviceToHost
         ));
 
-        // 10. Write PNG via existing rt::WritePNG
         std::string pngPath = "smoke_test.png";
         if (rt::WritePNG(pngPath, width, height, framebuffer)) {
             std::cout << "Successfully saved GPU output image to " << pngPath << "\n";
@@ -247,7 +238,6 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        // 11. Cleanup
         CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_params)));
         CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_outputBuffer)));
         CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_raygenRecord)));

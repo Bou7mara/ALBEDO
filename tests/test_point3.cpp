@@ -19,7 +19,7 @@ TEST_CASE("Point3 + Vector3 yields Point3, both directions", "[point3]") {
     Vector3f v(1.0f, 2.0f, 3.0f);
 
     REQUIRE(p + v == Point3f(2.0f, 3.0f, 4.0f));
-    REQUIRE(v + p == Point3f(2.0f, 3.0f, 4.0f)); 
+    REQUIRE(v + p == Point3f(2.0f, 3.0f, 4.0f));
 }
 
 TEST_CASE("Point3 - Vector3 yields Point3", "[point3]") {

@@ -106,4 +106,4 @@ namespace rt {
             Point3<T>(std::max(b.maxPt.x, p.x), std::max(b.maxPt.y, p.y), std::max(b.maxPt.z, p.z)));
     }
 
-} // namespace rt
+}

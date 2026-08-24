@@ -129,7 +129,6 @@ TEST_CASE("Parallel BVH construction produces bit-for-bit identical tree to seri
         REQUIRE(shapesSerial[i].get() == shapesParallel[i].get());
     }
 
-    // Ray queries match exactly
     for (int i = 0; i < 500; ++i) {
         Ray ray(Point3f(posDist(rng) * 0.5f, posDist(rng) * 0.5f, 10.0f),
                 Normalize(Vector3f(posDist(rng), posDist(rng), -1.0f)));

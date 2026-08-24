@@ -117,7 +117,6 @@ namespace rtx {
             devMesh.triangleCount = static_cast<unsigned int>(mesh->TriangleCount());
             devMesh.vertexCount = static_cast<unsigned int>(mesh->positions.size());
 
-            // 1. Upload Vertex Positions
             size_t posBytes = mesh->positions.size() * sizeof(rt::Point3f);
             CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&devMesh.d_positions), posBytes));
             CUDA_CHECK(cudaMemcpyAsync(
@@ -128,7 +127,6 @@ namespace rtx {
                 stream
             ));
 
-            // 2. Upload Shading Normals (if any)
             if (!mesh->normals.empty()) {
                 size_t normBytes = mesh->normals.size() * sizeof(rt::Normal3f);
                 CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&devMesh.d_normals), normBytes));
@@ -141,7 +139,6 @@ namespace rtx {
                 ));
             }
 
-            // 3. Upload UVs (if any)
             if (!mesh->uvs.empty()) {
                 size_t uvBytes = mesh->uvs.size() * sizeof(rt::Point2f);
                 CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&devMesh.d_uvs), uvBytes));
@@ -154,7 +151,6 @@ namespace rtx {
                 ));
             }
 
-            // 4. Upload Indices
             size_t idxBytes = mesh->indices.size() * sizeof(int);
             CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&devMesh.d_indices), idxBytes));
             CUDA_CHECK(cudaMemcpyAsync(
@@ -165,10 +161,9 @@ namespace rtx {
                 stream
             ));
 
-            // 5. Setup OptiX GAS Build Input
             OptixBuildInput buildInput{};
             buildInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
-            
+
             CUdeviceptr vertexBuffers[1] = { devMesh.d_positions };
             buildInput.triangleArray.vertexBuffers = vertexBuffers;
             buildInput.triangleArray.numVertices = devMesh.vertexCount;
@@ -214,7 +209,7 @@ namespace rtx {
             return devMesh;
         }
 
-    } // namespace
+    }
 
     DeviceScene::~DeviceScene() {
         Destroy();
@@ -359,7 +354,6 @@ namespace rtx {
                     instance.traversableHandle = scene.meshes[meshIndex].gasHandle;
                     optixInstances.push_back(instance);
 
-                    // Track emissive lights
                     if (mat.kind == MaterialKind::Emissive) {
                         float totalArea = 0.0f;
                         for (int t = 0; t < node->mesh->TriangleCount(); ++t) {
@@ -394,7 +388,6 @@ namespace rtx {
             return scene;
         }
 
-        // Build IAS over all instances
         size_t instancesBytes = optixInstances.size() * sizeof(OptixInstance);
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&scene.d_instances), instancesBytes));
         CUDA_CHECK(cudaMemcpyAsync(
@@ -438,7 +431,6 @@ namespace rtx {
 
         CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_tempIas)));
 
-        // Setup Light CDF & DeviceLightList
         if (!hostLights.empty()) {
             std::vector<float> hostCdf(hostLights.size());
             float totalPower = 0.0f;
@@ -466,7 +458,6 @@ namespace rtx {
             scene.lightList.totalPower = totalPower;
         }
 
-        // Upload 3D vector textures (RGB)
         if (!textureRegistry.textures3f.empty()) {
             std::vector<rt::Image2DView<rt::Vector3f>> hostViews3f;
             for (const auto* tex : textureRegistry.textures3f) {
@@ -484,7 +475,6 @@ namespace rtx {
             scene.textureList.count3f = static_cast<unsigned int>(hostViews3f.size());
         }
 
-        // Upload 1D scalar textures (float)
         if (!textureRegistry.textures1f.empty()) {
             std::vector<rt::Image2DView<float>> hostViews1f;
             for (const auto* tex : textureRegistry.textures1f) {
@@ -502,7 +492,6 @@ namespace rtx {
             scene.textureList.count1f = static_cast<unsigned int>(hostViews1f.size());
         }
 
-        // Upload Directional Albedo Energy Compensation LUTs
         const auto& lut = rt::GetDirectionalAlbedoLUT();
         size_t lutBytes = lut.eTable.texels.size() * sizeof(float);
         CUdeviceptr d_energyLut = 0;
@@ -522,4 +511,4 @@ namespace rtx {
         return scene;
     }
 
-} // namespace rtx
+}

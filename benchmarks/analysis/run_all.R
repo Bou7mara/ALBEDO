@@ -1,5 +1,3 @@
-# run_all.R
-# Top-level orchestration script executing the entire ALBEDO benchmark analysis pipeline.
 
 script_dir <- tryCatch({
   dirname(sys.frame(1)$ofile)
@@ -23,16 +21,13 @@ run_pipeline <- function(csv_path = NULL, output_dir = "benchmarks/analysis/resu
   }
   cat("Loading benchmark data from:", csv_path, "\n\n")
 
-  # 1. Load Data
   df <- load_benchmark_results(csv_path)
   cat("Loaded", nrow(df), "benchmark records across", length(unique(df$scene)), "scenes and", length(unique(df$as_variant)), "AS variants.\n\n")
 
-  # 2. Generate Comparative Visualizations
   cat("Generating ggplot2 comparative visualizations...\n")
   generate_all_plots(df, output_dir)
   cat("Visualizations written to:", output_dir, "\n\n")
 
-  # 3. Conduct Paired Significance Tests
   cat("Running paired Wilcoxon signed-rank tests (BH-adjusted)...\n")
   sig_summary <- run_significance_tests(df, baseline = "Binned-SAH (Serial)", output_dir = output_dir)
   cat("Significant comparisons (alpha = 0.05, BH-corrected):\n")
@@ -46,7 +41,6 @@ run_pipeline <- function(csv_path = NULL, output_dir = "benchmarks/analysis/resu
   }
   cat("\n")
 
-  # 4. SAH & Fanout Correlation Analysis
   cat("Evaluating monotonic rank correlation...\n")
   corr_results <- run_sah_correlation(df, output_dir)
   cat("Spearman rank correlation rho:", round(corr_results$spearman_rho, 3), "\n\n")

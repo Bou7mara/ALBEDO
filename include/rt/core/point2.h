@@ -97,4 +97,4 @@ namespace rt {
         return Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
     }
 
-} // namespace rt
+}

@@ -15,4 +15,4 @@ namespace rt {
         return degrees * (3.14159265358979323846f / 180.0f);
     }
 
-} // namespace rt
+}

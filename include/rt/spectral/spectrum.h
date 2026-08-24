@@ -14,14 +14,14 @@
 
 namespace rt {
 
-    constexpr float kLambdaMin = 380.0f; // nm
-    constexpr float kLambdaMax = 730.0f; // nm
-    constexpr float kLambdaRange = kLambdaMax - kLambdaMin; // 350 nm
-    constexpr float kCieYIntegral = 106.856917f; // Integral of CieY over [380, 730] nm
+    constexpr float kLambdaMin = 380.0f;
+    constexpr float kLambdaMax = 730.0f;
+    constexpr float kLambdaRange = kLambdaMax - kLambdaMin;
+    constexpr float kCieYIntegral = 106.856917f;
 
     struct HeroWavelengths {
-        float lambda[4]; // in nm
-        float pdf;       // 1.0f / kLambdaRange
+        float lambda[4];
+        float pdf;
 
         __host__ __device__ constexpr HeroWavelengths()
             : lambda{ 555.0f, 642.5f, 467.5f, 380.0f }, pdf(1.0f / 350.0f) {}
@@ -49,7 +49,6 @@ namespace rt {
         return std::exp(-0.5f * d * d);
     }
 
-    // Wyman, Sloan, Shirley 2013 Multi-Lobe Gaussian Analytic Fits to CIE 1931 2-deg Observer
     __host__ __device__ inline float CieX(float lambdaNm) {
         return 1.056f * Gaussian(lambdaNm, 599.8f, 37.9f, 31.0f)
              + 0.362f * Gaussian(lambdaNm, 442.0f, 16.0f, 26.7f)
@@ -66,7 +65,6 @@ namespace rt {
              + 0.681f * Gaussian(lambdaNm, 459.0f, 26.0f, 13.8f);
     }
 
-    // Equal-Energy Illuminant E to Linear sRGB (D65) Matrix
     __host__ __device__ inline Vector3f XyzToSrgb(const Vector3f& xyz) {
         return Vector3f(
              3.079953f * xyz.x - 1.5371385f * xyz.y - 0.542816f * xyz.z,
@@ -75,7 +73,6 @@ namespace rt {
         );
     }
 
-    // Converts a 4-channel spectral radiance sample into linear sRGB
     __host__ __device__ inline Vector3f SpectralToRgb(const HeroWavelengths& hw, const float spectralL[4]) {
         Vector3f xyz(0.0f, 0.0f, 0.0f);
         float factor = (kLambdaRange / 4.0f) / kCieYIntegral;
@@ -89,7 +86,6 @@ namespace rt {
         return XyzToSrgb(xyz);
     }
 
-    // Smooth RGB-to-Spectrum upsampling with partition of unity (white (c,c,c) maps to c everywhere)
     __host__ __device__ inline float RgbToSpectrum(const Vector3f& rgb, float lambdaNm) {
         if (lambdaNm < 490.0f) {
             float t = std::clamp((lambdaNm - 380.0f) / (490.0f - 380.0f), 0.0f, 1.0f);
@@ -103,4 +99,4 @@ namespace rt {
         }
     }
 
-} // namespace rt
+}

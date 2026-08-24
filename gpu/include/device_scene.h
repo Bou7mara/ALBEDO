@@ -77,4 +77,4 @@ namespace rtx {
     struct TextureRegistry;
     DeviceMaterial ConvertBsdfToDeviceMaterial(const rt::BSDF* bsdf, TextureRegistry* registry = nullptr);
 
-} // namespace rtx
+}

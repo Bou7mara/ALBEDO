@@ -48,7 +48,7 @@ std::shared_ptr<TriangleMesh> LoadOBJFromStream(std::istream& is) {
 
     std::string line;
     while (std::getline(is, line)) {
-        // Strip trailing CR if any
+
         if (!line.empty() && line.back() == '\r') line.pop_back();
 
         std::istringstream lineStream(line);
@@ -160,7 +160,7 @@ std::shared_ptr<TriangleMesh> LoadOBJFromStream(std::istream& is) {
     return mesh;
 }
 
-} // namespace
+}
 
 std::shared_ptr<TriangleMesh> LoadOBJFromString(const std::string& objData) {
     std::istringstream is(objData);
@@ -175,4 +175,4 @@ std::shared_ptr<TriangleMesh> LoadOBJ(const std::filesystem::path& path) {
     return LoadOBJFromStream(is);
 }
 
-} // namespace rt
+}

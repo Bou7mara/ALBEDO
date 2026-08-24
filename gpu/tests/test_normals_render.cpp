@@ -63,7 +63,7 @@ namespace {
         throw std::runtime_error("Could not locate OptiX-IR shader file: " + filename);
     }
 
-} // namespace
+}
 
 TEST_CASE("PerspectiveCamera ray generation sanity", "[camera][gpu]") {
     rt::PerspectiveCamera camera(
@@ -87,7 +87,6 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     constexpr int kWidth = 64;
     constexpr int kHeight = 64;
 
-    // 1. Setup Camera
     rt::PerspectiveCamera camera(
         rt::Point3f(0.0f, 0.0f, 3.0f),
         rt::Point3f(0.0f, 0.0f, 0.0f),
@@ -96,13 +95,11 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
         kWidth, kHeight
     );
 
-    // 2. Initialize OptiX & CUDA context
     auto ctx = rtx::OptixContext::Create();
     REQUIRE(ctx != nullptr);
     OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
     CUstream stream = ctx->GetCudaStream();
 
-    // 3. Construct Scene Graph: Triangle Quad facing camera, rotated 30 degrees around Y
     auto mesh = std::make_shared<rt::TriangleMesh>();
     mesh->positions = {
         rt::Point3f(-1.0f, -1.0f, 0.0f),
@@ -124,16 +121,13 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     node->localTransform = rt::Transform::Translate(rt::Vector3f(0.0f, 0.0f, -1.0f)) * rt::Transform::RotateY(30.0f);
     root->children.push_back(node);
 
-    // 4. Build CPU ground-truth Scene
     rt::Scene cpuScene;
     rt::FlattenSceneGraph(root, cpuScene);
     cpuScene.Build();
 
-    // 5. Build GPU DeviceScene
     rtx::DeviceScene devScene = rtx::DeviceScene::Build(root, optixContext, stream);
     REQUIRE(devScene.iasHandle != 0);
 
-    // 6. Load OptiX Module & Pipeline for normals_render
     std::filesystem::path shaderPath = FindShaderBinary("normals_render.optixir");
     std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
 
@@ -141,8 +135,8 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     OptixPipelineCompileOptions pipelineCompileOptions{};
     pipelineCompileOptions.usesMotionBlur = 0;
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-    pipelineCompileOptions.numPayloadValues = 3; // RGB
-    pipelineCompileOptions.numAttributeValues = 2; // barycentrics
+    pipelineCompileOptions.numPayloadValues = 3;
+    pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
 
@@ -211,7 +205,6 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     );
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // 7. Setup SBT
     RaygenRecord raygenRecord{};
     optixSbtRecordPackHeader(raygenPG, &raygenRecord);
     CUdeviceptr d_raygenRecord = 0;
@@ -247,7 +240,6 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
 
-    // 8. Allocate Output Buffer & Launch Params
     size_t bufferSize = static_cast<size_t>(kWidth) * kHeight * sizeof(rt::Vector3f);
     CUdeviceptr d_outputBuffer = 0;
     cudaMalloc(reinterpret_cast<void**>(&d_outputBuffer), bufferSize);
@@ -263,16 +255,13 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     cudaMalloc(reinterpret_cast<void**>(&d_params), sizeof(rtx::NormalsLaunchParams));
     cudaMemcpy(reinterpret_cast<void*>(d_params), &params, sizeof(rtx::NormalsLaunchParams), cudaMemcpyHostToDevice);
 
-    // 9. Launch OptiX Pipeline
     res = optixLaunch(pipeline, stream, d_params, sizeof(rtx::NormalsLaunchParams), &sbt, kWidth, kHeight, 1);
     REQUIRE(res == OPTIX_SUCCESS);
     cudaStreamSynchronize(stream);
 
-    // 10. Readback GPU Framebuffer
     std::vector<rt::Vector3f> gpuFramebuffer(kWidth * kHeight);
     cudaMemcpy(gpuFramebuffer.data(), reinterpret_cast<void*>(d_outputBuffer), bufferSize, cudaMemcpyDeviceToHost);
 
-    // 11. Pixel-for-Pixel Comparison vs CPU Reference
     int hitCount = 0;
     int missCount = 0;
 
@@ -306,7 +295,6 @@ TEST_CASE("Normals-only full resolution render parity vs CPU", "[gpu][normals][r
     REQUIRE(hitCount > 0);
     REQUIRE(missCount > 0);
 
-    // 12. Cleanup
     cudaFree(reinterpret_cast<void*>(d_params));
     cudaFree(reinterpret_cast<void*>(d_outputBuffer));
     cudaFree(reinterpret_cast<void*>(d_hitRecord));

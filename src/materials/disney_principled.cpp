@@ -31,7 +31,7 @@ namespace {
     }
 
     inline float Gtr1SmithG(float NdotV, float NdotL) {
-        // Clearcoat uses separable Smith GGX with fixed roughness alpha = 0.25
+
         return SmithG(NdotV, NdotL, 0.25f);
     }
 
@@ -68,7 +68,7 @@ namespace {
         return res;
     }
 
-} // namespace
+}
 
 Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vector3f& n, const Point2f& uv) const {
     float NdotO = Dot(wo, n);
@@ -89,7 +89,6 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
     float lum = Luminance(p.baseColor);
     Vector3f cTint = (lum > 0.0f) ? (p.baseColor / lum) : Vector3f(1.0f, 1.0f, 1.0f);
 
-    // 1. Diffuse & Subsurface Lobes
     Vector3f fDiffuse(0.0f, 0.0f, 0.0f);
     if (p.metallic < 1.0f) {
         float Fo = SchlickWeight(NdotO);
@@ -97,7 +96,6 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
         float Fd90 = 0.5f + 2.0f * p.roughness * VdotH * VdotH;
         float Fd = (1.0f + (Fd90 - 1.0f) * Fo) * (1.0f + (Fd90 - 1.0f) * Fi);
 
-        // Hanrahan-Krueger subsurface approximation
         float Fss90 = p.roughness * VdotH * VdotH;
         float Fss = (1.0f + (Fss90 - 1.0f) * Fo) * (1.0f + (Fss90 - 1.0f) * Fi);
         float ss = 1.25f * (Fss * (1.0f / (NdotO + NdotI) - 0.5f) + 0.5f);
@@ -105,7 +103,6 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
         float diffuseFactor = std::lerp(Fd, ss, p.subsurface);
         fDiffuse = p.baseColor * (std::numbers::inv_pi_v<float> * diffuseFactor * (1.0f - p.metallic));
 
-        // Sheen Lobe
         if (p.sheen > 0.0f) {
             float Fh = SchlickWeight(VdotH);
             Vector3f cSheen = (1.0f - p.sheenTint) * Vector3f(1.0f, 1.0f, 1.0f) + p.sheenTint * cTint;
@@ -114,7 +111,6 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
         }
     }
 
-    // 2. Specular (GGX) Lobe
     Vector3f fSpec(0.0f, 0.0f, 0.0f);
     float alpha = std::max(0.001f, Sq(p.roughness));
     float D = GgxD(NdotH, alpha);
@@ -126,7 +122,6 @@ Vector3f DisneyPrincipled::f(const Vector3f& wo, const Vector3f& wi, const Vecto
 
     fSpec = (D * G * F) / (4.0f * NdotO * NdotI);
 
-    // 3. Clearcoat Lobe (GTR1)
     Vector3f fClearcoat(0.0f, 0.0f, 0.0f);
     if (p.clearcoat > 0.0f) {
         float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
@@ -152,13 +147,13 @@ Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const
     ONB onb(n);
 
     if (u.x < w.wDiff) {
-        // 1. Sample Diffuse (Cosine Hemisphere)
+
         float remappedUx = u.x / w.wDiff;
         Point2f uSub(remappedUx, u.y);
         Vector3f localDir = CosineSampleHemisphere(uSub);
         *wi = Normalize(onb.ToWorld(localDir));
     } else if (u.x < w.wDiff + w.wSpec) {
-        // 2. Sample Specular (GGX microfacet normal)
+
         float remappedUx = (u.x - w.wDiff) / w.wSpec;
         Point2f uSub(remappedUx, u.y);
         float alpha = std::max(0.001f, Sq(p.roughness));
@@ -166,7 +161,7 @@ Vector3f DisneyPrincipled::Sample_f(const Vector3f& wo, const Vector3f& n, const
         Vector3f wh = Normalize(onb.ToWorld(localWh));
         *wi = Normalize(2.0f * Dot(wo, wh) * wh - wo);
     } else {
-        // 3. Sample Clearcoat (GTR1 microfacet normal)
+
         float remappedUx = (u.x - (w.wDiff + w.wSpec)) / w.wClear;
         Point2f uSub(remappedUx, u.y);
         float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
@@ -206,15 +201,12 @@ float DisneyPrincipled::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector
     DisneyParams p = ResolveDisneyParams(params_, uv);
     LobeWeights w = ComputeLobeWeights(p);
 
-    // Diffuse PDF
     float pdfDiff = CosineHemispherePdf(NdotI);
 
-    // Specular PDF
     float alpha = std::max(0.001f, Sq(p.roughness));
     float D = GgxD(NdotH, alpha);
     float pdfSpec = (D * NdotH) / (4.0f * VdotH);
 
-    // Clearcoat PDF
     float alphaG = std::lerp(0.1f, 0.001f, p.clearcoatGloss);
     float Dc = Gtr1D(NdotH, alphaG);
     float pdfClear = (Dc * NdotH) / (4.0f * VdotH);
@@ -222,4 +214,4 @@ float DisneyPrincipled::Pdf(const Vector3f& wo, const Vector3f& wi, const Vector
     return w.wDiff * pdfDiff + w.wSpec * pdfSpec + w.wClear * pdfClear;
 }
 
-} // namespace rt
+}

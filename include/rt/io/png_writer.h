@@ -24,7 +24,7 @@
 namespace rt {
     inline bool WritePNG(const std::string& filename, int width, int height, const std::vector<Vector3f>& buffer) {
         std::vector<uint8_t> pixels(width * height * 3);
-        
+
         for (size_t i = 0; i < buffer.size(); ++i) {
             auto toByte = [](float c) {
                 c = std::clamp(c, 0.0f, 1.0f);

@@ -1,5 +1,3 @@
-# duplication_analysis.R
-# Visualizes reference duplication ratios relative to the alpha-gate duplication ceiling.
 
 suppressPackageStartupMessages({
   if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2", repos = "https://cloud.r-project.org")

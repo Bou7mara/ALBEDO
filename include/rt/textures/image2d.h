@@ -41,7 +41,7 @@ namespace rt {
             if (wrap == WrapMode::Clamp) {
                 ix = (ix < 0) ? 0 : (ix >= width ? width - 1 : ix);
                 iy = (iy < 0) ? 0 : (iy >= height ? height - 1 : iy);
-            } else { // Repeat
+            } else {
                 ix = (ix % width + width) % width;
                 iy = (iy % height + height) % height;
             }
@@ -51,7 +51,6 @@ namespace rt {
         __host__ __device__ T Sample(float u, float v) const {
             if (width <= 0 || height <= 0 || !texels) return T{};
 
-            // Convert continuous normalized UV [0, 1] to continuous pixel space [-0.5, W - 0.5]
             float x = u * static_cast<float>(width) - 0.5f;
             float y = v * static_cast<float>(height) - 0.5f;
 
@@ -107,4 +106,4 @@ namespace rt {
         }
     };
 
-} // namespace rt
+}

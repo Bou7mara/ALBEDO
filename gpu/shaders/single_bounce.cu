@@ -81,9 +81,9 @@ static __forceinline__ __device__ HitPayload TraceRay(OptixTraversableHandle han
         0.0f,
         OptixVisibilityMask(255),
         OPTIX_RAY_FLAG_NONE,
-        0, // SBT offset
-        1, // SBT stride
-        0, // missSBTIndex
+        0,
+        1,
+        0,
         p0, p1
     );
 
@@ -101,7 +101,6 @@ extern "C" __global__ void __raygen__single_bounce() {
 
     rt::RNG rng(HashSeed(idx.x, idx.y, params.frameSeed));
 
-    // Primary ray trace
     HitPayload hit0 = TraceRay(params.iasHandle, ray.o, ray.d);
     if (!hit0.hit) {
         params.outputBuffer[pixel] = SkyGradient(ray.d);
@@ -111,7 +110,6 @@ extern "C" __global__ void __raygen__single_bounce() {
     rt::Vector3f wo = Normalize(-ray.d);
     rt::Vector3f L = rtx::EvaluateEmission(hit0.material, wo, static_cast<rt::Vector3f>(hit0.n));
 
-    // Single BSDF bounce
     rt::Vector3f wi(0.0f, 0.0f, 0.0f);
     float pdf = 0.0f;
     rt::Vector3f f = rtx::SampleBsdf(hit0.material, wo, static_cast<rt::Vector3f>(hit0.n), rng.Uniform2D(), &wi, &pdf);
@@ -120,7 +118,6 @@ extern "C" __global__ void __raygen__single_bounce() {
         float cosTheta = AbsDot(wi, hit0.n);
         rt::Vector3f throughput = f * cosTheta / pdf;
 
-        // Offset origin to prevent self-intersection
         rt::Vector3f offsetN = (Dot(wi, hit0.n) > 0.0f) ? static_cast<rt::Vector3f>(hit0.n) : -static_cast<rt::Vector3f>(hit0.n);
         rt::Point3f bounceOrigin = hit0.p + 1e-3f * offsetN;
 

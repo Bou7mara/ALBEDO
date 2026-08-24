@@ -38,4 +38,4 @@ Bounds3f Instance::WorldBound() const {
     return worldBounds_;
 }
 
-} // namespace rt
+}

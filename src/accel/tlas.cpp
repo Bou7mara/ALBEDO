@@ -62,4 +62,4 @@ TLAS::Stats TLAS::GetStats() const {
     return stats;
 }
 
-} // namespace rt
+}

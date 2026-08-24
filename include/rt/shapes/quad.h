@@ -39,4 +39,4 @@ namespace rt {
         float area_;
     };
 
-} // namespace rt
+}

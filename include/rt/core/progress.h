@@ -30,9 +30,9 @@ namespace rt {
                 now - start_).count();
 
             if (nowMs - lastMs < static_cast<long long>(interval_ * 1000) && done < total_) return;
-            
+
             if (!lastReportMs_.compare_exchange_strong(lastMs, nowMs, std::memory_order_relaxed)) return;
-            
+
             Report(done, false);
         }
 

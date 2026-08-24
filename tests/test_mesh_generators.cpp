@@ -9,7 +9,7 @@ using namespace rt;
 TEST_CASE("MakeIcosahedronMesh produces 12 vertices and 20 faces", "[mesh_generators]") {
     auto mesh = MakeIcosahedronMesh(1.0f, Vector3f(1, 1, 1));
     REQUIRE(mesh->positions.size() == 12);
-    REQUIRE(mesh->indices.size() == 60); // 20 faces * 3
+    REQUIRE(mesh->indices.size() == 60);
     REQUIRE(mesh->TriangleCount() == 20);
 }
 
@@ -25,9 +25,9 @@ TEST_CASE("MakeIcosahedronMesh respects non-uniform scale per axis", "[mesh_gene
 }
 
 TEST_CASE("MakeGridMesh produces the expected vertex and triangle counts", "[mesh_generators]") {
-    auto mesh = MakeGridMesh(4, 2.0f); // 4x4 cells
-    REQUIRE(mesh->positions.size() == 25);      // (4+1)*(4+1)
-    REQUIRE(mesh->TriangleCount() == 32);        // 4*4 cells * 2 triangles
+    auto mesh = MakeGridMesh(4, 2.0f);
+    REQUIRE(mesh->positions.size() == 25);
+    REQUIRE(mesh->TriangleCount() == 32);
 }
 
 TEST_CASE("MakeGridMesh spans the requested extent and stays flat at y=0", "[mesh_generators]") {

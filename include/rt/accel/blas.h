@@ -14,4 +14,4 @@ public:
     virtual Bounds3f WorldBound() const = 0;
 };
 
-} // namespace rt
+}

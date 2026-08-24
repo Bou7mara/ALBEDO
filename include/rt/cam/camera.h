@@ -24,4 +24,4 @@ public:
     __host__ __device__ virtual Ray GenerateRay(const CameraSample& sample) const = 0;
 };
 
-} // namespace rt
+}

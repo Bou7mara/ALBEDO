@@ -10,7 +10,7 @@ namespace rt {
         std::vector<Point3f> positions;
         std::vector<Normal3f> normals;
         std::vector<Point2f> uvs;
-        std::vector<int> indices; // 3 per triangle
+        std::vector<int> indices;
 
         [[nodiscard]] int TriangleCount() const noexcept {
             return static_cast<int>(indices.size() / 3);

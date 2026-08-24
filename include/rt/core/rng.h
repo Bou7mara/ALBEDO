@@ -48,4 +48,4 @@ namespace rt {
         uint64_t inc_{0xda3e39cb94b95bdbULL};
     };
 
-} // namespace rt
+}

@@ -134,4 +134,4 @@ float Quad::Area() const {
     return area_;
 }
 
-} // namespace rt
+}

@@ -1,4 +1,3 @@
-# gpu/CMakeLists.txt
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,7 +6,6 @@ add_compile_definitions(NOMINMAX)
 set(OPTIXIR_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/optixir")
 file(MAKE_DIRECTORY "${OPTIXIR_OUTPUT_DIR}")
 
-# 1. Custom Command: smoke_test.cu -> OptiX-IR (.optixir)
 set(SMOKE_TEST_CU "${CMAKE_CURRENT_SOURCE_DIR}/shaders/smoke_test.cu")
 set(SMOKE_TEST_OPTIXIR "${OPTIXIR_OUTPUT_DIR}/smoke_test.optixir")
 
@@ -32,7 +30,6 @@ add_custom_command(
     VERBATIM
 )
 
-# 2. Custom Command: intersection_test.cu -> OptiX-IR (.optixir)
 set(INTERSECTION_TEST_CU "${CMAKE_CURRENT_SOURCE_DIR}/shaders/intersection_test.cu")
 set(INTERSECTION_TEST_OPTIXIR "${OPTIXIR_OUTPUT_DIR}/intersection_test.optixir")
 
@@ -59,7 +56,6 @@ add_custom_command(
     VERBATIM
 )
 
-# 3. Custom Command: normals_render.cu -> OptiX-IR (.optixir)
 set(NORMALS_RENDER_CU "${CMAKE_CURRENT_SOURCE_DIR}/shaders/normals_render.cu")
 set(NORMALS_RENDER_OPTIXIR "${OPTIXIR_OUTPUT_DIR}/normals_render.optixir")
 
@@ -88,7 +84,6 @@ add_custom_command(
     VERBATIM
 )
 
-# 4. Custom Command: single_bounce.cu -> OptiX-IR (.optixir)
 set(SINGLE_BOUNCE_CU "${CMAKE_CURRENT_SOURCE_DIR}/shaders/single_bounce.cu")
 set(SINGLE_BOUNCE_OPTIXIR "${OPTIXIR_OUTPUT_DIR}/single_bounce.optixir")
 
@@ -119,7 +114,6 @@ add_custom_command(
     VERBATIM
 )
 
-# 5. Custom Command: path_tracer.cu -> OptiX-IR (.optixir)
 set(PATH_TRACER_CU "${CMAKE_CURRENT_SOURCE_DIR}/shaders/path_tracer.cu")
 set(PATH_TRACER_OPTIXIR "${OPTIXIR_OUTPUT_DIR}/path_tracer.optixir")
 
@@ -160,7 +154,6 @@ add_custom_target(optixir_shaders ALL DEPENDS
     "${PATH_TRACER_OPTIXIR}"
 )
 
-# 6. rt_gpu Library
 add_library(rt_gpu STATIC
     src/optix_context.cpp
     src/optix_context.h
@@ -197,7 +190,6 @@ target_link_libraries(rt_gpu PUBLIC
 
 add_dependencies(rt_gpu optixir_shaders)
 
-# Main gpu_smoke_test executable
 add_executable(gpu_smoke_test
     src/main.cpp
 )
@@ -206,7 +198,6 @@ target_link_libraries(gpu_smoke_test PRIVATE
     rt_gpu
 )
 
-# 7. GPU unit tests
 add_executable(gpu_tests
     tests/test_optix_context.cpp
     tests/test_device_scene.cpp
@@ -242,7 +233,6 @@ target_link_libraries(gpu_tests PRIVATE
 
 add_dependencies(gpu_tests optixir_shaders)
 
-# 8. Dual Host/Device Math, Material, and Light Parity Tests
 add_executable(gpu_math_tests
     tests/test_math_parity.cu
     tests/test_device_material.cu

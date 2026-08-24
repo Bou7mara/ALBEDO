@@ -82,16 +82,15 @@ namespace {
         throw std::runtime_error("Could not locate OptiX-IR shader file: " + filename);
     }
 
-} // namespace
+}
 
 TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][intersection]") {
-    // 1. Initialize OptiX & CUDA context
+
     auto ctx = rtx::OptixContext::Create();
     REQUIRE(ctx != nullptr);
     OptixDeviceContext optixContext = ctx->GetOptixDeviceContext();
     CUstream stream = ctx->GetCudaStream();
 
-    // 2. Construct Scene Graph with Instanced Geometry
     auto mesh = std::make_shared<rt::TriangleMesh>();
     mesh->positions = {
         rt::Point3f(0.0f, 0.0f, 0.0f),
@@ -107,30 +106,25 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
 
     auto root = std::make_shared<rt::SceneNode>();
 
-    // Instance 1: at z = -2
     auto node1 = std::make_shared<rt::SceneNode>();
     node1->mesh = mesh;
     node1->localTransform = rt::Transform::Translate(rt::Vector3f(0.0f, 0.0f, -2.0f));
     root->children.push_back(node1);
 
-    // Instance 2: sharing same mesh, shifted to x = 3, z = -2
     auto node2 = std::make_shared<rt::SceneNode>();
     node2->mesh = mesh;
     node2->localTransform = rt::Transform::Translate(rt::Vector3f(3.0f, 0.0f, -2.0f));
     root->children.push_back(node2);
 
-    // 3. Build CPU Scene for ground truth
     rt::Scene cpuScene;
     rt::FlattenSceneGraph(root, cpuScene);
     cpuScene.Build();
 
-    // 4. Build GPU DeviceScene (GAS + IAS)
     rtx::DeviceScene devScene = rtx::DeviceScene::Build(root, optixContext, stream);
     REQUIRE(devScene.iasHandle != 0);
-    // Verify GAS caching: exactly 1 GAS built for 2 instances of the same mesh!
+
     REQUIRE(devScene.meshes.size() == 1);
 
-    // 5. Load OptiX Module & Pipeline
     std::filesystem::path shaderPath = FindShaderBinary("intersection_test.optixir");
     std::vector<char> optixirCode = ReadBinaryFile(shaderPath);
 
@@ -138,8 +132,8 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     OptixPipelineCompileOptions pipelineCompileOptions{};
     pipelineCompileOptions.usesMotionBlur = 0;
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-    pipelineCompileOptions.numPayloadValues = 2; // pointer to payload
-    pipelineCompileOptions.numAttributeValues = 2; // barycentrics
+    pipelineCompileOptions.numPayloadValues = 2;
+    pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
 
@@ -159,7 +153,6 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     );
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // Create Program Groups: Raygen, Miss, ClosestHit
     OptixProgramGroupOptions pgOptions{};
     OptixProgramGroupDesc raygenPGDesc{};
     raygenPGDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
@@ -191,7 +184,6 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     res = optixProgramGroupCreate(optixContext, &hitPGDesc, 1, &pgOptions, logBuffer, &logSize, &hitPG);
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // Link Pipeline
     OptixProgramGroup programGroups[] = { raygenPG, missPG, hitPG };
     OptixPipelineLinkOptions linkOptions{};
     linkOptions.maxTraceDepth = 1;
@@ -210,7 +202,6 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     );
     REQUIRE(res == OPTIX_SUCCESS);
 
-    // 6. Build Shader Binding Table (SBT)
     RaygenRecord raygenRecord{};
     optixSbtRecordPackHeader(raygenPG, &raygenRecord);
     CUdeviceptr d_raygenRecord = 0;
@@ -248,17 +239,16 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
     sbt.hitgroupRecordCount = static_cast<unsigned int>(hitRecords.size());
 
-    // 7. Define Test Rays
     std::vector<TestRay> testRays = {
-        // Ray 0: Hit instance 1 at (0.25, 0.25, -2.0)
+
         { rt::Point3f(0.25f, 0.25f, 0.0f), rt::Vector3f(0.0f, 0.0f, -1.0f), 10.0f },
-        // Ray 1: Hit instance 2 at (3.25, 0.25, -2.0)
+
         { rt::Point3f(3.25f, 0.25f, 0.0f), rt::Vector3f(0.0f, 0.0f, -1.0f), 10.0f },
-        // Ray 2: Ray through gap between instances (miss)
+
         { rt::Point3f(1.50f, 0.25f, 0.0f), rt::Vector3f(0.0f, 0.0f, -1.0f), 10.0f },
-        // Ray 3: Miss shooting away
+
         { rt::Point3f(0.25f, 0.25f, 0.0f), rt::Vector3f(0.0f, 0.0f, 1.0f), 10.0f },
-        // Ray 4: Grazing angle on instance 1
+
         { rt::Point3f(0.1f, 0.1f, 1.0f), Normalize(rt::Vector3f(0.0f, 0.0f, -1.0f)), 10.0f }
     };
 
@@ -281,12 +271,10 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
     cudaMalloc(reinterpret_cast<void**>(&d_params), sizeof(IntersectionTestParams));
     cudaMemcpy(reinterpret_cast<void*>(d_params), &params, sizeof(IntersectionTestParams), cudaMemcpyHostToDevice);
 
-    // 8. Launch OptiX Trace Kernel
     res = optixLaunch(pipeline, stream, d_params, sizeof(IntersectionTestParams), &sbt, numRays, 1, 1);
     REQUIRE(res == OPTIX_SUCCESS);
     cudaStreamSynchronize(stream);
 
-    // 9. Read Back Results & Compare with CPU BVH
     std::vector<TestHitResult> gpuResults(numRays);
     cudaMemcpy(gpuResults.data(), reinterpret_cast<void*>(d_results), numRays * sizeof(TestHitResult), cudaMemcpyDeviceToHost);
 
@@ -309,7 +297,6 @@ TEST_CASE("GAS and IAS scene translation parity with CPU BVH", "[gpu][scene][int
         }
     }
 
-    // 10. Cleanup
     cudaFree(reinterpret_cast<void*>(d_params));
     cudaFree(reinterpret_cast<void*>(d_results));
     cudaFree(reinterpret_cast<void*>(d_testRays));

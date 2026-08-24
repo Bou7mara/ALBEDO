@@ -12,7 +12,7 @@ TEST_CASE("Sphere Cone Sampling integrates to 1", "[sphere][sampling]") {
     Point3f ref(0, 0, 0);
 
     RNG rng;
-    
+
     float d2 = 25.0f;
     float r2 = 1.0f;
     float sinThetaMax2 = r2 / d2;
@@ -22,7 +22,7 @@ TEST_CASE("Sphere Cone Sampling integrates to 1", "[sphere][sampling]") {
     for (int i = 0; i < 10; ++i) {
         ShapeSample s = sphere.Sample(ref, rng.Uniform2D());
         REQUIRE_THAT(s.pdf, WithinRel(expectedPdf, 1e-4f));
-        
+
         Vector3f wi = Normalize(s.p - ref);
         float pdf = sphere.Pdf(ref, wi);
         REQUIRE_THAT(pdf, WithinRel(expectedPdf, 1e-4f));

@@ -39,4 +39,4 @@ private:
     Bounds3f worldBounds_;
 };
 
-} // namespace rt
+}

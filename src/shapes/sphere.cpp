@@ -59,14 +59,14 @@ ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
     float r2 = worldRadius * worldRadius;
 
     ShapeSample sample;
-    
+
     if (d2 <= r2) {
         Vector3f objDir = UniformSampleSphere(u);
         Point3f pObj(objDir.x * radius_, objDir.y * radius_, objDir.z * radius_);
         Normal3f nObj(objDir.x, objDir.y, objDir.z);
         sample.p = objectToWorld_(pObj);
         sample.n = Normalize(objectToWorld_(nObj));
-        
+
         Vector3f wi = sample.p - ref;
         float distSq = LengthSquared(wi);
         if (distSq == 0.0f) { sample.pdf = 0.0f; return sample; }
@@ -91,11 +91,11 @@ ShapeSample Sphere::Sample(const Point3f& ref, const Point2f& u) const {
 
     ONB onbCenter(Normalize(-wc));
     Vector3f nWorld = onbCenter.ToWorld(Vector3f(sinAlpha * std::cos(phi), sinAlpha * std::sin(phi), cosAlpha));
-    
+
     sample.n = Normal3f(nWorld.x, nWorld.y, nWorld.z);
     sample.p = center + worldRadius * nWorld;
     sample.pdf = 1.0f / (2.0f * std::numbers::pi_v<float> * (1.0f - cosThetaMax));
-    
+
     return sample;
 }
 
@@ -117,7 +117,7 @@ float Sphere::Pdf(const Point3f& ref, const Vector3f& wi) const {
 
     float sinThetaMax2 = r2 / d2;
     float cosThetaMax = std::sqrt(std::max(0.0f, 1.0f - sinThetaMax2));
-    
+
     float cosTheta = Dot(Normalize(wc), wi);
     if (cosTheta < cosThetaMax) {
         return 0.0f;

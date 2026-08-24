@@ -1,5 +1,3 @@
-# plots.R
-# Generates publication-ready ggplot2 faceted comparison charts with IQR error bars.
 
 suppressPackageStartupMessages({
   if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2", repos = "https://cloud.r-project.org")

@@ -1,6 +1,3 @@
-# significance_tests.R
-# Conducts paired non-parametric Wilcoxon signed-rank tests against the baseline
-# and applies Benjamini-Hochberg False Discovery Rate (FDR) corrections.
 
 suppressPackageStartupMessages({
   if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr", repos = "https://cloud.r-project.org")
@@ -13,20 +10,20 @@ suppressPackageStartupMessages({
 
 run_significance_tests <- function(df, baseline = "Binned-SAH (Serial)", output_dir = "benchmarks/analysis/results") {
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-  
+
   scenes <- unique(df$scene)
   ray_sets <- unique(df$ray_set)
   variants <- setdiff(unique(df$as_variant), baseline)
-  
+
   results <- list()
-  
+
   for (sc in scenes) {
     for (rs in ray_sets) {
       subset_df <- df %>% filter(scene == sc, ray_set == rs)
-      
+
       base_data <- subset_df %>% filter(as_variant == baseline) %>% arrange(rep_id)
       if (nrow(base_data) == 0) {
-        # Check if instanced scene has another baseline (e.g. TLAS)
+
         base_variant_inst <- "TLAS (Instanced BVH)"
         base_data <- subset_df %>% filter(as_variant == base_variant_inst) %>% arrange(rep_id)
         if (nrow(base_data) == 0) next
@@ -34,17 +31,16 @@ run_significance_tests <- function(df, baseline = "Binned-SAH (Serial)", output_
       } else {
         current_baseline <- baseline
       }
-      
+
       for (cand in setdiff(unique(subset_df$as_variant), current_baseline)) {
         cand_data <- subset_df %>% filter(as_variant == cand) %>% arrange(rep_id)
-        
+
         if (nrow(cand_data) == nrow(base_data) && nrow(base_data) >= 3) {
-          # 1. Traversal Throughput (mrays_per_sec) Paired Test
+
           w_query <- wilcox.test(cand_data$mrays_per_sec, base_data$mrays_per_sec, paired = TRUE, exact = FALSE)
-          
-          # 2. Build Time Paired Test
+
           w_build <- wilcox.test(cand_data$build_time_ms, base_data$build_time_ms, paired = TRUE, exact = FALSE)
-          
+
           results[[length(results) + 1]] <- data.frame(
             scene = as.character(sc),
             ray_set = as.character(rs),
@@ -57,7 +53,7 @@ run_significance_tests <- function(df, baseline = "Binned-SAH (Serial)", output_
             raw_p_value = w_query$p.value,
             stringsAsFactors = FALSE
           )
-          
+
           results[[length(results) + 1]] <- data.frame(
             scene = as.character(sc),
             ray_set = as.character(rs),
@@ -74,21 +70,20 @@ run_significance_tests <- function(df, baseline = "Binned-SAH (Serial)", output_
       }
     }
   }
-  
+
   if (length(results) == 0) {
     warning("No paired test comparisons could be formed.")
     return(data.frame())
   }
-  
+
   test_df <- bind_rows(results)
-  
-  # Multiple comparisons Benjamini-Hochberg FDR correction
+
   test_df$p_adj_bh <- p.adjust(test_df$raw_p_value, method = "BH")
   test_df$is_significant <- test_df$p_adj_bh < 0.05
-  
+
   out_csv <- file.path(output_dir, "significance_summary.csv")
   write_csv(test_df, out_csv)
   message("Saved paired significance test summary to: ", out_csv)
-  
+
   return(test_df)
 }

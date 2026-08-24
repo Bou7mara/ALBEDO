@@ -22,7 +22,7 @@ namespace rt {
         double q = (b < 0) ? -0.5 * (b - rootDiscrim) : -0.5 * (b + rootDiscrim);
         double r0 = q / a;
         double r1 = c / q;
-        
+
         if (r0 > r1) {
             double tmp = r0;
             r0 = r1;
@@ -34,4 +34,4 @@ namespace rt {
         return true;
     }
 
-} // namespace rt
+}

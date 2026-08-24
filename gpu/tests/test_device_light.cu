@@ -20,7 +20,7 @@ namespace {
         rtx::SampleLightDevice(list, uVals[idx], &lightIndices[idx], &pmfs[idx]);
     }
 
-} // namespace
+}
 
 TEST_CASE("Device light CDF sampling parity", "[gpu][light][cdf]") {
     std::vector<rtx::DeviceLight> hostLights(3);
@@ -36,7 +36,6 @@ TEST_CASE("Device light CDF sampling parity", "[gpu][light][cdf]") {
     list.count = 3;
     list.totalPower = 100.0f;
 
-    // Test cases for u
     std::vector<float> testU = { 0.05f, 0.1f, 0.25f, 0.4f, 0.7f, 0.99f };
     std::vector<int> expectedIndices = { 0, 0, 1, 1, 2, 2 };
     std::vector<float> expectedPmfs = { 0.1f, 0.1f, 0.3f, 0.3f, 0.6f, 0.6f };
@@ -50,7 +49,6 @@ TEST_CASE("Device light CDF sampling parity", "[gpu][light][cdf]") {
         REQUIRE_THAT(pmf, WithinAbs(expectedPmfs[i], 1e-5f));
     }
 
-    // Device kernel execution
     int count = static_cast<int>(testU.size());
     rtx::DeviceLight* d_lights = nullptr;
     float* d_cdf = nullptr;

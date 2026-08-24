@@ -8,8 +8,8 @@ namespace rt {
 
     struct DirectionalAlbedoLUT {
         static constexpr int kResolution = 64;
-        Image2D<float> eTable;           // E(mu, alpha), width = mu, height = alpha
-        Image2D<float> eAvgTable;        // E_avg(alpha), width = alpha, height = 1
+        Image2D<float> eTable;
+        Image2D<float> eAvgTable;
 
         DirectionalAlbedoLUT();
 
@@ -22,10 +22,8 @@ namespace rt {
         }
     };
 
-    // Singleton access to precomputed LUT
     const DirectionalAlbedoLUT& GetDirectionalAlbedoLUT();
 
-    // Average Fresnel reflectance for conductors: 2 * int_0^1 mu * FrConductor(mu, eta, k) dmu
     __host__ __device__ inline Vector3f AverageFresnelConductor(const Vector3f& eta, const Vector3f& k) {
         constexpr int kSteps = 32;
         Vector3f sum(0.0f, 0.0f, 0.0f);
@@ -39,4 +37,4 @@ namespace rt {
         return sum;
     }
 
-} // namespace rt
+}

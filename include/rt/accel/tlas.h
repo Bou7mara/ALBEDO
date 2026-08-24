@@ -39,4 +39,4 @@ private:
     std::unique_ptr<BVH> bvh_;
 };
 
-} // namespace rt
+}
