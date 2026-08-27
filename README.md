@@ -1,5 +1,7 @@
 # ALBEDO
 
+<img width="2560" height="1280" alt="image25" src="https://github.com/user-attachments/assets/4df9eff4-4b14-4c0e-8f07-117bc12a6013" />
+
 A physically based ray tracer built from the ground up in modern C++23.
 
 ## Status
